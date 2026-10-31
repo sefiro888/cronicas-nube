@@ -286,7 +286,10 @@
 /* Móvil: el tablero ocupa casi todo el ancho; las cartas bajan a la franja
    superior, pequeñas, para no tapar las casillas. */
 @media (max-width: 760px) {
-  .duel { align-items: flex-start; padding-top: 52px; }
+  /* En móvil el marco del tablero se extiende más allá de la pantalla (el
+     escenario sangra por los lados) y con `absolute` las cartas quedaban
+     medio fuera: −52 px y 440 px en un ancho de 390. Se fijan a la pantalla. */
+  .duel { position: fixed; inset: 0; align-items: flex-start; padding: 64px 8px 0; }
   .fighter { width: 112px; gap: 4px; }
   .cardWrap > article { --card-width: 6.4rem; }
   .nexusPlate { width: 6.4rem; padding: 8px 6px; }
