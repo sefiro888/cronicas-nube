@@ -42,10 +42,36 @@ omitidas en cada pasada) y tras revisarlo en el navegador.
    ir a Ajustes. **Vida del Nexo en el duelo** cuando el objetivo es un
    Nexo: se muestra la vida antes del golpe, sumando los daños al Nexo que
    aún esperan en la cola (el motor ya los ha restado cuando el duelo se
-   presenta).
+   presenta). Publicado en `92a9a74`.
+7. **Revisión en móvil (390 × 844). SOLO EN COMMIT LOCAL, SIN PUBLICAR.**
+   La carta en grande cabe entera. El duelo se salía de la pantalla (las
+   cartas iban de −52 a 440 px) porque el marco del tablero sangra por los
+   lados; en móvil el duelo pasa a `fixed` (`CombatDuel.module.css`).
+   Comprobado midiendo las cajas en el navegador (de 8 a 120 px y de 270 a
+   382 px). Unitarias, lint y build correctos, pero **la batería e2e no
+   terminó**: el ordenador se suspendió y `marea-targeting.spec.ts` (1366)
+   quedó colgada 3,8 horas, y `game-flow.spec.ts` volvió a fallar por carga
+   lenta. Al retomar: repetir `npm run test:e2e` y, si pasa, `git push`.
+
+### Trampas aprendidas hoy
+
+- **Un panel de navegador oculto congela las animaciones CSS** (y con ellas
+  la opacidad de entrada): la carta en grande queda invisible. Para revisar,
+  activar «Reducir movimiento» o medir con `getBoundingClientRect`.
+- **El estado de la partida va por delante de la animación.** El motor
+  resuelve la jugada entera y la interfaz la reproduce después: piezas
+  muertas, vida del Nexo y escudos ya están actualizados cuando el duelo se
+  presenta. Cualquier cifra que se enseñe durante la presentación tiene que
+  reconstruirse con la cola pendiente (ver `displayedNexusHealth`).
+- `game-flow.spec.ts` puede fallar por tiempo de carga de la página de mazos
+  cuando la batería va lenta (14 min en vez de 9). En solitario pasa;
+  repetirlo antes de buscar un fallo.
 
 ### Pendiente, por prioridad
 
+- **Publicar el arreglo del duelo en móvil** (punto 7): está en un commit
+  local por encima de `origin/main`. Falta una pasada e2e completa sin
+  suspensiones; la de las 15:19 no llegó a terminar.
 - **Que el propietario pruebe el ritmo.** Cinco segundos por carta (pedido
   por él) y 1,8 s de presentación por ataque pueden pesar en partidas de 50
   turnos. Todo se ajusta en `presentation.ts` (`SPOTLIGHT_MS`,
