@@ -19,6 +19,7 @@ import { StepRipple } from './BattleSkies'
 import { RarityArrival } from './RarityArrival'
 import { Blessing, DrawCards, Fireball, FrostWave, HealingLight, PushWave, SkyJudgement, Storm } from './SpellStyles'
 import { spellKindFor } from './spellStyle'
+import { FactionSignature } from './FactionSignature'
 import { SPELL_CAST_STRETCH } from './eventTiming'
 import type { CastImpact } from './castImpact'
 import { ARRIVAL_LANDING } from './arrivalMotion'
@@ -416,6 +417,7 @@ export function EventEffects({ event, reducedMotion, impact }: EventEffectsProps
         <>
           <SummonRitual cell={event.to} tone={tone} timing={timing} faction={event.faction} />
           <LandingShock cell={event.to} tone={tone} timing={timing} heavy={Boolean(event.cast) || card?.rarity === 'mythic'} />
+          {!reducedMotion && <FactionSignature at={[boardX(event.to.x), boardZ(event.to.y)]} faction={event.faction} mode="summon" durationMs={event.durationMs} />}
           {card && !reducedMotion && (
             <RarityArrival at={[boardX(event.to.x), boardZ(event.to.y)]} rarity={card.rarity} tone={tone} durationMs={event.durationMs} landing={ARRIVAL_LANDING} />
           )}
@@ -481,6 +483,7 @@ export function EventEffects({ event, reducedMotion, impact }: EventEffectsProps
         <>
         <ImpactBurst cell={[boardX(event.to.x), boardZ(event.to.y)]} tone={tone} timing={timing} power={Math.min(1.6, powerFor(event.amount) + rarityPower(event.cardId))} />
         {!reducedMotion && <ImpactDebris at={[boardX(event.to.x), boardZ(event.to.y)]} cardId={event.targetCardId} durationMs={event.durationMs} />}
+        {!reducedMotion && <FactionSignature at={[boardX(event.to.x), boardZ(event.to.y)]} faction={event.faction} mode="hit" durationMs={event.durationMs} />}
         {!reducedMotion && <HitSpill at={[boardX(event.to.x), boardZ(event.to.y)]} cardId={event.targetCardId} durationMs={event.durationMs} amount={event.amount ?? 1} />}
         </>
       ) : null
@@ -499,6 +502,7 @@ export function EventEffects({ event, reducedMotion, impact }: EventEffectsProps
       return event.to ? <>
         <DestroyEmbers cell={event.to} tone={tone} timing={timing} cardId={event.cardId} />
         {!reducedMotion && <ImpactDebris at={[boardX(event.to.x), boardZ(event.to.y)]} cardId={event.cardId} durationMs={event.durationMs} destruction />}
+        {!reducedMotion && <FactionSignature at={[boardX(event.to.x), boardZ(event.to.y)]} faction={card?.faction ?? event.faction} mode="death" durationMs={event.durationMs} />}
         {!reducedMotion && <DeathFlourish at={[boardX(event.to.x), boardZ(event.to.y)]} cardId={event.cardId} durationMs={event.durationMs} />}
       </> : null
     case 'nexus-damage': {
