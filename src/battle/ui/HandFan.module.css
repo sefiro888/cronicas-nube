@@ -23,16 +23,27 @@
   100% { opacity: 1; }
 }
 /* El pequeño retraso al entrar estabiliza el abanico cuando el ratón lo barre. */
-.fanCard:hover, .fanCard:focus-within {
-  transform: rotate(0deg) translateY(-34px) scale(1.07);
-  transition-delay: 0.04s;
-  z-index: 60 !important;
-}
+/* El hueco no se mueve al pasar el ratón: solo la capa .lift. Antes se
+   levantaba el hueco entero y, con las cartas solapadas, el puntero quedaba
+   encima de la vecina: el clic seleccionaba otra carta o ninguna. */
+.fanCard:hover, .fanCard:focus-within { z-index: 60 !important; }
 .fanCard[data-selected='true'] {
-  transform: rotate(0deg) translateY(-44px) scale(1.09);
-  transition-delay: 0s;
   z-index: 61 !important;
   filter: drop-shadow(0 16px 26px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 18px rgba(228, 192, 105, 0.42));
+}
+.lift {
+  transform-origin: 50% 128%;
+  transition: transform 0.22s cubic-bezier(0.25, 0.8, 0.35, 1);
+}
+.fanCard:hover .lift, .fanCard:focus-within .lift {
+  transform: rotate(calc(var(--fan-rotation, 0deg) * -1)) translateY(-34px) scale(1.07);
+  transition-delay: 0.04s;
+}
+/* La elegida sube menos que al pasar el ratón: subida del todo tapaba la
+   fila de despliegue propia, y pulsar ahí la volvía a soltar. */
+.fanCard[data-selected='true'] .lift {
+  transform: rotate(calc(var(--fan-rotation, 0deg) * -1)) translateY(-16px) scale(1.04);
+  transition-delay: 0s;
 }
 /* Mientras vuela hacia el tablero, la carta se atenúa en su hueco del abanico:
    la que sigue al cursor es la «de verdad» y así no parece que haya dos. */
@@ -43,28 +54,28 @@
 
 /* En la mano, un filete verde dice «puedes jugarla» y uno dorado «seleccionada».
    Los halos anchos de rareza competían con esas dos señales de acción. */
-.fanCard > [data-card-id] {
+.fanCard > .lift > [data-card-id] {
   animation: none;
   box-shadow: 0 0 0 1px #121016, 0 0 0 2px var(--frame-mid), 0 10px 24px #0009, inset 0 0 1.8rem #0008;
 }
-.fanCard > [data-rarity='mythic'] {
+.fanCard > .lift > [data-rarity='mythic'] {
   border-color: #cbb3cb;
   box-shadow: 0 0 0 1px #211925, 0 0 0 2px #b48aad, 0 0 7px #a474b233, 0 10px 24px #0009, inset 0 0 1.8rem #0008;
 }
-.fanCard[data-playable='true'] > [data-card-id] {
+.fanCard[data-playable='true'] > .lift > [data-card-id] {
   box-shadow: 0 0 0 1px #111a17, 0 0 0 2px #82bf9c, 0 0 8px #75d4a02b, 0 10px 24px #0009;
 }
-.fanCard[data-selected='true'] > [data-card-id] {
+.fanCard[data-selected='true'] > .lift > [data-card-id] {
   box-shadow: 0 0 0 1px #17130d, 0 0 0 2px #eed39b, 0 0 10px #d4ac613d, 0 16px 30px #000a;
 }
-.hand[data-reduced-motion] .fanCard { transition: none; animation: none; }
+.hand[data-reduced-motion] .fanCard, .hand[data-reduced-motion] .lift { transition: none; animation: none; }
 @media (prefers-reduced-motion: reduce) {
-  .fanCard { transition: none; animation: none; }
+  .fanCard, .lift { transition: none; animation: none; }
 }
 @media (max-height: 820px) {
   .fanCard { transform: rotate(var(--fan-rotation, 0deg)) translateY(calc(var(--fan-lift, 0px) + 18px)); }
-  .fanCard:hover, .fanCard:focus-within { transform: rotate(0deg) translateY(-28px) scale(1.05); }
-  .fanCard[data-selected='true'] { transform: rotate(0deg) translateY(-36px) scale(1.07); }
+  .fanCard:hover .lift, .fanCard:focus-within .lift { transform: rotate(calc(var(--fan-rotation, 0deg) * -1)) translateY(-28px) scale(1.05); }
+  .fanCard[data-selected='true'] .lift { transform: rotate(calc(var(--fan-rotation, 0deg) * -1)) translateY(-12px) scale(1.03); }
 }
 
 /* Con diez cartas, centrar un abanico más ancho que el móvil ocultaba ambos

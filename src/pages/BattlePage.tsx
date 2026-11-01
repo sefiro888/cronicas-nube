@@ -618,7 +618,10 @@ export function BattlePage() {
     // ese clic alternaría la selección de la carta recién jugada.
     if (consumeDragged()) return
     if (!match || !player) return
-    if (match.activePlayer !== ME || match.winner || queueBusy) return
+    // Elegir carta es solo interfaz: se permite aunque haya una animación en
+    // curso. Antes se ignoraba en silencio y, con animaciones largas, el
+    // jugador pulsaba una carta y no pasaba nada.
+    if (match.activePlayer !== ME || match.winner) return
     const instance = player.hand.find((candidate) => candidate.instanceId === instanceId)
     const card = instance ? CARD_BY_ID[instance.cardId] : undefined
     if (!instance || !card) return
@@ -627,7 +630,7 @@ export function BattlePage() {
       return
     }
     useMatchStore.getState().selectHand(store.selectedHandId === instanceId ? undefined : instanceId)
-  }, [match, player, queueBusy, store.selectedHandId, doAction, finishSelection, ME, consumeDragged])
+  }, [match, player, store.selectedHandId, doAction, finishSelection, ME, consumeDragged])
 
   const inspectCard = useCallback((cardId?: string, pieceId?: string) => useMatchStore.getState().inspect(cardId, pieceId), [])
   const closeInspection = useCallback(() => useMatchStore.getState().inspect(undefined), [])
@@ -669,8 +672,13 @@ export function BattlePage() {
     }
     if (selectedPiece && moves.some((cell) => cell.x === position.x && cell.y === position.y)) {
       if (doAction({ type: 'move', playerId: ME, pieceId: selectedPiece.instanceId, to: position })) finishSelection()
+      return
     }
-  }, [photoMode, selectedInstance, selectedCard, selectedPiece, moves, doAction, finishSelection, ME, offering])
+    // Pulsar una casilla que no sirve ya no es silencioso: se dice por qué.
+    if (selectedPiece && selectedPiece.owner === ME && match?.activePlayer === ME) {
+      useMatchStore.setState({ message: moves.length > 0 ? 'No puede ir ahí: elige una de las casillas resaltadas.' : 'Esta unidad ya no puede moverse este turno.' })
+    }
+  }, [photoMode, selectedInstance, selectedCard, selectedPiece, moves, doAction, finishSelection, ME, offering, match])
 
   const onPiece = useCallback((pieceId: string) => {
     if (photoMode || !match) return

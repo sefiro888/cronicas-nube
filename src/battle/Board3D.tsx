@@ -674,6 +674,9 @@ function VerdictBadges({ verdicts }: { verdicts: readonly PreviewVerdict[] }) {
   )
 }
 
+/** Altura de mundo a partir de la cual un clic en una carta de pie apunta a la casilla de detrás. */
+const HIT_UPPER_HALF = 0.62
+
 const BoardCard = memo(function BoardCard({ deploying = false, piece, runo, formationBonus, selected, targetable, ready, active, mine, crowded, stackSafe, onPiece, onInspect, onHover, previewLines, reducedMotion, impulse, impact, arrival, waiting }: { deploying?: boolean; piece: BoardPiece; runo: number; formationBonus: number; selected: boolean; targetable: boolean; ready: boolean; active: boolean; mine: boolean; crowded: boolean; stackSafe: boolean; onPiece: (pieceId: string) => void; onInspect?: (cardId: string, pieceId?: string) => void; onHover?: (pieceId?: string) => void; previewLines?: readonly PreviewVerdict[]; reducedMotion: boolean; impulse?: Impulse; impact?: AnimationEvent; arrival?: AnimationEvent; waiting: boolean }) {
   const card = CARD_BY_ID[piece.cardId]
   const displayedAttack = Math.max(0, (card?.attack ?? 0) + piece.attackModifier + (card?.type === 'unit' ? runoAttackBonus(runo) : 0) + formationBonus)
@@ -907,7 +910,12 @@ const BoardCard = memo(function BoardCard({ deploying = false, piece, runo, form
         // casilla de detrás y se quedaban el clic: no se podía desplegar entre
         // dos fichas aunque la casilla fuera válida. Si la ficha no es objetivo
         // y detrás hay una casilla válida, el clic sigue hasta ella.
-        if (deploying && !targetable && event.intersections.some((hit) => hit.object.userData?.validCell)) return
+        const validBehind = !targetable && event.intersections.some((hit) => hit.object.userData?.validCell)
+        // Al desplegar, cualquier clic sobre una ficha que tapa una casilla
+        // válida sigue hasta la casilla. Al mover, solo si se pulsa la parte
+        // alta de la carta (la que tapa la casilla de detrás): la de abajo
+        // sigue seleccionando la ficha.
+        if (validBehind && (deploying || event.point.y > HIT_UPPER_HALF)) return
         event.stopPropagation()
         onClick()
       }}

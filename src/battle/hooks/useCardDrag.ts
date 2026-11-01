@@ -5,7 +5,15 @@ import { useCallback, useEffect, useRef, useState } from 'react'
  * arrastre y no como clic. Sin este umbral, cualquier temblor del ratón al
  * pulsar una carta cancelaría el clic de toda la vida.
  */
-const DRAG_THRESHOLD = 8
+const DRAG_THRESHOLD = 14
+
+/**
+ * Además del recorrido, el arrastre tiene que ir hacia arriba (hacia el
+ * tablero). Con solo 8 px en cualquier dirección, un pequeño desliz al pulsar
+ * convertía el clic en un «arrastre» que se soltaba sobre la mano: la carta
+ * no se seleccionaba y el jugador veía que «pinchaba y no pasaba nada».
+ */
+const DRAG_UPWARD = 10
 
 export interface CardDrag {
   /** Carta que se está arrastrando ahora mismo, si el gesto ya pasó el umbral. */
@@ -58,6 +66,7 @@ export const useCardDrag = ({ onDrop, onDragStart, onDragEnd }: CardDragOptions)
       if (!current) return
       const distance = Math.hypot(event.clientX - current.startX, event.clientY - current.startY)
       if (!current.dragging && distance < DRAG_THRESHOLD) return
+      if (!current.dragging && current.startY - event.clientY < DRAG_UPWARD) return
       // El barrido lateral consulta la mano larga; subir hacia el tablero
       // conserva el arrastre de cartas y no compite con el scroll nativo.
       if (!current.dragging && current.touch && Math.abs(event.clientX - current.startX) > Math.abs(event.clientY - current.startY)) {

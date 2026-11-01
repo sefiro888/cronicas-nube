@@ -1,5 +1,30 @@
 # Estado del proyecto y por dónde seguir
 
+## Selección de carta y casilla más fiable — 1 de noviembre de 2026 (Claude Code, nube)
+
+El propietario: «a veces le doy clic y no coge la carta que quiero o no va
+al lugar que quiero». Causas encontradas y arreglos:
+
+1. **Clics ignorados durante animaciones:** `onHandSelect` salía si la cola
+   estaba ocupada; con las animaciones nuevas pasaba a menudo. Elegir carta
+   ya no espera a la cola (las acciones sobre casillas ya se permitían).
+2. **Carta que «huía» al pasar el ratón** (`HandFan`): se levantaba el hueco
+   entero y el puntero quedaba sobre la vecina. Ahora el hueco (`.fanCard`)
+   no se mueve; solo la capa `.lift`. El hueco también selecciona.
+3. **La elegida tapaba la fila de despliegue** y pulsar ahí la soltaba:
+   sube 16 px en vez de 44.
+4. **Clics convertidos en arrastre** (`useCardDrag`): umbral 14 px y además
+   tiene que ir hacia arriba (10 px).
+5. **Casillas tapadas por cartas de pie al mover:** pulsar la parte alta de
+   una carta (y > 0,62) que tapa una casilla válida llega a la casilla.
+6. **Clic en casilla no válida con unidad elegida:** mensaje explicando por qué.
+
+Pruebas: 747 unitarias, lint y build; e2e de mano y tablero (`battle-ui`,
+`home`, `card-faces`, `game-flow`) correctas. `drag-and-drop` sigue fallando
+por tiempo igual que en `main` (máquina sin GPU).
+
+---
+
 ## Ajustes tras probar el propietario — 1 de noviembre de 2026 (Claude Code, nube)
 
 - **Quitado el mapa rojo de peligro** (punto 3 de las once mejoras). Decisión

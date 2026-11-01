@@ -69,16 +69,25 @@ export const HandFan = memo(function HandFan({ match, reducedMotion, localPlayer
             data-playable={playable}
             data-dragging={draggingId === instance.instanceId || undefined}
             onPointerDown={(event) => { if (playable) onDragStart?.(instance.instanceId, event) }}
+            // El hueco fijo de la carta también la selecciona: al levantarse por
+            // encima, la parte de abajo de su hueco queda libre y antes ese clic
+            // se perdía (o caía en la carta vecina).
+            onClick={(event) => { if (event.target === event.currentTarget) onSelect(instance.instanceId) }}
           >
-            <Card
-              card={card}
-              size="hand"
-              reducedMotion={reducedMotion}
-              selected={selected}
-              playable={playable}
-              onSelect={() => onSelect(instance.instanceId)}
-              onInspect={() => onInspect(card.id)}
-            />
+            {/* Solo esta capa se levanta al pasar el ratón; el hueco (.fanCard)
+                no se mueve, así la zona pulsable es estable y el puntero no
+                acaba encima de la carta de al lado. */}
+            <div className={styles.lift}>
+              <Card
+                card={card}
+                size="hand"
+                reducedMotion={reducedMotion}
+                selected={selected}
+                playable={playable}
+                onSelect={() => onSelect(instance.instanceId)}
+                onInspect={() => onInspect(card.id)}
+              />
+            </div>
             {onToggleFavorite && (
               <button
                 type="button"
