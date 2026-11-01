@@ -7,9 +7,20 @@ Juego táctico de cartas de fantasía para PC, en español: duelos 1v1 sobre un
 Las unidades y estructuras conservan su forma de carta sobre el tablero.
 También se puede instalar como PWA.
 
-**Estado revisado el 30 de octubre de 2026.** Este README es el punto de entrada
+**Estado revisado el 1 de noviembre de 2026.** Este README es el punto de entrada
 para entender el juego y continuar su desarrollo. Distingue contenido integrado,
 trabajo local y diseños pendientes: tener un dosier no significa ser jugable.
+
+**Avance local del 1 de noviembre:** portada y navegación renovadas, atlas
+ilustrado con las 19 facciones y Torre del Nexo con escena de conquista,
+selección de expedición y bendiciones ilustradas. Se han creado seis escenas
+originales y se conserva el funcionamiento del juego. Esta entrega todavía
+no está publicada. Véanse el
+[registro actual de continuidad](docs/ESTADO-Y-SIGUIENTE.md) y el
+[inventario de escenas y prompts](docs/INTERFAZ-MUNDOS-2026-11-01.md).
+Las referencias a pausa, prototipos sin publicar y última entrega del
+30 de octubre en los apartados históricos siguientes deben leerse junto a
+las publicaciones del 31 de octubre recogidas en ese registro.
 
 ## Estado actual
 

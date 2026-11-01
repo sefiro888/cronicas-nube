@@ -1,5 +1,43 @@
 # Estado del proyecto y por dónde seguir
 
+## Portada, navegación y Torre — 1 de noviembre de 2026 (Codex)
+
+Nueva petición del propietario: rediseño conjunto inspirado en sus capturas
+de pruebas de otra carpeta, con dirección artística propia y todas las
+facciones presentes. Implementación local en el proyecto principal; no se ha
+modificado `Cronicasargon` ni se ha hecho push.
+
+- Seis escenas originales de ImageGen: convergencia del Nexo, asedio de una
+  Torre colosal y cuatro paisajes que agrupan las 19 facciones. Cada facción
+  conserva además una ilustración propia y un acceso que selecciona su mazo.
+- Portada a todo el ancho, atlas de territorios, progreso/continuación de
+  partida conservados y acceso ilustrado a la Torre. Navegación de bronce y
+  piedra, pestaña activa y barra móvil desplazable.
+- Torre con criaturas escalando, dragón, hechizos y ruta visual de 19 pisos.
+  Selección ilustrada de expedición, Vida real del comandante, progreso y
+  bendiciones con arte existente; no se cambian las reglas ni los mazos.
+- Niebla, partículas y efectos de magia mediante CSS, detenidos por movimiento
+  reducido o calidad baja. WebP grandes y pequeños, carga diferida de escenas
+  inferiores, maestros en `tools/art-inbox/interface-2026-11/` (ignorado).
+- Procedencia, inventario y prompts completos:
+  [INTERFAZ-MUNDOS-2026-11-01](INTERFAZ-MUNDOS-2026-11-01.md).
+- Verificación cerrada: 722 unitarias correctas, 5 omitidas, build y lint
+  correctos. Batería e2e general: 107 correctas y 43 sondas opcionales omitidas;
+  una expectativa de texto detectó la numeración decorativa unida a «Mazos».
+  Corregido pasando los números a CSS, sin cambiar la prueba. Pasada posterior
+  de portada, navegación móvil, flujo de Torre y cuatro e2e nuevos: 10/10
+  correctas. Las 108 pruebas activas quedan comprobadas. Capturas revisadas a
+  1920 × 1080, 1366 × 768 y 390 × 844. La entrada a Torre cabe en la primera
+  vista del portátil; las escenas nuevas participan en la caché de arte PWA.
+- Servidor de revisión en `http://127.0.0.1:4175/`: 4173 lo ocupa la carpeta
+  independiente del propietario. Playwright admite `E2E_PORT` para verificar
+  el proyecto correcto sin cerrar ni confundir servidores.
+
+El arreglo móvil del duelo del punto 7 siguiente ya está publicado, como
+confirmó el propietario; no es una tarea pendiente de esta sesión.
+
+---
+
 ## Sesión autónoma del 31 de octubre de 2026, 13:15–16:00 (Claude Code)
 
 **Si llegas ahora (Codex o Claude), empieza por aquí.** El propietario se fue
@@ -43,15 +81,16 @@ omitidas en cada pasada) y tras revisarlo en el navegador.
    Nexo: se muestra la vida antes del golpe, sumando los daños al Nexo que
    aún esperan en la cola (el motor ya los ha restado cuando el duelo se
    presenta). Publicado en `92a9a74`.
-7. **Revisión en móvil (390 × 844). SOLO EN COMMIT LOCAL, SIN PUBLICAR.**
+7. **Revisión en móvil (390 × 844). PUBLICADA.**
    La carta en grande cabe entera. El duelo se salía de la pantalla (las
    cartas iban de −52 a 440 px) porque el marco del tablero sangra por los
    lados; en móvil el duelo pasa a `fixed` (`CombatDuel.module.css`).
    Comprobado midiendo las cajas en el navegador (de 8 a 120 px y de 270 a
-   382 px). Unitarias, lint y build correctos, pero **la batería e2e no
-   terminó**: el ordenador se suspendió y `marea-targeting.spec.ts` (1366)
-   quedó colgada 3,8 horas, y `game-flow.spec.ts` volvió a fallar por carga
-   lenta. Al retomar: repetir `npm run test:e2e` y, si pasa, `git push`.
+   382 px). Unitarias, lint y build correctos. La batería e2e de aquella
+   sesión quedó interrumpida por suspensión del ordenador y carga lenta.
+   **Actualización del 1 de noviembre de 2026:** el propietario confirma que
+   el arreglo ya está publicado; no hay que repetir los e2e ni hacer push
+   para cerrar este punto.
 
 ### Trampas aprendidas hoy
 
@@ -69,9 +108,6 @@ omitidas en cada pasada) y tras revisarlo en el navegador.
 
 ### Pendiente, por prioridad
 
-- **Publicar el arreglo del duelo en móvil** (punto 7): está en un commit
-  local por encima de `origin/main`. Falta una pasada e2e completa sin
-  suspensiones; la de las 15:19 no llegó a terminar.
 - **Que el propietario pruebe el ritmo.** Cinco segundos por carta (pedido
   por él) y 1,8 s de presentación por ataque pueden pesar en partidas de 50
   turnos. Todo se ajusta en `presentation.ts` (`SPOTLIGHT_MS`,

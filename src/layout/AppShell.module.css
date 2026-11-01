@@ -1,112 +1,43 @@
-.shell { min-height: 100vh; position: relative; overflow-x: hidden; }
-.header {
-  height: 76px;
-  display: grid;
-  grid-template-columns: minmax(260px, 1fr) auto minmax(260px, 1fr);
-  align-items: center;
-  padding: 0 38px;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  border-bottom: 1px solid var(--line);
-  background: rgba(8, 10, 16, 0.82);
-  backdrop-filter: blur(18px);
-  box-shadow: 0 8px 30px rgba(0,0,0,.22);
-}
-.brand { display: flex; align-items: center; gap: 12px; width: max-content; }
-.brandMark {
-  width: 38px;
-  height: 38px;
-  display: grid;
-  place-items: center;
-  color: var(--gold-bright);
-  border: 1px solid var(--line-bright);
-  transform: rotate(45deg);
-  background: radial-gradient(circle, rgba(107, 167, 215, .35), rgba(153, 77, 27, .15));
-  box-shadow: inset 0 0 16px rgba(236, 197, 111, .16), 0 0 20px rgba(91, 148, 220, .12);
-}
-.brandMark span { transform: rotate(-45deg); font-family: var(--display); font-size: 21px; }
-.brandText strong { display: block; font-family: var(--display); letter-spacing: .16em; font-size: 15px; }
-.brandText small { display: block; margin-top: 2px; color: var(--muted); font-size: 9px; letter-spacing: .28em; text-transform: uppercase; }
-.nav { display: flex; height: 100%; align-items: stretch; gap: 5px; }
-.navLink {
-  position: relative;
-  display: grid;
-  place-items: center;
-  padding: 0 17px;
-  color: #aba79f;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  transition: color .2s ease;
-}
-.navLink:hover, .navLink[data-active="true"] { color: var(--ivory); }
-.navLink::after {
-  content: "";
-  position: absolute;
-  left: 17px;
-  right: 17px;
-  bottom: -1px;
-  height: 2px;
-  background: var(--gold-bright);
-  transform: scaleX(0);
-  transition: transform .2s ease;
-  box-shadow: 0 0 12px var(--gold);
-}
-.navLink[data-active="true"]::after { transform: scaleX(1); }
-.actions { justify-self: end; display: flex; align-items: center; gap: 10px; }
-.iconButton {
-  display: grid;
-  place-items: center;
-  width: 38px;
-  height: 38px;
-  border: 1px solid var(--line);
-  border-radius: 50%;
-  background: rgba(255,255,255,.025);
-  color: #d9ceba;
-  cursor: pointer;
-}
-.iconButton:hover { border-color: var(--line-bright); background: rgba(215,180,103,.08); }
-.main { min-height: calc(100vh - 76px); }
-.footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 18px 38px;
-  color: #77756f;
-  border-top: 1px solid rgba(255,255,255,.05);
-  font-size: 11px;
-  letter-spacing: .05em;
-}
-
-/* ── Móvil: la marca arriba, la navegación en su propia fila ── */
+.shell { min-height: 100vh; position: relative; isolation: isolate; overflow-x: clip; background: #0b121ccc; }
+.worldBackdrop { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .2; z-index: -1; pointer-events: none; filter: saturate(.7); }
+.shell[data-immersive='true'] > .worldBackdrop { display: none; }
+.header { height: 82px; display: grid; grid-template-columns: minmax(240px, 1fr) auto minmax(90px, .5fr); gap: 22px; align-items: center; padding: 0 clamp(20px, 3vw, 70px); position: sticky; top: 0; z-index: 100; border-bottom: 1px solid #d2b17d50; background: linear-gradient(110deg, #101b27f5, #0a1320f5 65%, #14202cf5); backdrop-filter: blur(18px); box-shadow: 0 8px 40px #0004; }
+.header::after { content: ''; position: absolute; bottom: -1px; left: 25%; right: 25%; height: 1px; background: linear-gradient(90deg, transparent, #e9ce9c80, transparent); pointer-events: none; }
+.brand { display: flex; align-items: center; gap: 15px; width: max-content; }
+.brandMark { width: 33px; height: 40px; display: grid; place-items: center; color: #e3c78e; border: 1px solid #d9bd8059; background: radial-gradient(ellipse at center, #c5e6ff30, #75644115 70%); clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); }
+.brandMark > span { font-size: 26px; filter: drop-shadow(0 0 7px #8ec6ed90); }
+.brandText strong { display: block; font: 400 14px var(--display); letter-spacing: .14em; color: #f3e7cf; }
+.brandText small { display: block; color: #a6aaa7; font-size: 7px; letter-spacing: .22em; text-transform: uppercase; margin-top: 7px; }
+.nav { display: flex; align-items: stretch; height: 100%; gap: 2px; min-width: 0; }
+.navLink { position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 7px; padding: 0 14px; color: #bac0c0; font-size: 10px; font-weight: 500; letter-spacing: .13em; text-transform: uppercase; white-space: nowrap; transition: color .2s, background .2s; }
+.navNumber { font-family: var(--display); font-size: 9px; color: #a9936a; letter-spacing: .12em; }
+.navNumber::before { content: attr(data-number); }
+.navLink:hover { color: #f6e4bd; background: #d9b57808; }
+.navLink[data-active='true'] { color: #f4dfb7; background: linear-gradient(0deg, #e9bd5821, transparent 90%); }
+.navLink::after { content: ''; position: absolute; left: 14px; right: 14px; bottom: -1px; height: 2px; background: #e6c389; transform: scaleX(0); transition: transform .2s; box-shadow: 0 0 16px #d1a35566; }
+.navLink[data-active='true']::after { transform: scaleX(1); }
+.actions { display: flex; justify-self: end; gap: 8px; }
+.iconButton { display: grid; place-items: center; min-width: 40px; height: 40px; color: #e5d7ba; border: 1px solid #c3b18b40; border-radius: 50%; background: #c1d5f005; cursor: pointer; }
+.iconButton:hover { color: #fff0ce; border-color: #d9b77e; background: #d9b77e13; }
+.main { position: relative; min-height: calc(100vh - 82px); }
+.footer { position: relative; display: flex; justify-content: space-between; gap: 20px; align-items: center; padding: 26px max(24px, 6.5vw); color: #98a8b1; border-top: 1px solid #c9ab762a; background: #0c1722df; font-size: 8px; letter-spacing: .2em; }
+.footerBrand { font: 12px var(--display); color: #d3bd94; letter-spacing: .16em; }
+@media (max-width: 1260px) { .header { grid-template-columns: minmax(190px, 1fr) auto auto; padding-inline: 20px; gap: 10px; } .brandText strong { font-size: 11px; letter-spacing: .1em; } .brandText small { font-size: 6px; } .brand { gap: 10px; } .navLink { padding-inline: 11px; font-size: 9px; letter-spacing: .08em; } .iconButton { min-width: 36px; height: 36px; } }
+@media (max-width: 980px) and (min-width: 721px) { .header { grid-template-columns: 45px 1fr auto; gap: 10px; } .brandText { display: none; } .nav { justify-content: center; } .navLink { padding-inline: 9px; font-size: 9px; } }
 @media (max-width: 720px) {
-  .header {
-    height: auto;
-    grid-template-columns: 1fr auto;
-    grid-template-areas:
-      'brand actions'
-      'nav nav';
-    padding: 10px 14px 0;
-  }
+  .header { height: auto; min-height: 106px; grid-template-columns: 1fr auto; grid-template-areas: 'brand actions' 'nav nav'; gap: 0; padding: 10px 16px 0; }
   .brand { grid-area: brand; }
-  .actions { grid-area: actions; }
-  /* La navegación se desplaza SOLA en vez de empujar la página: con seis
-     secciones ya no cabían en 375 px y el desborde movía toda la pantalla de
-     lado (se veía «CIO» en vez de «INICIO»). El degradado de los extremos
-     avisa de que hay más secciones a los lados. */
-  .nav {
-    grid-area: nav; height: 46px; justify-content: flex-start; gap: 0; margin-top: 2px;
-    overflow-x: auto; overflow-y: hidden; scrollbar-width: none; -webkit-overflow-scrolling: touch;
-    mask-image: linear-gradient(90deg, transparent, #000 14px, #000 calc(100% - 14px), transparent);
-  }
-  .nav::-webkit-scrollbar { display: none; }
-  .navLink { flex: 0 0 auto; padding: 0 11px; font-size: 11px; letter-spacing: .08em; }
-  .navLink::after { left: 11px; right: 11px; }
+  .brandMark { width: 27px; height: 33px; }
+  .brandMark > span { font-size: 22px; }
+  .brandText strong { font-size: 11px; }
   .brandText small { display: none; }
-  /* Sonido y ajustes: 38 px es poco para un pulgar; 44 es la medida cómoda. */
-  .iconButton { width: 44px; height: 44px; }
-  .main { min-height: calc(100vh - 128px); }
-  .footer { flex-direction: column; gap: 6px; padding: 14px; text-align: center; }
+  .actions { grid-area: actions; gap: 6px; }
+  .iconButton { min-width: 44px; height: 44px; font-size: 15px; }
+  .nav { grid-area: nav; margin-top: 3px; height: 48px; justify-content: start; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; overscroll-behavior-x: contain; mask-image: linear-gradient(90deg, #000 0%, #000 calc(100% - 12px), transparent); }
+  .nav::-webkit-scrollbar { display: none; }
+  .navLink { flex: 0 0 auto; padding: 0 12px; gap: 0; font-size: 9px; letter-spacing: .08em; }
+  .navNumber { display: none; }
+  .navLink::after { left: 12px; right: 12px; }
+  .main { min-height: calc(100vh - 106px); }
+  .footer { padding: 23px 18px; flex-direction: column; gap: 10px; text-align: center; font-size: 7px; }
 }

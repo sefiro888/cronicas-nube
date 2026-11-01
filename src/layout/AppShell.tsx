@@ -5,6 +5,7 @@ import { usePreferences } from '../store/preferences'
 import { playSynthCue } from '../services/audio'
 import { useAudioMix, useSoundtrack } from '../services/useAudioMix'
 import { AchievementToast } from '../components/AchievementToast'
+import { withBase } from '../utils/assets'
 import styles from './AppShell.module.css'
 
 const links = [
@@ -54,7 +55,8 @@ export function AppShell() {
       {isBattle ? (
         <Outlet />
       ) : (
-        <div className={styles.shell}>
+        <div className={styles.shell} data-immersive={location.pathname === '/' || location.pathname === '/tower'}>
+          <img className={styles.worldBackdrop} src={withBase('/assets/interface/nexo-convergencia-v1-small.webp')} alt="" aria-hidden="true" />
           <header className={styles.header}>
             <NavLink to="/" className={styles.brand} aria-label="Crónicas del Nexo, inicio">
               <span className={styles.brandMark} aria-hidden="true"><span>✦</span></span>
@@ -64,7 +66,7 @@ export function AppShell() {
               </span>
             </NavLink>
             <nav ref={navRef} className={styles.nav} aria-label="Navegación principal">
-              {links.map((link) => (
+              {links.map((link, index) => (
                 <NavLink
                   key={link.to}
                   to={link.to}
@@ -72,7 +74,7 @@ export function AppShell() {
                   className={styles.navLink}
                   data-active={location.pathname === link.to}
                 >
-                  {link.label}
+                  <span className={styles.navNumber} data-number={`0${index + 1}`} aria-hidden="true" /><span>{link.label}</span>
                 </NavLink>
               ))}
             </nav>
@@ -85,8 +87,8 @@ export function AppShell() {
           </header>
           <main className={styles.main}><Outlet /></main>
           <footer className={styles.footer}>
-            <span>PROTOTIPO VERTICAL · IA Y MULTIJUGADOR</span>
-            <span>{PLAYABLE_FACTIONS.length} FACCIONES · NEXO 35</span>
+            <span className={styles.footerBrand}>✦ CRÓNICAS DEL NEXO</span>
+            <span>{PLAYABLE_FACTIONS.length} FACCIONES · INFINITAS CRÓNICAS</span>
           </footer>
         </div>
       )}

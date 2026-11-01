@@ -1,0 +1,17 @@
+.atmosphere { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 1; }
+.mist { position: absolute; width: 120%; height: 45%; bottom: -12%; left: -10%; background: radial-gradient(ellipse, #b0c6d526, transparent 67%); filter: blur(22px); animation: drift 24s ease-in-out infinite alternate; }
+.ember { position: absolute; left: var(--x); top: var(--y); width: 3px; height: 3px; border-radius: 50%; background: #ffe2a3; box-shadow: 0 0 9px 2px #e6b35885; animation: rise var(--time) var(--delay) ease-in-out infinite; }
+.ember:nth-child(3n) { background: #9edbff; box-shadow: 0 0 9px #69beff; width: 2px; height: 2px; }
+.ward { position: absolute; width: 220px; aspect-ratio: 1; right: 10%; top: 32%; border: 1px solid #8dd9fc80; border-radius: 50%; box-shadow: 0 0 32px #8dd9fc45, inset 0 0 26px #8dd9fc20; animation: breathe 7s ease-in-out infinite; }
+.ward::after { content: ''; position: absolute; inset: 12px; border: 1px dashed #d2ebff70; border-radius: 50%; }
+.lightning { position: absolute; right: 8%; top: 9%; width: 28%; height: 52%; background: linear-gradient(120deg, transparent, #b9e8ff22, transparent); clip-path: polygon(70% 0, 56% 40%, 73% 35%, 33% 100%, 48% 47%, 32% 56%); animation: flash 11s infinite; }
+.comet { position: absolute; left: 43%; top: 28%; width: 22%; height: 2px; transform: rotate(-34deg); background: linear-gradient(90deg, transparent, #ffc86b, #fff5da); box-shadow: 0 0 12px #efb45f; animation: comet 13s ease-in infinite; }
+@keyframes rise { 0%, 100% { opacity: .1; transform: translate(0, 20px); } 45% { opacity: .8; } 85% { opacity: 0; transform: translate(24px, -75px); } }
+@keyframes drift { to { transform: translate(6%, -8%); } }
+@keyframes breathe { 50% { opacity: .3; transform: scale(.92); } }
+@keyframes flash { 0%, 86%, 91%, 100% { opacity: 0; } 88%, 93% { opacity: .9; } }
+@keyframes comet { 0%, 72%, 100% { opacity: 0; translate: -60px 40px; } 76% { opacity: .8; } 82% { opacity: 0; translate: 120px -80px; } }
+.atmosphere[data-quiet='true'] *, .atmosphere[data-quiet='true'] *::after { animation: none; }
+.atmosphere[data-quiet='true'] .lightning, .atmosphere[data-quiet='true'] .comet { display: none; }
+@media (prefers-reduced-motion: reduce) { .atmosphere *, .atmosphere *::after { animation: none; } .lightning, .comet { display: none; } }
+@media (max-width: 720px) { .ward { width: 110px; right: 9%; top: 25%; } .ember:nth-child(n+9) { display: none; } }

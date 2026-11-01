@@ -1,5 +1,19 @@
 # Arte de interfaz
 
+## Portada, territorios y Torre — 1 de noviembre de 2026
+
+Seis escenas originales generadas con ImageGen: convergencia del Nexo, asedio
+de la Torre y cuatro paisajes que representan a las 19 facciones. El juego usa
+WebP optimizados en `public/assets/interface/`; los maestros PNG se conservan
+en `tools/art-inbox/interface-2026-11/`, ignorado por Git. Las referencias
+visuales utilizadas pertenecen al propio proyecto.
+
+Inventario, usos, referencias y prompts completos en
+[INTERFAZ-MUNDOS-2026-11-01](INTERFAZ-MUNDOS-2026-11-01.md).
+La navegación y los textos se dibujan con HTML/CSS; las imágenes no contienen
+letras, botones ni marcos de carta. Los retratos de facciones y bendiciones
+reutilizan el arte existente sin sustituirlo ni alterar sus reglas.
+
 ## Cinco emblemas de relieve — 22 de octubre de 2026
 
 Recursos originales generados para Crónicas del Nexo mediante la herramienta

@@ -38,7 +38,7 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html}'],
         runtimeCaching: [
           {
-            urlPattern: /\/assets\/(cards\/art|scenarios)\/.*\.(webp|svg|png|glb)$/,
+            urlPattern: /\/assets\/(cards\/art|scenarios|interface)\/.*\.(webp|svg|png|glb)$/,
             handler: 'CacheFirst',
             options: {
               cacheName: 'game-art',
