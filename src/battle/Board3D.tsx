@@ -49,6 +49,7 @@ import { NexusCrown } from './NexusCrown'
 import { BattleSkies } from './BattleSkies'
 import type { PreviewVerdict } from './ui/battleHints'
 import { DangerHeat, ThreatArrows, type ThreatFocus } from './ThreatOverlay'
+import { TraitFlourishes, type TraitFx } from './TraitFlourish'
 import { MaterialEnvironment } from './MaterialEnvironment'
 import { arrivalMotion } from './arrivalMotion'
 import { FACTION_BY_ID } from '../game/factions'
@@ -145,6 +146,8 @@ interface Board3DProps {
   threatFocus?: ThreatFocus
   /** Casillas que el rival puede golpear en su próximo turno. */
   dangerCells?: ReadonlyMap<string, number>
+  /** Animaciones de palabras clave que acaban de actuar. */
+  traitFx?: readonly TraitFx[]
   /** Casilla enfocada con el teclado (flechas). Undefined = se está jugando con ratón. */
   cursorCell?: Position
   /** Cola de animaciones aún por reproducir: sirve para saber qué piezas van a morir. */
@@ -1833,6 +1836,7 @@ function Scene(props: Board3DProps) {
       <ImpactMarks event={props.activeEvent} impact={props.castImpact} reducedMotion={props.reducedMotion} />
       {!props.photoMode && <ThreatArrows focus={props.threatFocus} board={props.state.board} nexusZ={nexusWorldZ} reducedMotion={props.reducedMotion} />}
       {!props.photoMode && <DangerHeat cells={props.dangerCells} reducedMotion={props.reducedMotion} />}
+      <TraitFlourishes effects={props.traitFx ?? []} reducedMotion={props.reducedMotion} />
       <RecentHits event={props.activeEvent} reducedMotion={props.reducedMotion} />
       </group>
       <CameraRig event={props.activeEvent} reducedMotion={props.reducedMotion} />

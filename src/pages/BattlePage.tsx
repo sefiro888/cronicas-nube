@@ -48,6 +48,8 @@ import { useNetworkSync } from '../multiplayer/useNetworkSync'
 import { useBattleTension, useSoundtrack } from '../services/useAudioMix'
 import { REPLAY_MARK } from '../store/match'
 import { dangerCells, threatLinks } from '../battle/threats'
+import { TRAIT_FX_MS, type TraitFx } from '../battle/TraitFlourish'
+import { gridToWorldX, gridToWorldZ, nexusWorldZ } from '../battle/grid/gridCoordinates'
 import { battleStrain } from '../battle/scenarios/BattleClimate'
 import { useMatchStore } from '../store/match'
 import { canPayOffering, offeringCost, offeringOf } from '../game/duna'
@@ -482,6 +484,37 @@ export function BattlePage() {
     }
     return undefined
   }, [match, selectedPiece, selectedCard, hoveredTargetId, attacks, RIVAL])
+
+  // Habilidades que «hablan»: cada palabra clave que actúa en el duelo lanza
+  // su animación sobre el tablero una sola vez (ver TraitFlourish).
+  const [traitFx, setTraitFx] = useState<readonly TraitFx[]>([])
+  const seenTraitFx = useRef(new Set<string>())
+  useEffect(() => {
+    const exchange = director.exchange
+    if (!exchange || exchange.phase !== 'clash') return
+    const at = (position?: Position): readonly [number, number] | undefined => position && [gridToWorldX(position.x), gridToWorldZ(position.y)]
+    const defenderAt = at(exchange.defender.piece?.position)
+    const attackerAt = at(exchange.attacker.piece?.position)
+    const found: TraitFx[] = []
+    const add = (kind: TraitFx['kind'], where?: readonly [number, number], to?: readonly [number, number]) => {
+      const id = `${exchange.key}-${kind}`
+      if (!where || seenTraitFx.current.has(id)) return
+      seenTraitFx.current.add(id)
+      found.push({ id, kind, at: where, to })
+    }
+    const triggered = exchange.attacker.triggered
+    if (triggered.includes('pierce') && defenderAt) add('pierce', defenderAt, [defenderAt[0], nexusWorldZ(exchange.defender.owner)])
+    if (triggered.includes('lifelink') && defenderAt && attackerAt) add('lifelink', defenderAt, [attackerAt[0], nexusWorldZ(exchange.attacker.owner)])
+    if (triggered.includes('stun')) add('stun', defenderAt)
+    if (exchange.defender.triggered.includes('shield')) add('shield', defenderAt)
+    if (exchange.attacker.triggered.includes('shield')) add('shield', attackerAt)
+    const defenderCard = exchange.defender.cardId ? CARD_BY_ID[exchange.defender.cardId] : undefined
+    if (defenderCard?.keywords.includes('guard') || exchange.defender.piece?.grantedKeywords?.includes('guard')) add('guard', defenderAt)
+    if (found.length === 0) return
+    const show = window.setTimeout(() => setTraitFx((list) => [...list, ...found]), 0)
+    const hide = window.setTimeout(() => setTraitFx((list) => list.filter((fx) => !found.includes(fx))), TRAIT_FX_MS + 200)
+    return () => { window.clearTimeout(show); window.clearTimeout(hide) }
+  }, [director.exchange])
 
   // Flechas de amenaza: la unidad seleccionada o, si no hay, la señalada con
   // el cursor (propia o rival). Sin carta en la mano elegida, que entonces el
@@ -980,6 +1013,7 @@ export function BattlePage() {
             activeEvent={visualEvent}
             castImpact={visualEvent ? store.castImpacts[visualEvent.id] : undefined}
             threatFocus={queueBusy ? undefined : threatFocus}
+            traitFx={traitFx}
             dangerCells={queueBusy ? undefined : dangerMap}
             pendingEvents={store.pendingAnimations}
             cursorCell={boardCursor.cell}
