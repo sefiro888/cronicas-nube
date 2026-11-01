@@ -10,6 +10,13 @@ import { eventDuration } from '../eventTiming'
 import { clashExchange, duelIntroDuration, endsExchange, foldExchange, isFinisher, openExchange, pushRecentPlay, recentPlayFor, spotlightFor, type CombatExchange, type RecentPlay, type Spotlight } from '../presentation'
 
 /** Traduce un evento del motor a su señal sonora. `me` es el bando que controla este navegador. */
+export interface Reaction {
+  readonly key: string
+  readonly kind: 'block' | 'burst' | 'silence'
+  readonly title: string
+  readonly detail: string
+}
+
 /** Daños que salen de una muerte o una explosión y pueden encadenar más muertes. */
 const CHAIN_EFFECT = /petardazo|mine|splash|explos|deathburst/
 
@@ -92,6 +99,8 @@ export interface EventDirector {
   dismissDuel: () => void
   /** Quién golpea a quién en el intercambio que se está reproduciendo. */
   exchange?: CombatExchange
+  /** Respuesta del tablero a la jugada en curso (Escudo, Petardazo, silencio). */
+  reaction?: Reaction
   /** Reacción en cadena en curso (desde la segunda muerte encadenada). */
   chain?: { readonly key: string; readonly count: number }
   /** Racha de ataques del mismo bando en este turno (desde el segundo). */
@@ -147,6 +156,16 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
    * cada destrucción que llega justo detrás de un daño de explosión.
    */
   const [chain, setChain] = useState<{ readonly key: string; readonly count: number }>()
+  /**
+   * Respuesta: algo del tablero reacciona a la jugada (un Escudo absorbe el
+   * golpe, una unidad estalla al morir, una carta deja a otra sin
+   * habilidades). En las reglas no hay contrahechizos que anulen cartas;
+   * estas son las reacciones que sí existen y que antes pasaban sin aviso.
+   */
+  const [reaction, setReaction] = useState<Reaction>()
+  const reactedRef = useRef(new Set<string>())
+  /** Evento que abrió la jugada en curso: agrupa las respuestas de una misma jugada. */
+  const playRootRef = useRef('')
   const chainRef = useRef({ count: 0, splash: false })
 
   // 1) Si no hay evento en reproducción, avanza la cola. Antes de una carta
@@ -222,6 +241,22 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
     // Los canales laterales actualizan estado de React fuera del cuerpo del
     // efecto para no encadenar renders síncronos.
     const sideChannel = window.setTimeout(() => {
+      // Respuestas (ver `reaction`). Una por jugada y tipo para no repetirlas.
+      if (currentEvent.type === 'attack' || currentEvent.cast || currentEvent.type === 'turn') playRootRef.current = currentEvent.id
+      const rootKey = playRootRef.current
+      const respond = (next: Reaction) => {
+        const id = `${rootKey}-${next.kind}`
+        if (reactedRef.current.has(id)) return
+        reactedRef.current.add(id)
+        setReaction({ ...next, key: currentEvent.id })
+      }
+      if (currentEvent.type === 'shield' && (currentEvent.amount ?? 0) > 0) {
+        respond({ key: '', kind: 'block', title: '¡Bloqueado!', detail: `El Escudo absorbe ${currentEvent.amount}` })
+      } else if (currentEvent.type === 'damage' && /petardazo/.test(currentEvent.effectId ?? '')) {
+        respond({ key: '', kind: 'burst', title: '¡Petardazo!', detail: 'Estalla al morir y daña a sus vecinas' })
+      } else if (currentEvent.cast && state.castImpacts[currentEvent.id]?.pieces.some((piece) => piece.changes.some((change) => change.label === 'Silenciada'))) {
+        respond({ key: '', kind: 'silence', title: '¡Anulada!', detail: 'Sus habilidades dejan de actuar' })
+      }
       // Reacción en cadena (ver chainRef): se reinicia con cada jugada nueva.
       const run = chainRef.current
       if (currentEvent.type === 'attack' || currentEvent.cast || currentEvent.type === 'turn') {
@@ -303,6 +338,12 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
       window.clearTimeout(landing)
     }
   }, [currentEvent, preferences.animationSpeed, preferences.effectsVolume, preferences.masterVolume, preferences.muted, preferences.reducedMotion, preferences.presentationPace, me])
+
+  useEffect(() => {
+    if (!reaction) return
+    const timer = window.setTimeout(() => setReaction(undefined), 1900)
+    return () => window.clearTimeout(timer)
+  }, [reaction])
 
   useEffect(() => {
     if (!chain) return
@@ -436,6 +477,7 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
     exchange,
     combo,
     chain,
+    reaction,
     impact,
     recentPlays,
     resetBanners,

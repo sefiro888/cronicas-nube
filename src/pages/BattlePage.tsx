@@ -1069,6 +1069,14 @@ export function BattlePage() {
             </div>
           )}
           {!photoMode && <RecentPlays plays={director.recentPlays} me={ME} onInspect={inspectCard} />}
+          {/* Respuesta: sello lateral con el tipo de reacción. */}
+          {director.reaction && !photoMode && (
+            <div key={director.reaction.key} className={styles.reaction} data-kind={director.reaction.kind} role="status">
+              <small>Respuesta</small>
+              <strong>{director.reaction.title}</strong>
+              <span>{director.reaction.detail}</span>
+            </div>
+          )}
           {/* Reacción en cadena: crece y se calienta con cada muerte encadenada. */}
           {director.chain && !photoMode && (
             <div key={director.chain.key} className={styles.chain} data-level={Math.min(director.chain.count, 5)} role="status">
