@@ -75,6 +75,8 @@ import { MatchResultDialog } from './battle/MatchResultDialog'
 import { MulliganDialog } from './battle/MulliganDialog'
 import { BattleIntro } from './battle/BattleIntro'
 import { CommanderQuote } from './battle/CommanderQuote'
+import { useProfile } from '../components/useProfile'
+import { StreakEmblem } from '../components/ProfileBadges'
 import { ScryDialog } from './battle/ScryDialog'
 import { SparkDialog } from './battle/SparkDialog'
 import { TacticalDialog } from './battle/TacticalDialog'
@@ -88,6 +90,7 @@ export function BattlePage() {
   const [searchParams] = useSearchParams()
   const preferences = usePreferences()
   const store = useMatchStore()
+  const profile = useProfile()
   const room = useNetworkStore((state) => state.room)
   const role = useNetworkStore((state) => state.role)
   // En solitario y para el anfitrión, «yo» soy el bando 'player' del motor;
@@ -1136,11 +1139,16 @@ export function BattlePage() {
           <section className={styles.panelSection}>
             <span className={styles.panelLabel}>Comandante</span>
             <div className={`${styles.commander} ${styles.ownCommander}`}>
-              <div className={styles.portraitFrame}>
+              <div className={styles.portraitFrame} data-profile-frame={profile.frame.id}>
                 <img className={styles.portrait} src={commander ? withBase(commander.art.webp) : undefined} alt="" />
                 {commander && <FactionSigil faction={commander.faction} size="large" decorative className={styles.commanderSigil} />}
               </div>
               <div className={styles.commanderIdentity}><strong>{commander?.name}</strong><small>{commander?.title}</small></div>
+            </div>
+            {/* Tu perfil: el título elegido y la racha, ganados con logros y victorias. */}
+            <div className={styles.profileStrip}>
+              <span className={styles.profileTitle}>{profile.title.label}</span>
+              <StreakEmblem streak={profile.streak} compact />
             </div>
             {commander && <p className={styles.commanderRules}>{commander.rules}</p>}
             {player.runo !== undefined && <p className={styles.commanderBoon}>Runo: {player.runo} · +{Math.floor(player.runo / 3)} Ataque a tus unidades</p>}
@@ -1460,6 +1468,7 @@ export function BattlePage() {
       {match.turn <= 1 && introSeed !== match.seed && !photoMode && COMMANDER_BY_ID[match.players[ME].commanderId] && COMMANDER_BY_ID[match.players[ME === 'player' ? 'ai' : 'player'].commanderId] && (
         <BattleIntro
           own={COMMANDER_BY_ID[match.players[ME].commanderId]!}
+          ownTitle={profile.title.label}
           rival={COMMANDER_BY_ID[match.players[ME === 'player' ? 'ai' : 'player'].commanderId]!}
           onDone={finishIntro}
         />

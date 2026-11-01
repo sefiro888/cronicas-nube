@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { COMMANDER_BY_ID, STARTER_DECKS, type MatchState, type PlayerId } from '../../game'
 import { evaluateAchievements, type Achievement } from '../../store/achievements'
 import { useMatchStore } from '../../store/match'
+import { useCollection } from '../../store/collection'
 import { useRecords, type MatchRecord } from '../../store/records'
 
 interface RecordOutcome {
@@ -96,6 +97,8 @@ export const useMatchRecorder = (options: MatchRecorderOptions): MatchRecorder =
         mode: isPvp ? 'pvp' : 'ai',
       }),
     )
+    // Cada victoria da un sobre para el álbum (ver store/collection.ts).
+    if (match.winner === me) useCollection.getState().grantPack()
     if (!isPvp) {
       // Diferido: evita anidar el setState dentro de un bloque condicional
       // del cuerpo síncrono del efecto (mismo patrón que otros canales

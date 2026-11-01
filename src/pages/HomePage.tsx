@@ -8,6 +8,8 @@ import { evaluateDailyChallenge } from '../store/dailyChallenge'
 import { useMatchStore } from '../store/match'
 import { usePreferences } from '../store/preferences'
 import { useRecords } from '../store/records'
+import { useCollection } from '../store/collection'
+import { StreakEmblem } from '../components/ProfileBadges'
 import { TOWER_FLOORS } from '../store/tower'
 import { withBase } from '../utils/assets'
 import { gameFacts, resumableMatch, summarizeForHome } from './home/homeSummary'
@@ -22,6 +24,7 @@ function SceneImage({ name, eager = false, className }: { name: string; eager?: 
 
 export function HomePage() {
   const records = useRecords((state) => state.records)
+  const packs = useCollection((state) => state.packs)
   const match = useMatchStore((state) => state.match)
   const setSelectedDeck = usePreferences((state) => state.setSelectedDeck)
   const resume = useMemo(() => resumableMatch(match), [match])
@@ -72,6 +75,13 @@ export function HomePage() {
           <div className={styles.youAside}>
             <div className={styles.dailyCard} data-done={daily.done}><small>Reto de hoy{daily.done ? ' · completado' : ''}</small><strong>{daily.title}</strong><span>{daily.description}</span></div>
             {me.lastDeckName && <p className={styles.lastDeck}>Última partida con <strong>{me.lastDeckName}</strong></p>}
+            {/* Racha y sobres: lo que dan las victorias, con acceso directo al álbum. */}
+            <div className={styles.rewards}>
+              <StreakEmblem streak={Math.max(0, me.streak)} />
+              <Link className={styles.packLink} to="/album" data-ready={packs > 0 || undefined}>
+                ✦ {packs > 0 ? `${packs} ${packs === 1 ? 'sobre por abrir' : 'sobres por abrir'}` : 'Álbum de colección'}
+              </Link>
+            </div>
           </div>
         </section>
       )}

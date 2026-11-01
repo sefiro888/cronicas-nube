@@ -16,6 +16,7 @@ const links = [
   { to: '/gallery', label: 'Galería' },
   { to: '/illustrations', label: 'Ilustraciones' },
   { to: '/decks', label: 'Mazos' },
+  { to: '/album', label: 'Álbum' },
 ]
 
 export function AppShell() {

@@ -118,3 +118,5 @@
   .plate { max-width: 80vw; }
   .split { display: none; }
 }
+
+.profileTitle { color: #ffd76a; font: italic 700 clamp(13px, 1.2vw, 17px) Georgia, serif; text-shadow: 0 0 12px rgba(255, 200, 90, 0.6); }

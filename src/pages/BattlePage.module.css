@@ -1054,3 +1054,19 @@
   100% { opacity: 0; transform: translateX(20px); }
 }
 @media (prefers-reduced-motion: reduce) { .reaction { animation: none; } }
+
+/* Perfil en la partida: título elegido, racha y marco alrededor del retrato. */
+.profileStrip { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 6px 0 2px; }
+.profileTitle { color: #ffd76a; font: italic 700 13px Georgia, serif; text-shadow: 0 0 10px rgba(255, 200, 90, 0.4); }
+.portraitFrame[data-profile-frame] { box-shadow: 0 0 0 2px var(--pf1, #b07a3a), 0 0 0 4px var(--pf2, #e6b878), 0 0 18px var(--pf2, #e6b878); }
+.portraitFrame[data-profile-frame='plata'] { --pf1: #8f98a8; --pf2: #f2f6ff; }
+.portraitFrame[data-profile-frame='acero'] { --pf1: #3c4452; --pf2: #a8b4c8; }
+.portraitFrame[data-profile-frame='oro'] { --pf1: #b8860b; --pf2: #fff0a0; }
+.portraitFrame[data-profile-frame='llamas'] { --pf1: #ff3b1a; --pf2: #ffd25a; animation: pfFlame 0.5s steps(2) infinite; }
+.portraitFrame[data-profile-frame='tormenta'] { --pf1: #2a3a8a; --pf2: #9fdcff; }
+.portraitFrame[data-profile-frame='runas'] { --pf1: #1f6f6a; --pf2: #8ff0e0; }
+.portraitFrame[data-profile-frame='prisma'] { --pf1: #b06fff; --pf2: #5fc3ff; animation: pfPrism 3s linear infinite; }
+.portraitFrame[data-profile-frame='real'] { --pf1: #6a1b9a; --pf2: #ffd76a; }
+@keyframes pfFlame { 50% { filter: brightness(1.15); } }
+@keyframes pfPrism { to { filter: hue-rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .portraitFrame[data-profile-frame] { animation: none; } }

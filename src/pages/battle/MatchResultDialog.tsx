@@ -6,6 +6,9 @@ import type { BestPlay, HealthSnapshot } from '../../store/match'
 import type { RecordSummary } from '../../store/records'
 import { HealthChart } from './HealthChart'
 import { withBase } from '../../utils/assets'
+import { Link } from 'react-router-dom'
+import { useProfile } from '../../components/useProfile'
+import { StreakEmblem } from '../../components/ProfileBadges'
 import styles from '../BattlePage.module.css'
 import heroStyles from './ResultHero.module.css'
 
@@ -89,6 +92,7 @@ const formatDuration = (seconds: number): string => {
 }
 
 export function MatchResultDialog(props: MatchResultDialogProps) {
+  const { streak } = useProfile()
   const won = props.match.winner === props.me
   return (
     <div className={styles.resultBackdrop}>
@@ -119,6 +123,13 @@ export function MatchResultDialog(props: MatchResultDialogProps) {
             </div>
           )
         })()}
+        {/* Recompensas de la victoria: el sobre ganado y la racha. */}
+        {won && !props.isPvp && (
+          <div className={heroStyles.rewardRow}>
+            <Link to="/album" className={heroStyles.packReward}>🎁 +1 sobre · ábrelo en el álbum</Link>
+            <StreakEmblem streak={streak} />
+          </div>
+        )}
         {props.onReplay && (
           <button type="button" className={heroStyles.replayDecisive} onClick={props.onReplay}>
             🎬 Ver el golpe decisivo
