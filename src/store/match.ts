@@ -15,6 +15,7 @@ import {
   type Position,
   type SpellTarget,
 } from '../game'
+import { castImpact, type CastImpact } from '../battle/castImpact'
 
 /**
  * Entrada compacta del registro de partida (para el botón "Descargar
@@ -111,6 +112,12 @@ interface MatchStore {
   pendingAnimations: readonly AnimationEvent[]
   /** Evento visual en reproducción en este instante. */
   currentEvent?: AnimationEvent
+  /**
+   * A quién afectó cada carta o poder lanzado, por id de su evento. Se calcula
+   * al despachar, que es el único momento en que existen el tablero de antes
+   * y el de después; la presentación lo lee al enseñar la carta.
+   */
+  castImpacts: Readonly<Record<string, CastImpact>>
   /**
    * Arranca una escaramuza contra la IA. `opponentDeckId` fija el rival; sin
    * él lo elige la semilla, como siempre. `setup` permite entrar con la Vida
@@ -235,6 +242,22 @@ const initialState = {
   elapsedSeconds: 0,
   pendingAnimations: [] as readonly AnimationEvent[],
   currentEvent: undefined as AnimationEvent | undefined,
+  castImpacts: {} as Readonly<Record<string, CastImpact>>,
+}
+
+/** Cuántos resultados de cartas se guardan: solo hacen falta los que aún esperan en la cola. */
+const CAST_IMPACT_LIMIT = 12
+
+const withCastImpact = (
+  current: Readonly<Record<string, CastImpact>>,
+  before: MatchState,
+  after: MatchState,
+  events: readonly AnimationEvent[],
+): Readonly<Record<string, CastImpact>> => {
+  const cast = events.find((event) => event.cast)
+  if (!cast) return current
+  const entries = [...Object.entries(current), [cast.id, castImpact(before, after)] as const]
+  return Object.fromEntries(entries.slice(-CAST_IMPACT_LIMIT))
 }
 
 /** Snapshot de Vida de ambos Nexos justo después de resolver una acción. */
@@ -366,6 +389,7 @@ export const useMatchStore = create<MatchStore>()(
         ? updateBestPlay(current.bestPlay, events, match.turn, action.playerId, logEntry.card)
         : current.bestPlay,
       pendingAnimations: [...current.pendingAnimations, ...events],
+      castImpacts: withCastImpact(current.castImpacts, match, cleaned, events),
       elapsedSeconds: cleaned.winner ? Math.max(1, Math.round((Date.now() - current.startedAtMs) / 1000)) : current.elapsedSeconds,
     }))
     return true

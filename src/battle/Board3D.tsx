@@ -17,6 +17,8 @@ import { BoardRim } from './grid/BoardRim'
 import { stoneMaps } from './materials/stoneMaterial'
 import { forgedMetalMaps } from './materials/forgedMetal'
 import { DamageNumbers } from './DamageNumbers'
+import { ImpactMarks } from './ImpactMarks'
+import type { CastImpact } from './castImpact'
 import { FallenPieces } from './FallenPieces'
 import { RecentHits } from './RecentHits'
 import { EventEffects } from './EventEffects'
@@ -133,6 +135,8 @@ interface Board3DProps {
   scenario: ScenarioId
   /** Evento visual en reproducción, entregado por el director de animaciones. */
   activeEvent?: AnimationEvent
+  /** A quién afectó la carta o poder de `activeEvent`, si es un lanzamiento. */
+  castImpact?: CastImpact
   /** Casilla enfocada con el teclado (flechas). Undefined = se está jugando con ratón. */
   cursorCell?: Position
   /** Cola de animaciones aún por reproducir: sirve para saber qué piezas van a morir. */
@@ -1728,6 +1732,7 @@ function Scene(props: Board3DProps) {
         reducedMotion={props.reducedMotion}
       />
       <DamageNumbers event={props.activeEvent} reducedMotion={props.reducedMotion} />
+      <ImpactMarks event={props.activeEvent} impact={props.castImpact} reducedMotion={props.reducedMotion} />
       <RecentHits event={props.activeEvent} reducedMotion={props.reducedMotion} />
       </group>
       <CameraRig event={props.activeEvent} reducedMotion={props.reducedMotion} />

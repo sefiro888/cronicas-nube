@@ -935,6 +935,7 @@ export function BattlePage() {
             quality={preferences.graphicsQuality}
             scenario={scenario}
             activeEvent={visualEvent}
+            castImpact={visualEvent ? store.castImpacts[visualEvent.id] : undefined}
             pendingEvents={store.pendingAnimations}
             cursorCell={boardCursor.cell}
           />

@@ -1,0 +1,70 @@
+/* Marcas de efecto sobre las fichas. Cada una entra un poco más tarde que la
+   anterior (--order): parece una onda que recorre las unidades afectadas, y
+   el ojo puede seguir a cuántas ha tocado. La duración casa con MARK_MS. */
+.mark {
+  --order: 0;
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  pointer-events: none;
+  opacity: 0;
+  animation: markLife 2600ms cubic-bezier(.2, .9, .3, 1) calc(var(--order) * 120ms) forwards;
+}
+.burst {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 236, 180, 0.9);
+  box-shadow: 0 0 24px rgba(255, 210, 120, 0.85), inset 0 0 18px rgba(255, 210, 120, 0.6);
+  transform: translate(-50%, -50%) scale(0.2);
+  opacity: 0;
+  animation: burst 700ms ease-out calc(var(--order) * 120ms) forwards;
+}
+.mark[data-power] .burst { width: 84px; height: 84px; border-width: 3px; }
+
+.chip {
+  --kw: #e9cf8a;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 7px 1px 5px;
+  border-radius: 20px;
+  color: #140e06;
+  background: var(--kw);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.55), 0 0 18px var(--kw);
+  font: 900 11px/1.4 var(--display);
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+.chip[data-tone='harm']:not([style]) { --kw: #ff6b55; color: #fff; }
+.chip[data-tone='boon']:not([style]) { --kw: #8be38f; }
+.chip[data-tone='control']:not([style]) { --kw: #9fd8ff; }
+.chip[data-tone='neutral']:not([style]) { --kw: #d8ccb0; }
+.glyph { font-size: 1.2em; }
+.mark[data-power] .chip { font-size: 12px; }
+
+@keyframes markLife {
+  0% { opacity: 0; transform: translateY(14px) scale(0.4); }
+  12% { opacity: 1; transform: translateY(-4px) scale(1.18); }
+  20% { transform: translateY(0) scale(1); }
+  78% { opacity: 1; transform: translateY(-10px); }
+  100% { opacity: 0; transform: translateY(-26px); }
+}
+@keyframes burst {
+  0% { opacity: 1; transform: translate(-50%, -50%) scale(0.2); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.6); }
+}
+@keyframes fadeOnly {
+  0%, 80% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.mark[data-reduced-motion] { animation: fadeOnly 2600ms ease-out forwards; }
+.mark[data-reduced-motion] .burst { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  .mark { animation: fadeOnly 2600ms ease-out forwards; }
+  .burst { display: none; }
+}

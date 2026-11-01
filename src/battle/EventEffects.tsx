@@ -386,6 +386,15 @@ interface EventEffectsProps {
 /** Intensidad continua (0-1) del destello de impacto según el daño real repartido. */
 const powerFor = (amount?: number): number => Math.max(0, Math.min(1, ((amount ?? 0) - 1) / 5))
 
+/**
+ * Plus de espectáculo por rareza de quien golpea. El propietario pidió que
+ * cada rareza se sintiera distinta en cualquier acción: un golpe de una
+ * mítica tiene que estallar más que el de una común aunque haga el mismo
+ * daño. Se suma a la potencia por cantidad, que sigue mandando.
+ */
+const RARITY_POWER: Readonly<Record<string, number>> = { common: 0, uncommon: 0.15, rare: 0.4, mythic: 0.75 }
+const rarityPower = (cardId?: string): number => RARITY_POWER[cardId ? CARD_BY_ID[cardId]?.rarity ?? 'common' : 'common'] ?? 0
+
 export function EventEffects({ event, reducedMotion }: EventEffectsProps) {
   const timing: TimedProps = { durationMs: event.durationMs, reducedMotion }
   const tone = toneOf(event.effectId, event.faction)
@@ -421,7 +430,7 @@ export function EventEffects({ event, reducedMotion }: EventEffectsProps) {
     case 'damage':
       return event.to ? (
         <>
-        <ImpactBurst cell={[boardX(event.to.x), boardZ(event.to.y)]} tone={tone} timing={timing} power={powerFor(event.amount)} />
+        <ImpactBurst cell={[boardX(event.to.x), boardZ(event.to.y)]} tone={tone} timing={timing} power={Math.min(1.6, powerFor(event.amount) + rarityPower(event.cardId))} />
         {!reducedMotion && <ImpactDebris at={[boardX(event.to.x), boardZ(event.to.y)]} cardId={event.targetCardId} durationMs={event.durationMs} />}
         </>
       ) : null

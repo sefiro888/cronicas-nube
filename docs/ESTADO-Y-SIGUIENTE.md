@@ -1,5 +1,64 @@
 # Estado del proyecto y por dónde seguir
 
+## Espectáculo de batalla — 1 de noviembre de 2026 (Claude Code, nube)
+
+**Hecho en el repositorio de pruebas `sefiro888/cronicas-nube`, rama
+`claude/sweet-clarke-76ugku`, con PR para que el propietario lo revise. NO
+está en `magicfable` ni publicado.** Si gusta, se trae a mano al proyecto
+principal (ver `NUBE.md`).
+
+Petición del propietario, con capturas: que el combate, el poder del
+comandante y la carta en grande sean mucho más claros y espectaculares, que
+cada término del glosario tenga identidad propia y que la rareza se note en
+cualquier acción. Dejó la ejecución a criterio del agente («de la mejor
+manera que tú veas»). No se ha tocado el motor ni el equilibrio.
+
+- **Identidad de términos** (`src/components/keywordIdentity.tsx`): cada
+  término del glosario tiene icono SVG propio, color y familia (ataque,
+  defensa, control, recurso, mecánica de facción, regla). El texto de las
+  cartas pinta cada término con su color y el tooltip lleva icono y familia.
+  Prueba nueva: todo término del glosario necesita identidad.
+- **Glosario ampliado**: Petardazo, Golpe veloz, Chispa, Formación, Descarga,
+  Canto (y Hunde) y Vuelo salían en cartas sin explicación en ningún sitio.
+- **A quién afecta cada carta** (`src/battle/castImpact.ts`): al despachar
+  una acción con carta o poder, el almacén compara el tablero de antes y
+  después y guarda el resultado por id de evento (`castImpacts`). Así se
+  sabe, por ejemplo, que «¿Y si…?» dio Petardazo a 3 unidades, aunque el
+  motor no emita ningún evento por ello. Las partidas en red
+  (`replaceMatch`) no lo calculan: la carta se ve igual, sin la lista.
+- **Carta en grande** (`CastSpotlight`): panel «Qué hace» con a quién afecta
+  (retrato y cambios de cada unidad), duración leída del texto y cada término
+  con su icono, definición y animación por familia. Rara y mítica aterrizan
+  con onda; la común ya no lleva rayos, para que la rareza se note.
+- **Poder de comandante**: escena propia antes de la carta. El retrato entra
+  en un círculo de runas con ondas de choque, destello y el nombre del poder
+  en grande. Después, en el tablero, cada unidad afectada muestra su cambio
+  (`src/battle/ImpactMarks.tsx`), una tras otra como una onda.
+- **Combate** (`CombatDuel`): carga, embestida con «hit-stop», destello y
+  sacudida según el daño; tajo y chispas del color de la rareza de quien
+  golpea; grietas según el daño; la carta destruida estalla en fragmentos de
+  su ilustración; rótulos «¡Golpe!», «¡Brutal!» y «¡Letal!». Marcos por
+  rareza (filo verde, zafiro animado con brasas, corona prismática dorada y
+  algo más grande en la mítica). Las habilidades del duelo llevan su icono.
+  En el tablero 3D, el estallido del impacto crece también con la rareza.
+- Movimiento reducido: se mantiene toda la información y se quitan vuelos,
+  fragmentos, chispas y destellos.
+
+**Pruebas:** 731 unitarias correctas (5 omitidas), `build` y `lint`
+correctos. Capturas con `e2e/battle-spectacle-shots.spec.ts` (fuera del
+gate, `RUN_SHOTS=1`) a 1366 × 768: poder de Bromuro con 3 goblins y duelo de
+una mítica que destruye a una común. Ese guion congela el reloj y las
+animaciones porque en la nube no hay GPU y cada captura tarda más de un
+segundo. La batería e2e completa: ver el resultado anotado debajo.
+
+**Pendiente / ideas siguientes:** revisar a 1920 × 1080 y en móvil en un
+equipo con GPU; sonidos propios por rareza y por término (hoy se reutilizan
+los existentes); golpe final a cámara lenta; previsión del resultado en el
+duelo; reacción del retrato del comandante. El ritmo no se ha cambiado
+(`presentation.ts`): la escena del poder cabe en los 5 s ya pedidos.
+
+---
+
 ## Portada, navegación y Torre — 1 de noviembre de 2026 (Codex)
 
 **PUBLICADO Y COMPROBADO EN LA WEB.** Implementación en `5817113` y nota de

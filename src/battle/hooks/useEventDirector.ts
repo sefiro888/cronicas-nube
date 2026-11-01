@@ -147,6 +147,7 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
     if (next?.cast && !presentedRef.current.has(next.id)) {
       const shown = spotlightFor(next, state.match, me, {
         pace: preferences.presentationPace, animationSpeed: preferences.animationSpeed,
+        impact: state.castImpacts[next.id],
       })
       if (shown) {
         const latest = state.history[state.history.length - 1]

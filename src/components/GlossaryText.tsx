@@ -1,6 +1,7 @@
 import { useId, useMemo } from 'react';
 
 import styles from './GlossaryText.module.css';
+import { FAMILY_LABELS, KeywordGlyph, keywordIdentity, keywordStyle } from './keywordIdentity';
 
 export interface GlossaryEntry {
   readonly id: string;
@@ -168,7 +169,7 @@ export const CARD_GLOSSARY: readonly GlossaryEntry[] = [
   },
   {
     id: 'volador',
-    terms: ['Volador', 'Voladora'],
+    terms: ['Volador', 'Voladora', 'Vuelo'],
     label: 'Volador',
     definition: 'Puede ignorar ciertas restricciones de ocupación o terreno indicadas por las reglas del efecto.',
   },
@@ -195,6 +196,42 @@ export const CARD_GLOSSARY: readonly GlossaryEntry[] = [
     terms: ['Descarta', 'Descartar', 'Descartes'],
     label: 'Descartar',
     definition: 'Mueve una carta de la mano al descarte sin jugarla.',
+  },
+  {
+    id: 'golpe-veloz',
+    terms: ['Golpe veloz', 'Golpe Veloz'],
+    label: 'Golpe veloz',
+    definition: 'Puede atacar el mismo turno en que entra en juego, sin esperar a tu siguiente turno.',
+  },
+  {
+    id: 'petardazo',
+    terms: ['Petardazo'],
+    label: 'Petardazo',
+    definition: 'Goblins. Cuando la unidad es destruida, inflige 2 de daño a todas las unidades adyacentes, incluidas las tuyas. Si la carta indica otra cifra, usa esa.',
+  },
+  {
+    id: 'chispa',
+    terms: ['Chispa', 'Chispas'],
+    label: 'Chispa',
+    definition: 'Goblins. Al jugar la carta se lanza una moneda: a cara obtienes un efecto y a cruz el otro. Las dos caras sirven para algo.',
+  },
+  {
+    id: 'formacion',
+    terms: ['Formación'],
+    label: 'Formación',
+    definition: 'Tercios. Mientras la unidad tenga dos o más unidades aliadas adyacentes, gana +1 de Ataque y +2 de Vida.',
+  },
+  {
+    id: 'descarga',
+    terms: ['Descarga'],
+    label: 'Descarga',
+    definition: 'Tercios. Si hay una unidad aliada entre esta unidad y su objetivo, el ataque inflige 2 de daño adicional.',
+  },
+  {
+    id: 'canto',
+    terms: ['Canto', 'Hunde', 'Hundir', 'Hundida', 'Hundido'],
+    label: 'Canto',
+    definition: 'Kalevala. No destruye: hunde. La unidad sale del tablero y vuelve al final del siguiente turno de su dueño, en la misma casilla si está libre y con sus estadísticas base.',
   },
   {
     id: 'nexo',
@@ -249,9 +286,12 @@ export function GlossaryText({
         const entry = glossary.termMap.get(normalize(chunk));
         if (!entry) return <span key={`${index}-${chunk}`}>{chunk}</span>;
         const tooltipId = `${idPrefix}-${entry.id}-${index}`;
+        const identity = keywordIdentity(entry.id);
         return (
           <span
             className={styles.term}
+            style={keywordStyle(entry.id)}
+            data-family={identity.family}
             role="term"
             tabIndex={0}
             aria-label={`${chunk}: ${entry.definition}`}
@@ -261,7 +301,11 @@ export function GlossaryText({
           >
             {chunk}
             <span className={styles.tooltip} id={tooltipId} role="tooltip">
-              <strong>{entry.label}</strong>
+              <strong className={styles.tooltipHead}>
+                <KeywordGlyph glyph={identity.glyph} className={styles.tooltipGlyph} />
+                {entry.label}
+                <em>{FAMILY_LABELS[identity.family]}</em>
+              </strong>
               <span>{entry.definition}</span>
             </span>
           </span>

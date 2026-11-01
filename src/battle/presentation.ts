@@ -1,3 +1,4 @@
+import type { CastImpact } from './castImpact'
 import { CARD_BY_ID, COMMANDER_BY_ID, FACTION_BY_ID, type AnimationEvent, type BoardPiece, type CardDefinition, type Keyword, type MatchState, type PlayerId } from '../game'
 
 /**
@@ -71,6 +72,8 @@ export interface Spotlight {
   readonly commanderName?: string
   readonly target?: SpotlightTarget
   readonly durationMs: number
+  /** A quién afectó la jugada (ver castImpact.ts). Falta en partidas en red. */
+  readonly impact?: CastImpact
 }
 
 /**
@@ -131,7 +134,7 @@ export const spotlightFor = (
   event: AnimationEvent | undefined,
   match: Pick<MatchState, 'players'> | undefined,
   me: PlayerId,
-  options: { readonly pace?: PresentationPace; readonly animationSpeed?: number },
+  options: { readonly pace?: PresentationPace; readonly animationSpeed?: number; readonly impact?: CastImpact },
 ): Spotlight | undefined => {
   if (!event?.cast || !match) return undefined
   const caster = event.actorId as PlayerId
@@ -145,12 +148,12 @@ export const spotlightFor = (
     return {
       eventId: event.id, kind: 'power', caster, card,
       commanderName: COMMANDER_BY_ID[event.cast.sourceId]?.name,
-      target: targetFor(event, caster, me), durationMs,
+      target: targetFor(event, caster, me), durationMs, impact: options.impact,
     }
   }
   const card = CARD_BY_ID[event.cast.sourceId]
   if (!card) return undefined
-  return { eventId: event.id, kind: event.cast.kind, caster, card, target: targetFor(event, caster, me), durationMs }
+  return { eventId: event.id, kind: event.cast.kind, caster, card, target: targetFor(event, caster, me), durationMs, impact: options.impact }
 }
 
 /** Título del rótulo: deja claro de un vistazo QUIÉN hace QUÉ. */
