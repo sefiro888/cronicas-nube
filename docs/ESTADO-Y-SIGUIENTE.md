@@ -1,5 +1,28 @@
 # Estado del proyecto y por dónde seguir
 
+## Sobres, álbum, perfil y racha — 1 de noviembre de 2026, noche (Claude Code, nube)
+
+**Misma rama y PR.** El propietario pidió los puntos 12, 14 y 15.
+
+- **Sobres** (`store/collection.ts`, `components/PackOpening.tsx`): uno por
+  victoria (`useMatchRecorder`). Cinco cartas de menos a más raras
+  (`rollPack`, determinista por semilla, la última puede ser mítica, 8 %
+  doradas). **Decisión:** es colección para lucir; no limita qué se puede
+  jugar ni toca mazos ni equilibrio.
+- **Álbum** (`pages/AlbumPage.tsx`, ruta `/album`, nueva pestaña en el
+  menú): progreso, copias, doradas, siluetas y filtro por facción.
+- **Títulos y marcos** (`store/profile.ts`, `ProfileShowcase`,
+  `ProfileBadges`): ligados a los logros existentes; se eligen en el álbum
+  y se ven en el panel del comandante y en el cara a cara.
+- **Racha** (`StreakEmblem`): niveles a 1, 3, 5 y 10 victorias seguidas;
+  portada, partida y pantalla final.
+
+Persistencia nueva en `localStorage`: `cronicas-nexo-coleccion` (v1).
+**Pruebas:** 747 unitarias correctas, lint y build correctos; captura en
+navegador del álbum y de la apertura completa sin errores.
+
+---
+
 ## Once mejoras de claridad y facciones — 1 de noviembre de 2026, noche (Claude Code, nube)
 
 **Misma rama y PR** (`claude/sweet-clarke-76ugku`, vista previa en
