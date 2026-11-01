@@ -1,0 +1,28 @@
+name: Comprobar
+
+# Este repositorio es una copia de pruebas para sesiones de Claude en la nube.
+# No despliega: el juego publicado sale solo de sefiro888/magicfable, y un
+# despliegue desde aquí podría confundirse con él. Solo comprueba que lo que
+# llegue de la nube compila y pasa las pruebas.
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  comprobar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run test
+      - run: npm run build
+      - run: npm run lint
