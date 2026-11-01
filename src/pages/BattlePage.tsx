@@ -39,7 +39,7 @@ import { HistoryLog } from '../battle/ui/HistoryLog'
 import { HowToPlay, hasSeenHowTo, markHowToSeen } from '../battle/ui/HowToPlay'
 import { GuidedTutorial } from '../battle/ui/GuidedTutorial'
 import { GlossaryPanel } from '../components/GlossaryPanel'
-import { actionHintFor, attackNexusPreviewLines, attackPiecePreviewLines, cardStatLine, isBoardCard, pieceStatLine, requiresPieceTarget } from '../battle/ui/battleHints'
+import { actionHintFor, attackNexusPreviewLines, attackNexusVerdicts, attackPieceVerdicts, attackPiecePreviewLines, cardStatLine, isBoardCard, pieceStatLine, requiresPieceTarget } from '../battle/ui/battleHints'
 import { describePendingActions, pendingTurnActions } from '../battle/ui/pendingTurnActions'
 import { CardInspector, FactionSigil } from '../components'
 import { GameIcon } from '../components/GameIcon'
@@ -468,11 +468,16 @@ export function BattlePage() {
     if (!match || !selectedPiece || selectedCard || !hoveredTargetId) return undefined
     if (hoveredTargetId === `${RIVAL}-nexus` && attacks.canAttackNexus) {
       const preview = previewAttackNexus(match, selectedPiece.instanceId)
-      return preview ? { targetId: hoveredTargetId, lines: attackNexusPreviewLines(preview) } : undefined
+      return preview ? {
+        targetId: hoveredTargetId, attackerId: selectedPiece.instanceId, lines: attackNexusPreviewLines(preview),
+        target: attackNexusVerdicts(preview), attacker: [{ tone: 'safe' as const, title: 'Sin contragolpe' }],
+      } : undefined
     }
     if (attacks.pieceIds.includes(hoveredTargetId)) {
       const preview = previewAttackPiece(match, selectedPiece.instanceId, hoveredTargetId)
-      return preview ? { targetId: hoveredTargetId, lines: attackPiecePreviewLines(preview) } : undefined
+      if (!preview) return undefined
+      const verdicts = attackPieceVerdicts(preview)
+      return { targetId: hoveredTargetId, attackerId: selectedPiece.instanceId, lines: attackPiecePreviewLines(preview), ...verdicts }
     }
     return undefined
   }, [match, selectedPiece, selectedCard, hoveredTargetId, attacks, RIVAL])

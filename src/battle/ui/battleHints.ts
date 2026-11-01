@@ -104,3 +104,38 @@ export const attackPiecePreviewLines = (preview: AttackPiecePreview): readonly s
 /** Líneas de la vista previa de daño al pasar el cursor sobre el Nexo rival. */
 export const attackNexusPreviewLines = (preview: AttackNexusPreview): readonly string[] =>
   preview.lethal ? [`−${preview.damage} · ¡Golpe letal!`] : [`−${preview.damage} → ${preview.nexusHealthAfter} Vida`]
+
+/**
+ * Veredicto de la previsión al apuntar, para cada una de las dos fichas.
+ * Sustituye a unas líneas de texto sueltas sobre el objetivo: ahora cada
+ * ficha dice lo que le va a pasar con un sello de color propio, y la
+ * atacante también avisa del contragolpe sin tener que leer la otra.
+ */
+export type VerdictTone = 'kill' | 'hurt' | 'counterKill' | 'counter' | 'safe' | 'sink' | 'pierce' | 'nexus' | 'lethal'
+
+export interface PreviewVerdict {
+  readonly tone: VerdictTone
+  readonly title: string
+  readonly detail?: string
+}
+
+export const attackPieceVerdicts = (preview: AttackPiecePreview): { readonly target: readonly PreviewVerdict[]; readonly attacker: readonly PreviewVerdict[] } => {
+  if (preview.sinksDefender) {
+    return { target: [{ tone: 'sink', title: 'Hundida', detail: 'Vuelve en su próximo turno' }], attacker: [{ tone: 'safe', title: 'Sin contragolpe' }] }
+  }
+  const target: PreviewVerdict[] = [preview.defenderDies
+    ? { tone: 'kill', title: 'Muere', detail: `−${preview.damageToDefender}` }
+    : { tone: 'hurt', title: `Sobrevive con ${preview.defenderHealthAfter}`, detail: `−${preview.damageToDefender}` }]
+  if (preview.pierceOverkill > 0) target.push({ tone: 'pierce', title: `+${preview.pierceOverkill} al Nexo`, detail: 'Perforar' })
+  const attacker: PreviewVerdict[] = preview.retaliationToAttacker > 0
+    ? [preview.attackerDies
+      ? { tone: 'counterKill', title: 'Muere en el contragolpe', detail: `−${preview.retaliationToAttacker}` }
+      : { tone: 'counter', title: `Devuelve ${preview.retaliationToAttacker}`, detail: `Te quedas con ${preview.attackerHealthAfter}` }]
+    : [{ tone: 'safe', title: 'Sin contragolpe' }]
+  return { target, attacker }
+}
+
+export const attackNexusVerdicts = (preview: AttackNexusPreview): readonly PreviewVerdict[] =>
+  preview.lethal
+    ? [{ tone: 'lethal', title: '¡Golpe letal!', detail: `−${preview.damage}` }]
+    : [{ tone: 'nexus', title: `Queda con ${preview.nexusHealthAfter}`, detail: `−${preview.damage}` }]

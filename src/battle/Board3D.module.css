@@ -109,17 +109,14 @@
 /* Vista previa de daño: aparece al pasar el cursor sobre un objetivo válido
    con una ficha atacante seleccionada, antes de confirmar el ataque. */
 .attackPreview {
-  width: 150px;
+  width: auto;
   pointer-events: none;
   text-align: center;
   font: 800 12px var(--display);
   letter-spacing: 0.02em;
   color: #ffd9a0;
   text-shadow: 0 2px 4px #000, 0 0 6px #000;
-  background: rgba(8, 6, 4, 0.85);
-  border: 1px solid rgba(255, 180, 90, 0.5);
-  border-radius: 8px;
-  padding: 4px 8px;
+  /* Sin caja propia: cada sello de veredicto lleva su fondo y color. */
   white-space: nowrap;
 }
 .nexusLabel { width: 110px; text-align: center; color: var(--gold-bright); font: 700 10px var(--display); text-shadow: 0 2px 6px #000; pointer-events: none; }
@@ -193,3 +190,43 @@
     font-size: calc(12px * var(--label-scale, 1));
   }
 }
+
+/* ── Previsión al apuntar: sellos por ficha ─────────────────────────────── */
+.verdicts { display: grid; justify-items: center; gap: 4px; pointer-events: none; }
+.verdict {
+  --tone: #ffd27a;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 11px 4px 6px;
+  border: 1.5px solid var(--tone);
+  border-radius: 20px;
+  color: #fff6e0;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--tone) 38%, rgba(8, 6, 4, 0.92)), rgba(8, 6, 4, 0.92) 70%);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--tone) 60%, transparent), 0 4px 10px rgba(0, 0, 0, 0.7);
+  font: 800 13px var(--display);
+  white-space: nowrap;
+  animation: verdictIn 260ms cubic-bezier(.2, 1.6, .4, 1) both;
+}
+.verdict small { color: color-mix(in srgb, var(--tone) 60%, #fff); font-size: 11px; font-weight: 700; }
+.verdictIcon {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  color: #120c06;
+  background: var(--tone);
+  font-size: 12px;
+}
+.verdict[data-tone='kill'], .verdict[data-tone='lethal'] { --tone: #ff5a3c; animation: verdictIn 260ms cubic-bezier(.2, 1.6, .4, 1) both, verdictPulse 0.9s ease-in-out 260ms infinite alternate; }
+.verdict[data-tone='counterKill'] { --tone: #ff3b6a; animation: verdictIn 260ms cubic-bezier(.2, 1.6, .4, 1) both, verdictPulse 0.9s ease-in-out 260ms infinite alternate; }
+.verdict[data-tone='hurt'] { --tone: #ffb347; }
+.verdict[data-tone='counter'] { --tone: #ff9a6a; }
+.verdict[data-tone='safe'] { --tone: #7fe39a; }
+.verdict[data-tone='sink'] { --tone: #6fc7c0; }
+.verdict[data-tone='pierce'] { --tone: #ff9a62; }
+.verdict[data-tone='nexus'] { --tone: #8fd8ff; }
+@keyframes verdictIn { from { opacity: 0; transform: translateY(6px) scale(0.7); } to { opacity: 1; transform: none; } }
+@keyframes verdictPulse { from { box-shadow: 0 0 10px var(--tone), 0 4px 10px rgba(0, 0, 0, 0.7); } to { box-shadow: 0 0 26px var(--tone), 0 4px 10px rgba(0, 0, 0, 0.7); } }
+@media (prefers-reduced-motion: reduce) { .verdict { animation: none !important; } }

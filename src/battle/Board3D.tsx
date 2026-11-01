@@ -47,6 +47,7 @@ import { RitualSeal } from './RitualSeal'
 import { NexusFractures } from './NexusFractures'
 import { NexusCrown } from './NexusCrown'
 import { BattleSkies } from './BattleSkies'
+import type { PreviewVerdict } from './ui/battleHints'
 import { MaterialEnvironment } from './MaterialEnvironment'
 import { arrivalMotion } from './arrivalMotion'
 import { FACTION_BY_ID } from '../game/factions'
@@ -125,7 +126,7 @@ interface Board3DProps {
   onHoverPiece?: (pieceId?: string) => void
   onHoverNexus?: (playerId?: PlayerId) => void
   /** Objetivo (ficha o Nexo) sobre el que mostrar la vista previa, con sus líneas de texto ya redactadas. */
-  attackPreview?: { readonly targetId: string; readonly lines: readonly string[] }
+  attackPreview?: { readonly targetId: string; readonly attackerId?: string; readonly lines: readonly string[]; readonly target?: readonly PreviewVerdict[]; readonly attacker?: readonly PreviewVerdict[] }
   /** Hay una carta en la mano siendo arrastrada: la cámara no debe orbitar. */
   dragging?: boolean
   /** Modo foto: cámara libre para admirar el tablero, sin límites de ángulo/distancia ni clics de juego. */
@@ -641,7 +642,31 @@ interface HopPath {
   segmentStart: number
 }
 
-const BoardCard = memo(function BoardCard({ piece, runo, formationBonus, selected, targetable, ready, active, mine, crowded, stackSafe, onPiece, onInspect, onHover, previewLines, reducedMotion, impulse, impact, arrival, waiting }: { piece: BoardPiece; runo: number; formationBonus: number; selected: boolean; targetable: boolean; ready: boolean; active: boolean; mine: boolean; crowded: boolean; stackSafe: boolean; onPiece: (pieceId: string) => void; onInspect?: (cardId: string, pieceId?: string) => void; onHover?: (pieceId?: string) => void; previewLines?: readonly string[]; reducedMotion: boolean; impulse?: Impulse; impact?: AnimationEvent; arrival?: AnimationEvent; waiting: boolean }) {
+/** Icono de cada veredicto de la previsión. */
+const VERDICT_ICON: Readonly<Record<PreviewVerdict['tone'], string>> = {
+  kill: '☠', hurt: '♥', counterKill: '☠', counter: '↩', safe: '✓', sink: '≈', pierce: '➶', nexus: '◆', lethal: '☠',
+}
+
+/**
+ * Sellos de la previsión al apuntar: «Muere», «Sobrevive con 2», «Devuelve
+ * 3»… cada uno con su color. Van sobre las dos fichas para que el jugador
+ * vea de un vistazo qué gana y qué arriesga antes de confirmar el ataque.
+ */
+function VerdictBadges({ verdicts }: { verdicts: readonly PreviewVerdict[] }) {
+  return (
+    <div className={styles.verdicts}>
+      {verdicts.map((verdict) => (
+        <div key={verdict.title} className={styles.verdict} data-tone={verdict.tone}>
+          <span className={styles.verdictIcon}>{VERDICT_ICON[verdict.tone]}</span>
+          <strong>{verdict.title}</strong>
+          {verdict.detail && <small>{verdict.detail}</small>}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+const BoardCard = memo(function BoardCard({ piece, runo, formationBonus, selected, targetable, ready, active, mine, crowded, stackSafe, onPiece, onInspect, onHover, previewLines, reducedMotion, impulse, impact, arrival, waiting }: { piece: BoardPiece; runo: number; formationBonus: number; selected: boolean; targetable: boolean; ready: boolean; active: boolean; mine: boolean; crowded: boolean; stackSafe: boolean; onPiece: (pieceId: string) => void; onInspect?: (cardId: string, pieceId?: string) => void; onHover?: (pieceId?: string) => void; previewLines?: readonly PreviewVerdict[]; reducedMotion: boolean; impulse?: Impulse; impact?: AnimationEvent; arrival?: AnimationEvent; waiting: boolean }) {
   const card = CARD_BY_ID[piece.cardId]
   const displayedAttack = Math.max(0, (card?.attack ?? 0) + piece.attackModifier + (card?.type === 'unit' ? runoAttackBonus(runo) : 0) + formationBonus)
   const texture = useTexture(withBase(card?.art.webp ?? '/assets/cards/art/fuente-furia.webp'))
@@ -1030,7 +1055,7 @@ const BoardCard = memo(function BoardCard({ piece, runo, formationBonus, selecte
           Ataque impreso — para eso reutiliza `previewAttackPiece`. */}
       {previewLines && previewLines.length > 0 && (
         <Html center position={[0, CARD_STAND_RISE * 2 + 0.42, 0]} distanceFactor={8.6} zIndexRange={[15, 0]} className={styles.attackPreview}>
-          {previewLines.map((line, index) => <div key={index}>{line}</div>)}
+          <VerdictBadges verdicts={previewLines} />
         </Html>
       )}
     </group>
@@ -1071,7 +1096,7 @@ function Nexus({
   targetable: boolean
   onClick: () => void
   onHover?: (playerId?: PlayerId) => void
-  previewLines?: readonly string[]
+  previewLines?: readonly PreviewVerdict[]
   commanderArt: string
   activeEvent?: AnimationEvent
   /** Piedra del sitio: el pedestal se talla en el material de la escena. */
@@ -1243,7 +1268,7 @@ function Nexus({
       </Html>
       {previewLines && previewLines.length > 0 && (
         <Html center position={[0, 1.7, 0]} distanceFactor={7} zIndexRange={[15, 0]} className={styles.attackPreview}>
-          {previewLines.map((line, index) => <div key={index}>{line}</div>)}
+          <VerdictBadges verdicts={previewLines} />
         </Html>
       )}
       <pointLight ref={nexusLight} position={[0, 1.1, 0]} color={color} intensity={5} distance={4} decay={2} />
@@ -1749,7 +1774,8 @@ function Scene(props: Board3DProps) {
             onPiece={props.onPiece}
             onInspect={props.onInspectPiece}
             onHover={props.onHoverPiece}
-            previewLines={props.attackPreview?.targetId === piece.instanceId ? props.attackPreview.lines : undefined}
+            previewLines={props.attackPreview?.targetId === piece.instanceId ? props.attackPreview.target
+              : props.attackPreview?.attackerId === piece.instanceId ? props.attackPreview.attacker : undefined}
             reducedMotion={props.reducedMotion}
             impulse={impulses.get(piece.instanceId)}
             impact={props.activeEvent?.targetId === piece.instanceId ? props.activeEvent : undefined}
@@ -1767,7 +1793,7 @@ function Scene(props: Board3DProps) {
         targetable={props.validTargets.includes('player-nexus')}
         onClick={() => props.onNexus('player')}
         onHover={props.onHoverNexus}
-        previewLines={props.attackPreview?.targetId === 'player-nexus' ? props.attackPreview.lines : undefined}
+        previewLines={props.attackPreview?.targetId === 'player-nexus' ? props.attackPreview.target : undefined}
         commanderArt={COMMANDER_BY_ID[props.state.players.player.commanderId]?.art.webp ?? '/assets/cards/art/fuente-furia.webp'}
         activeEvent={props.activeEvent}
         terrainStyle={terrainStyle}
@@ -1783,7 +1809,7 @@ function Scene(props: Board3DProps) {
         targetable={props.validTargets.includes('ai-nexus')}
         onClick={() => props.onNexus('ai')}
         onHover={props.onHoverNexus}
-        previewLines={props.attackPreview?.targetId === 'ai-nexus' ? props.attackPreview.lines : undefined}
+        previewLines={props.attackPreview?.targetId === 'ai-nexus' ? props.attackPreview.target : undefined}
         commanderArt={COMMANDER_BY_ID[props.state.players.ai.commanderId]?.art.webp ?? '/assets/cards/art/fuente-arcana.webp'}
         activeEvent={props.activeEvent}
         terrainStyle={terrainStyle}
