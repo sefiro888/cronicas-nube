@@ -1,0 +1,54 @@
+.quote {
+  position: absolute;
+  z-index: 47;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(420px, 60%);
+  pointer-events: none;
+  animation: quoteLife 3400ms cubic-bezier(.2, 1.3, .4, 1) both;
+}
+.quote[data-side='own'] { bottom: 18px; left: 18px; }
+.quote[data-side='rival'] { top: 56px; right: 18px; flex-direction: row-reverse; text-align: right; }
+.quote img {
+  flex: none;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 0 0 3px var(--accent), 0 0 22px var(--accent);
+  animation: portraitTalk 0.5s ease-in-out 3 alternate;
+}
+.bubble {
+  position: relative;
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 9px 14px;
+  border: 1px solid color-mix(in srgb, var(--accent) 60%, transparent);
+  border-radius: 14px;
+  color: #f6ecd2;
+  background: rgba(10, 12, 18, 0.94);
+  box-shadow: 0 0 24px color-mix(in srgb, var(--accent) 30%, transparent), 0 10px 24px rgba(0, 0, 0, 0.6);
+}
+/* Pico del bocadillo apuntando al retrato. */
+.bubble::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  border: 8px solid transparent;
+  transform: translateY(-50%);
+}
+.quote[data-side='own'] .bubble::before { left: -16px; border-right-color: color-mix(in srgb, var(--accent) 60%, transparent); }
+.quote[data-side='rival'] .bubble::before { right: -16px; border-left-color: color-mix(in srgb, var(--accent) 60%, transparent); }
+.bubble strong { color: var(--accent); font: 800 11px var(--display); letter-spacing: 0.16em; text-transform: uppercase; }
+.bubble span { font: italic 600 clamp(13px, 1.1vw, 16px)/1.35 Georgia, serif; }
+@keyframes quoteLife {
+  0% { opacity: 0; transform: translateY(14px) scale(0.85); }
+  10% { opacity: 1; transform: none; }
+  88% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-6px); }
+}
+@keyframes portraitTalk { from { transform: scale(1); } to { transform: scale(1.06) rotate(-2deg); } }
+@media (prefers-reduced-motion: reduce) { .quote, .quote img { animation: none; } }
+@media (max-width: 760px) { .quote { max-width: 86%; } .quote img { width: 44px; height: 44px; } }

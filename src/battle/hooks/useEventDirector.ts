@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { CARD_BY_ID, type AnimationEvent, type PlayerId } from '../../game'
+import { CARD_BY_ID, COMMANDER_BY_ID, type AnimationEvent, type PlayerId } from '../../game'
+import { HURT_QUOTE_DAMAGE, quoteFor, type QuoteMoment } from '../commanderQuotes'
 import { attackKindFor } from '../attackStyle'
 import { REPLAY_MARK } from '../../store/match'
 import { playSynthCue, type SoundCue } from '../../services/audio'
@@ -99,6 +100,8 @@ export interface EventDirector {
   dismissDuel: () => void
   /** Quién golpea a quién en el intercambio que se está reproduciendo. */
   exchange?: CombatExchange
+  /** Frase del comandante que habla ahora. */
+  quote?: { readonly key: string; readonly owner: PlayerId; readonly text: string }
   /** Respuesta del tablero a la jugada en curso (Escudo, Petardazo, silencio). */
   reaction?: Reaction
   /** Reacción en cadena en curso (desde la segunda muerte encadenada). */
@@ -163,6 +166,8 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
    * estas son las reacciones que sí existen y que antes pasaban sin aviso.
    */
   const [reaction, setReaction] = useState<Reaction>()
+  /** Bocadillo del comandante que habla ahora (poder, golpe fuerte o victoria). */
+  const [quote, setQuote] = useState<{ readonly key: string; readonly owner: PlayerId; readonly text: string }>()
   const reactedRef = useRef(new Set<string>())
   /** Evento que abrió la jugada en curso: agrupa las respuestas de una misma jugada. */
   const playRootRef = useRef('')
@@ -257,6 +262,16 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
       } else if (currentEvent.cast && state.castImpacts[currentEvent.id]?.pieces.some((piece) => piece.changes.some((change) => change.label === 'Silenciada'))) {
         respond({ key: '', kind: 'silence', title: '¡Anulada!', detail: 'Sus habilidades dejan de actuar' })
       }
+      // Frases de los comandantes (ver commanderQuotes).
+      const speak = (owner: PlayerId, moment: QuoteMoment) => {
+        const commanderId = state.match?.players[owner].commanderId
+        const faction = commanderId ? COMMANDER_BY_ID[commanderId]?.faction : undefined
+        if (faction) setQuote({ key: currentEvent.id, owner, text: quoteFor(faction, moment, currentEvent.id) })
+      }
+      if (currentEvent.cast?.kind === 'power' && (currentEvent.actorId === 'player' || currentEvent.actorId === 'ai')) speak(currentEvent.actorId, 'power')
+      else if (currentEvent.type === 'nexus-damage' && (currentEvent.amount ?? 0) >= HURT_QUOTE_DAMAGE && currentEvent.targetId?.endsWith('-nexus') && !currentEvent.id.includes(REPLAY_MARK)) {
+        speak(currentEvent.targetId.replace('-nexus', '') as PlayerId, 'hurt')
+      } else if (currentEvent.type === 'victory' && (currentEvent.actorId === 'player' || currentEvent.actorId === 'ai')) speak(currentEvent.actorId, 'win')
       // Reacción en cadena (ver chainRef): se reinicia con cada jugada nueva.
       const run = chainRef.current
       if (currentEvent.type === 'attack' || currentEvent.cast || currentEvent.type === 'turn') {
@@ -338,6 +353,12 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
       window.clearTimeout(landing)
     }
   }, [currentEvent, preferences.animationSpeed, preferences.effectsVolume, preferences.masterVolume, preferences.muted, preferences.reducedMotion, preferences.presentationPace, me])
+
+  useEffect(() => {
+    if (!quote) return
+    const timer = window.setTimeout(() => setQuote(undefined), 3400)
+    return () => window.clearTimeout(timer)
+  }, [quote])
 
   useEffect(() => {
     if (!reaction) return
@@ -478,6 +499,7 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
     combo,
     chain,
     reaction,
+    quote,
     impact,
     recentPlays,
     resetBanners,

@@ -74,6 +74,7 @@ import { ESSENCE_LABELS, PHASE_LABELS } from './battle/labels'
 import { MatchResultDialog } from './battle/MatchResultDialog'
 import { MulliganDialog } from './battle/MulliganDialog'
 import { BattleIntro } from './battle/BattleIntro'
+import { CommanderQuote } from './battle/CommanderQuote'
 import { ScryDialog } from './battle/ScryDialog'
 import { SparkDialog } from './battle/SparkDialog'
 import { TacticalDialog } from './battle/TacticalDialog'
@@ -1069,6 +1070,15 @@ export function BattlePage() {
             </div>
           )}
           {!photoMode && <RecentPlays plays={director.recentPlays} me={ME} onInspect={inspectCard} />}
+          {/* El comandante habla: poder, golpe fuerte a su Nexo o victoria. */}
+          {director.quote && !photoMode && COMMANDER_BY_ID[match.players[director.quote.owner].commanderId] && (
+            <CommanderQuote
+              key={director.quote.key}
+              commander={COMMANDER_BY_ID[match.players[director.quote.owner].commanderId]!}
+              text={director.quote.text}
+              mine={director.quote.owner === ME}
+            />
+          )}
           {/* Respuesta: sello lateral con el tipo de reacción. */}
           {director.reaction && !photoMode && (
             <div key={director.reaction.key} className={styles.reaction} data-kind={director.reaction.kind} role="status">
