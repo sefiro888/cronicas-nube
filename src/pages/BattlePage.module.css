@@ -977,3 +977,16 @@
 @media (prefers-reduced-motion: reduce) {
   .boardFrame[data-impact] { animation: none; }
 }
+
+/* Fase de peligro del Nexo propio: bordes que laten en rojo, sin tapar el centro. */
+.dangerVignette {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  pointer-events: none;
+  background: radial-gradient(ellipse 75% 70% at 50% 50%, transparent 55%, rgba(170, 10, 0, 0.5));
+  animation: dangerPulse 1.1s ease-in-out infinite alternate;
+}
+.dangerVignette[data-reduced-motion] { animation: none; opacity: 0.6; }
+@keyframes dangerPulse { from { opacity: 0.35; } to { opacity: 0.85; } }
+@media (prefers-reduced-motion: reduce) { .dangerVignette { animation: none; opacity: 0.6; } }

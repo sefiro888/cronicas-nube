@@ -60,6 +60,7 @@ import { withBase } from '../utils/assets'
 import { AI_GAP_SCALE, PACE_LABELS, PRESENTATION_PACES } from '../battle/presentation'
 import { TYPE_LABELS } from '../utils/cardLabels'
 import { CastSpotlight } from './battle/CastSpotlight'
+import { NEXUS_DANGER_RATIO } from '../battle/NexusCrown'
 import { CombatDuel } from './battle/CombatDuel'
 import { DevPanel } from './battle/DevPanel'
 import { DragGhost } from './battle/DragGhost'
@@ -903,6 +904,11 @@ export function BattlePage() {
         />
       )}
 
+      {/* Fase de peligro: con tu Nexo a un cuarto de Vida o menos, los bordes
+          de la pantalla laten en rojo. La corona 3D del Nexo late a la vez. */}
+      {match && !photoMode && displayedNexusHealth[ME] > 0
+        && displayedNexusHealth[ME] <= (COMMANDER_BY_ID[match.players[ME].commanderId]?.nexusHealth ?? 35) * NEXUS_DANGER_RATIO
+        && <div className={styles.dangerVignette} data-reduced-motion={preferences.reducedMotion || undefined} aria-hidden="true" />}
       <div className={styles.arena}>
         <div
           className={styles.boardFrame}

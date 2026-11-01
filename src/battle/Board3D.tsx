@@ -45,6 +45,7 @@ import { TerrainMarks } from './terrain/TerrainMarks'
 import { CardFrameTrim, CardPlinth, CardSurfaceWear, CardWard } from './CardFinish'
 import { RitualSeal } from './RitualSeal'
 import { NexusFractures } from './NexusFractures'
+import { NexusCrown } from './NexusCrown'
 import { MaterialEnvironment } from './MaterialEnvironment'
 import { arrivalMotion } from './arrivalMotion'
 import { FACTION_BY_ID } from '../game/factions'
@@ -1202,6 +1203,7 @@ function Nexus({
       })}
       </group>
       </group>
+      {!collapse?.settled && <NexusCrown color={color} damage={damage} hitAt={hitAt} collapsing={Boolean(collapse)} reducedMotion={reducedMotion} />}
       {collapse && <NexusRupture key={collapse.id} durationMs={collapse.durationMs} tone={color}
         stoneColors={[stone.base, stone.shaft, stone.crown]} reducedMotion={reducedMotion || Boolean(collapse.settled)} />}
       {/* Volumen invisible: conserva el clic/hover en 3D sin gastar una textura. */}
