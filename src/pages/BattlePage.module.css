@@ -590,6 +590,9 @@
 .paceButton:hover { color: var(--gold-bright); border-color: var(--gold); transform: scale(1.08); }
 .paceButton:focus-visible { outline: 2px solid #fff1b8; outline-offset: 2px; }
 .paceButton[data-pace='cinematic'] { border-color: var(--gold); }
+/* Repetir jugada: justo a la derecha del botón de ritmo. */
+.replayButton { left: 58px; font-size: 18px; }
+.replayButton:disabled { opacity: .4; cursor: default; transform: none; }
 .paceHint {
   position: absolute; z-index: 44; top: 14px; left: 60px; max-width: 320px;
   padding: 8px 14px; border-radius: 8px; border: 1px solid var(--line-bright);

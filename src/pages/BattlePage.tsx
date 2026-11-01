@@ -45,7 +45,9 @@ import { CardInspector, FactionSigil } from '../components'
 import { GameIcon } from '../components/GameIcon'
 import { inspectionStatuses } from '../battle/inspectionStatuses'
 import { useNetworkSync } from '../multiplayer/useNetworkSync'
-import { useSoundtrack } from '../services/useAudioMix'
+import { useBattleTension, useSoundtrack } from '../services/useAudioMix'
+import { REPLAY_MARK } from '../store/match'
+import { battleStrain } from '../battle/scenarios/BattleClimate'
 import { useMatchStore } from '../store/match'
 import { canPayOffering, offeringCost, offeringOf } from '../game/duna'
 import { resolveScenario } from '../battle/scenarioForFaction'
@@ -68,6 +70,7 @@ import { EnemyPanel } from './battle/EnemyPanel'
 import { ESSENCE_LABELS, PHASE_LABELS } from './battle/labels'
 import { MatchResultDialog } from './battle/MatchResultDialog'
 import { MulliganDialog } from './battle/MulliganDialog'
+import { BattleIntro } from './battle/BattleIntro'
 import { ScryDialog } from './battle/ScryDialog'
 import { SparkDialog } from './battle/SparkDialog'
 import { TacticalDialog } from './battle/TacticalDialog'
@@ -153,6 +156,9 @@ export function BattlePage() {
       sitio al tablero. En PC siempre está visible, este estado no se usa ahí. */
   const [ownPanelOpenMobile, setOwnPanelOpenMobile] = useState(false)
   /** Aviso breve tras cambiar el ritmo desde la propia partida. */
+  // Semilla de la partida cuya presentación ya se vio (o se saltó).
+  const [introSeed, setIntroSeed] = useState<number>()
+  const finishIntro = useCallback(() => setIntroSeed(useMatchStore.getState().match?.seed), [])
   const [paceHint, setPaceHint] = useState<string>()
   // Con temporizador y no con el fin de la animación: con movimiento reducido
   // no hay animación y el aviso se quedaba para siempre.
@@ -208,7 +214,7 @@ export function BattlePage() {
   // cuando el golpe se ve caer, no antes.
   const displayedNexusHealth = useMemo(() => {
     const pending = (owner: PlayerId) => store.pendingAnimations
-      .filter((event) => event.type === 'nexus-damage' && event.targetId === `${owner}-nexus`)
+      .filter((event) => event.type === 'nexus-damage' && event.targetId === `${owner}-nexus` && !event.id.includes(REPLAY_MARK))
       .reduce((total, event) => total + (event.amount ?? 0), 0)
     return {
       player: (store.match?.players.player.nexusHealth ?? 0) + pending('player'),
@@ -234,6 +240,11 @@ export function BattlePage() {
   )
   // Capa ambiental generativa del escenario activo (se apaga sola al salir).
   useSoundtrack(scenario === 'solar-court' ? 'duna' : scenario === 'bestiary-ravine' ? 'grove' : scenario, Boolean(match))
+  // La música se intensifica con la partida: misma tensión que la luz y el clima.
+  const musicTension = match ? Math.round(battleStrain(match.turn, (['player', 'ai'] as const).map((id) => ({
+    health: match.players[id].nexusHealth, maxHealth: COMMANDER_BY_ID[match.players[id].commanderId]?.nexusHealth ?? 35,
+  }))) * 20) / 20 : 0
+  useBattleTension(musicTension, Boolean(match) && !match?.winner)
 
   /**
    * Resultado del piso de Torre. Se apunta una sola vez por partida: el
@@ -976,6 +987,20 @@ export function BattlePage() {
           >
             {preferences.presentationPace === 'cinematic' ? '🎬' : preferences.presentationPace === 'normal' ? '▶' : '⏩'}
           </button>
+          {/* Repetir la última jugada a cámara lenta: el estado no cambia, solo
+              se vuelven a reproducir sus eventos con el ritmo cinemático. */}
+          {store.lastPlay && !photoMode && (
+            <button
+              className={`${styles.paceButton} ${styles.replayButton}`}
+              type="button"
+              disabled={queueBusy}
+              onClick={() => store.replayLastPlay()}
+              aria-label="Repetir la última jugada"
+              title="Repetir la última jugada"
+            >
+              ↺
+            </button>
+          )}
           {paceHint && !photoMode && (
             <div key={paceHint} className={styles.paceHint} role="status">
               {paceHint}
@@ -1344,6 +1369,14 @@ export function BattlePage() {
         />
       )}
 
+      {/* Cara a cara al empezar: una vez por partida, antes del mulligan. */}
+      {match.turn <= 1 && introSeed !== match.seed && !photoMode && COMMANDER_BY_ID[match.players[ME].commanderId] && COMMANDER_BY_ID[match.players[ME === 'player' ? 'ai' : 'player'].commanderId] && (
+        <BattleIntro
+          own={COMMANDER_BY_ID[match.players[ME].commanderId]!}
+          rival={COMMANDER_BY_ID[match.players[ME === 'player' ? 'ai' : 'player'].commanderId]!}
+          onDone={finishIntro}
+        />
+      )}
       {inspected && <CardInspector card={inspected} statusEffects={inspectionStatuses(inspectedPiece)} onClose={closeInspection} />}
 
       {match.winner && !queueBusy && (
@@ -1365,6 +1398,7 @@ export function BattlePage() {
           rematchPeer={rematchPeer}
           onRematch={requestRematch}
           onRepeat={repeat}
+          onReplay={store.lastPlay ? () => store.replayLastPlay() : undefined}
           onHome={() => leaveToHome('/')}
           onDownloadLog={() => downloadMatchLog({
             match,

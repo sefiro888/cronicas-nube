@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { currentMusicTheme, resumeAudio, setAudioMix, startAmbientMusic, stopAmbientMusic, type MusicTheme } from './audio'
+import { currentMusicTheme, resumeAudio, setAudioMix, setBattleTension, startAmbientMusic, stopAmbientMusic, stopBattleTension, type MusicTheme } from './audio'
 import { usePreferences } from '../store/preferences'
 
 /**
@@ -68,4 +68,23 @@ export const useSoundtrack = (theme: MusicTheme, enabled: boolean): void => {
       stopMine()
     }
   }, [theme, audible])
+}
+
+/**
+ * Sube o baja la capa de tensión de la música (ver setBattleTension) según la
+ * tensión de la partida. Se apaga al salir de la batalla o al silenciar.
+ */
+export const useBattleTension = (level: number, enabled: boolean): void => {
+  const musicVolume = usePreferences((state) => state.musicVolume)
+  const muted = usePreferences((state) => state.muted)
+  const audible = enabled && !muted && musicVolume > 0
+  useEffect(() => {
+    if (!audible) {
+      stopBattleTension()
+      return undefined
+    }
+    setBattleTension(level)
+    return undefined
+  }, [level, audible])
+  useEffect(() => () => stopBattleTension(), [])
 }

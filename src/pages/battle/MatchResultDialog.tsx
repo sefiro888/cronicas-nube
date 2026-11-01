@@ -30,6 +30,8 @@ interface MatchResultDialogProps {
   onRepeat: () => void
   onHome: () => void
   onDownloadLog: () => void
+  /** Vuelve a ver el golpe que decidió la partida (la última jugada, a cámara lenta). */
+  onReplay?: () => void
   reducedMotion?: boolean
 }
 
@@ -102,11 +104,25 @@ export function MatchResultDialog(props: MatchResultDialogProps) {
           <div><strong>{props.stats.cardsPlayed}</strong><span>Jugadas</span></div>
         </div>
         <HealthChart history={props.healthHistory} me={props.me} />
-        {props.bestPlay && (
-          <p className={styles.bestPlay}>
-            🏆 Mejor jugada: <strong>{CARD_BY_ID[props.bestPlay.cardId ?? '']?.name ?? 'Una unidad'}</strong>{' '}
-            {props.bestPlay.by === props.me ? 'tuya' : 'del rival'} hizo <strong>{props.bestPlay.amount}</strong> de daño en el turno {props.bestPlay.turn}.
-          </p>
+        {props.bestPlay && (() => {
+          const card = CARD_BY_ID[props.bestPlay.cardId ?? '']
+          // La mejor jugada, como vitrina: la carta con su arte y el dato
+          // grande, en vez de una frase suelta al final de la lista.
+          return (
+            <div className={heroStyles.bestShowcase} data-mine={props.bestPlay.by === props.me || undefined}>
+              {card && <img src={withBase(card.art.webp)} alt="" />}
+              <div>
+                <small>🏆 Mejor jugada · turno {props.bestPlay.turn}</small>
+                <strong>{card?.name ?? 'Una unidad'}</strong>
+                <span>{props.bestPlay.by === props.me ? 'Tuya' : 'Del rival'}: <b>{props.bestPlay.amount}</b> de daño de un golpe</span>
+              </div>
+            </div>
+          )
+        })()}
+        {props.onReplay && (
+          <button type="button" className={heroStyles.replayDecisive} onClick={props.onReplay}>
+            🎬 Ver el golpe decisivo
+          </button>
         )}
         {props.tally.played > 1 && (
           <p className={styles.resultTally}>

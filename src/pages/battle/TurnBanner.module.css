@@ -93,3 +93,66 @@
   .copy strong { font-size: 20px; }
   .copy small { font-size: 11px; }
 }
+
+/* ── Barrido del comandante ─────────────────────────────────────────────── */
+.sweep {
+  position: absolute;
+  top: -70%;
+  bottom: -70%;
+  left: 0;
+  width: 46%;
+  overflow: hidden;
+  clip-path: polygon(18% 0, 100% 0, 82% 100%, 0 100%);
+  opacity: 0;
+  animation: sweepAcross 2s cubic-bezier(.3, .8, .3, 1) forwards;
+}
+.banner[data-side='rival'] .sweep { animation-name: sweepAcrossRival; }
+.sweep img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 25%;
+  filter: saturate(1.2) contrast(1.05);
+  mask-image: linear-gradient(90deg, transparent, #000 25%, #000 75%, transparent);
+}
+.edge {
+  position: absolute;
+  top: -40%;
+  bottom: -40%;
+  left: 0;
+  width: 6px;
+  background: linear-gradient(transparent, #fff, var(--accent), #fff, transparent);
+  box-shadow: 0 0 24px var(--accent), 0 0 60px var(--accent);
+  transform: skewX(-18deg);
+  opacity: 0;
+  animation: edgeAcross 2s cubic-bezier(.3, .8, .3, 1) forwards;
+}
+.banner[data-side='rival'] .edge { animation-name: edgeAcrossRival; }
+@keyframes sweepAcross {
+  0% { opacity: 0; transform: translateX(-60%); }
+  18% { opacity: 0.9; }
+  70% { opacity: 0.75; }
+  100% { opacity: 0; transform: translateX(170%); }
+}
+@keyframes sweepAcrossRival {
+  0% { opacity: 0; transform: translateX(230%); }
+  18% { opacity: 0.9; }
+  70% { opacity: 0.75; }
+  100% { opacity: 0; transform: translateX(0%); }
+}
+@keyframes edgeAcross {
+  0% { opacity: 0; left: 0; }
+  10% { opacity: 1; }
+  60% { opacity: 1; }
+  100% { opacity: 0; left: 100%; }
+}
+@keyframes edgeAcrossRival {
+  0% { opacity: 0; left: 100%; }
+  10% { opacity: 1; }
+  60% { opacity: 1; }
+  100% { opacity: 0; left: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .sweep, .edge { display: none; } }
+/* El retrato y el texto van por encima del barrido. */
+.portrait, .copy { z-index: 2; }
+.copy { position: relative; }

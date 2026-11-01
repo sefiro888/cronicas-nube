@@ -1,0 +1,120 @@
+/* Cara a cara al empezar. Las dos mitades entran desde sus lados, chocan en
+   la diagonal central y el «VS» estalla en el choque. Dura BATTLE_INTRO_MS. */
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  overflow: hidden;
+  background: #05060a;
+  cursor: pointer;
+  animation: introLife 3600ms ease forwards;
+}
+.side {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 58%;
+  overflow: hidden;
+}
+.side[data-side='own'] {
+  left: 0;
+  clip-path: polygon(0 0, 100% 0, 72% 100%, 0 100%);
+  animation: fromLeft 900ms cubic-bezier(.2, .9, .2, 1) both;
+}
+.side[data-side='rival'] {
+  right: 0;
+  clip-path: polygon(28% 0, 100% 0, 100% 100%, 0 100%);
+  animation: fromRight 900ms cubic-bezier(.2, .9, .2, 1) both;
+}
+.side img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 22%;
+  filter: saturate(1.15) contrast(1.05) brightness(0.85);
+  animation: slowZoom 3600ms linear both;
+}
+.side::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(0deg, rgba(5, 6, 10, 0.92), transparent 55%), radial-gradient(circle at 50% 30%, transparent 30%, color-mix(in srgb, var(--accent) 35%, transparent) 90%);
+}
+.plate {
+  position: absolute;
+  z-index: 1;
+  bottom: 9%;
+  display: grid;
+  gap: 4px;
+  max-width: 34vw;
+  animation: plateIn 700ms cubic-bezier(.2, 1.2, .3, 1) 500ms both;
+}
+.side[data-side='own'] .plate { left: 6%; text-align: left; }
+.side[data-side='rival'] .plate { right: 6%; text-align: right; justify-items: end; }
+.plate small { color: var(--accent); font: 700 12px var(--display); letter-spacing: 0.26em; text-transform: uppercase; }
+.plate strong {
+  color: #fff6dc;
+  font: 900 clamp(34px, 5vw, 76px) var(--display);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-shadow: 0 0 24px var(--accent), 0 4px 12px rgba(0, 0, 0, 0.9);
+}
+.plate span { color: #d9ccaa; font: 600 clamp(13px, 1.2vw, 17px) var(--display); }
+.plate q { margin-top: 6px; color: #cfc4a8; font: italic 500 clamp(12px, 1.05vw, 15px)/1.4 Georgia, serif; }
+.split {
+  position: absolute;
+  top: -10%;
+  bottom: -10%;
+  left: 50%;
+  width: 4px;
+  background: linear-gradient(transparent, #fff, #ffd76a, #fff, transparent);
+  box-shadow: 0 0 30px #ffd76a, 0 0 80px #ff8a3a;
+  transform: translateX(-50%) skewX(-12deg);
+  animation: splitFlash 1200ms ease 700ms both;
+}
+.versus {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  color: #fff;
+  font: 900 clamp(70px, 11vw, 160px) var(--display);
+  font-style: italic;
+  letter-spacing: -0.02em;
+  text-shadow: 0 0 30px #ffd76a, 0 0 70px #ff6a2a, 0 6px 16px rgba(0, 0, 0, 0.95);
+  -webkit-text-stroke: 3px #3a1a06;
+  paint-order: stroke fill;
+  transform: translate(-50%, -50%);
+  animation: versusSlam 900ms cubic-bezier(.2, 1.6, .4, 1) 750ms both;
+}
+.hint {
+  position: absolute;
+  bottom: 22px;
+  left: 50%;
+  color: rgba(236, 223, 184, 0.6);
+  font: 500 12px var(--display);
+  letter-spacing: 0.08em;
+  transform: translateX(-50%);
+}
+@keyframes introLife { 0%, 88% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes fromLeft { from { transform: translateX(-100%); } to { transform: none; } }
+@keyframes fromRight { from { transform: translateX(100%); } to { transform: none; } }
+@keyframes slowZoom { from { scale: 1.08; } to { scale: 1.18; } }
+@keyframes plateIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
+@keyframes splitFlash { 0% { opacity: 0; } 15% { opacity: 1; } 100% { opacity: 0.4; } }
+@keyframes versusSlam {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(3) rotate(-8deg); filter: blur(8px); }
+  60% { opacity: 1; transform: translate(-50%, -50%) scale(0.9) rotate(2deg); filter: none; }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .intro, .side, .side img, .plate, .split, .versus { animation: none !important; }
+}
+@media (max-width: 760px) {
+  .side { width: 100%; height: 52%; }
+  .side[data-side='own'] { top: 0; bottom: auto; clip-path: polygon(0 0, 100% 0, 100% 86%, 0 100%); }
+  .side[data-side='rival'] { top: auto; bottom: 0; clip-path: polygon(0 14%, 100% 0, 100% 100%, 0 100%); }
+  .plate { max-width: 80vw; }
+  .split { display: none; }
+}

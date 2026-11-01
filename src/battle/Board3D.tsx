@@ -1452,7 +1452,9 @@ const COMBAT_PUNCH = 0.07
 function CombatPunch({ event, reducedMotion }: { event?: AnimationEvent; reducedMotion: boolean }) {
   const start = useRef<{ at: number; durationMs: number } | null>(null)
   useEffect(() => {
-    if (event?.type === 'attack') start.current = { at: performance.now(), durationMs: Math.max(200, event.durationMs) }
+    // También la entrada de una mítica: llega con un rayo y la cámara se acerca.
+    const mythicArrival = event?.type === 'summon' && event.cardId && CARD_BY_ID[event.cardId]?.rarity === 'mythic'
+    if (event?.type === 'attack' || mythicArrival) start.current = { at: performance.now(), durationMs: Math.max(200, event!.durationMs) }
   }, [event])
   useFrame(({ camera }) => {
     if (!(camera instanceof ThreePerspectiveCamera)) return
@@ -1476,6 +1478,51 @@ function CombatPunch({ event, reducedMotion }: { event?: AnimationEvent; reduced
     camera.zoom = 1 + COMBAT_PUNCH * shape
     camera.updateProjectionMatrix()
   }, -0.55)
+  return null
+}
+
+/**
+ * Cámara que acompaña la acción: en cada jugada importante el encuadre se
+ * desliza un poco hacia donde ocurre y vuelve. Usa `setViewOffset` (desplaza
+ * el recorte de la imagen) en vez de mover la cámara, para no pelear con los
+ * controles de órbita ni con el encuadre que elige el jugador.
+ */
+const ACTION_PAN = 0.11
+function ActionCamera({ event, reducedMotion }: { event?: AnimationEvent; reducedMotion: boolean }) {
+  const run = useRef<{ at: number; durationMs: number; point: Vector3 } | null>(null)
+  const offset = useRef(new Vector2())
+  const projected = useMemo(() => new Vector3(), [])
+  useEffect(() => {
+    if (!event?.to) return
+    const important = event.type === 'attack' || event.type === 'destroy' || event.type === 'summon' || Boolean(event.cast)
+    if (!important) return
+    run.current = { at: performance.now(), durationMs: Math.max(600, event.durationMs * 1.6), point: new Vector3(boardX(event.to.x), 0.4, boardZ(event.to.y)) }
+  }, [event])
+  useFrame(({ camera, size }, delta) => {
+    if (!(camera instanceof ThreePerspectiveCamera)) return
+    const active = run.current
+    let wantX = 0
+    let wantY = 0
+    if (active && !reducedMotion) {
+      const progress = (performance.now() - active.at) / active.durationMs
+      if (progress >= 1) run.current = null
+      else {
+        // Va hacia la acción y vuelve: pico en el primer tercio.
+        const shape = progress < 0.3 ? progress / 0.3 : 1 - (progress - 0.3) / 0.7
+        projected.copy(active.point).project(camera)
+        wantX = projected.x * size.width * 0.5 * ACTION_PAN * shape
+        wantY = -projected.y * size.height * 0.5 * ACTION_PAN * shape
+      }
+    }
+    const current = offset.current
+    current.x = MathUtils.damp(current.x, wantX, 5, delta)
+    current.y = MathUtils.damp(current.y, wantY, 5, delta)
+    if (Math.abs(current.x) < 0.2 && Math.abs(current.y) < 0.2 && !run.current) {
+      if (camera.view?.enabled) camera.clearViewOffset()
+      return
+    }
+    camera.setViewOffset(size.width, size.height, current.x, current.y, size.width, size.height)
+  }, -0.5)
   return null
 }
 
@@ -1757,6 +1804,7 @@ function Scene(props: Board3DProps) {
       </group>
       <CameraRig event={props.activeEvent} reducedMotion={props.reducedMotion} />
       <CombatPunch event={props.activeEvent} reducedMotion={props.reducedMotion} />
+      <ActionCamera event={props.activeEvent} reducedMotion={props.reducedMotion} />
       <ResponsiveCamera />
       <NexusFocus event={props.activeEvent} localPlayerId={props.localPlayerId} reducedMotion={props.reducedMotion} photoMode={props.photoMode} />
       {props.onCellHover && (

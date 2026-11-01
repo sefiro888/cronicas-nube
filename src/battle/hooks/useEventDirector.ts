@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import type { AnimationEvent, PlayerId } from '../../game'
+import { CARD_BY_ID, type AnimationEvent, type PlayerId } from '../../game'
+import { attackKindFor } from '../attackStyle'
+import { REPLAY_MARK } from '../../store/match'
 import { playSynthCue, type SoundCue } from '../../services/audio'
 import { useMatchStore } from '../../store/match'
 import type { PreferencesState } from '../../store/preferences'
@@ -16,7 +18,12 @@ const cueForEvent = (event: AnimationEvent, me: PlayerId): SoundCue | undefined 
     case 'summon': return 'summon'
     case 'spell': return 'spell'
     case 'move': return 'move'
-    case 'attack': return 'attack'
+    case 'attack': {
+      // Cada tipo de criatura suena a su manera (acero, zarpa, pólvora...).
+      const card = event.cardId ? CARD_BY_ID[event.cardId] : undefined
+      const kind = attackKindFor(card, (card?.range ?? 1) <= 1)
+      return kind === 'orb' ? 'attack' : kind === 'barbs' ? 'attack-claw' : `attack-${kind}`
+    }
     case 'damage': return 'impact'
     case 'nexus-damage': return 'impact'
     case 'shield': return 'shield'
@@ -246,7 +253,8 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
       } else {
         setExchange((open) => (open ? foldExchange(open, currentEvent) : open))
       }
-      const play = recentPlayFor(currentEvent, state.match?.board ?? [])
+      // Una jugada repetida no vuelve a entrar en el historial.
+      const play = currentEvent.id.includes(REPLAY_MARK) ? undefined : recentPlayFor(currentEvent, state.match?.board ?? [])
       if (play) setRecentPlays((list) => pushRecentPlay(list, play))
       const amount = currentEvent.amount ?? 0
       if (currentEvent.type === 'destroy' || currentEvent.type === 'nexus-damage' || (currentEvent.type === 'damage' && amount > 0)) {

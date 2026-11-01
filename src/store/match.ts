@@ -119,6 +119,13 @@ interface MatchStore {
    */
   castImpacts: Readonly<Record<string, CastImpact>>
   /**
+   * Eventos de la última jugada que mereció la pena ver (un ataque, una carta
+   * o un poder), para el botón «Repetir jugada». No se guarda en disco.
+   */
+  lastPlay?: readonly AnimationEvent[]
+  /** Vuelve a reproducir la última jugada. Solo presentación: el estado no cambia. */
+  replayLastPlay: () => void
+  /**
    * Arranca una escaramuza contra la IA. `opponentDeckId` fija el rival; sin
    * él lo elige la semilla, como siempre. `setup` permite entrar con la Vida
    * ya mermada, que es como encadena combates la Torre del Nexo.
@@ -243,7 +250,25 @@ const initialState = {
   pendingAnimations: [] as readonly AnimationEvent[],
   currentEvent: undefined as AnimationEvent | undefined,
   castImpacts: {} as Readonly<Record<string, CastImpact>>,
+  lastPlay: undefined as readonly AnimationEvent[] | undefined,
 }
+
+/** Sufijo de los eventos repetidos: la presentación los reconoce por él. */
+export const REPLAY_MARK = '-repetida-'
+
+/**
+ * Lo que se repite de una acción: desde el primer ataque o carta lanzada,
+ * sin el cambio de turno, los robos ni la victoria (repetir la victoria
+ * volvería a derrumbar el Nexo y a abrir la pantalla final).
+ */
+const replayable = (events: readonly AnimationEvent[]): readonly AnimationEvent[] | undefined => {
+  const start = events.findIndex((event) => event.type === 'attack' || event.cast)
+  if (start < 0) return undefined
+  const kept = events.slice(start).filter((event) => event.type !== 'turn' && event.type !== 'draw' && event.type !== 'victory' && event.type !== 'resource' && event.type !== 'mana-flow')
+  return kept.length > 0 ? kept : undefined
+}
+
+let replayCount = 0
 
 /** Cuántos resultados de cartas se guardan: solo hacen falta los que aún esperan en la cola. */
 const CAST_IMPACT_LIMIT = 12
@@ -390,6 +415,7 @@ export const useMatchStore = create<MatchStore>()(
         : current.bestPlay,
       pendingAnimations: [...current.pendingAnimations, ...events],
       castImpacts: withCastImpact(current.castImpacts, match, cleaned, events),
+      lastPlay: replayable(events) ?? current.lastPlay,
       elapsedSeconds: cleaned.winner ? Math.max(1, Math.round((Date.now() - current.startedAtMs) / 1000)) : current.elapsedSeconds,
     }))
     return true
@@ -407,6 +433,23 @@ export const useMatchStore = create<MatchStore>()(
       matchLog: message ? [...current.matchLog, { turn: cleaned.turn, type: 'info' as const, ok: true, note: message }] : current.matchLog,
       pendingAnimations: [...current.pendingAnimations, ...events],
       elapsedSeconds: cleaned.winner ? Math.max(1, Math.round((Date.now() - current.startedAtMs) / 1000)) : current.elapsedSeconds,
+    }))
+  },
+  replayLastPlay: () => {
+    const play = get().lastPlay
+    if (!play || get().pendingAnimations.length > 0 || get().currentEvent) return
+    replayCount += 1
+    const suffix = `${REPLAY_MARK}${replayCount}`
+    // A cámara lenta: cada evento dura un 60 % más que la primera vez.
+    const copies = play.map((event) => ({ ...event, id: `${event.id}${suffix}`, durationMs: Math.round(event.durationMs * 1.6) }))
+    set((current) => ({
+      pendingAnimations: copies,
+      // El resultado de la carta se copia con el id nuevo para que el panel
+      // «Qué hace» y las marcas del tablero también se repitan.
+      castImpacts: Object.fromEntries([
+        ...Object.entries(current.castImpacts),
+        ...play.filter((event) => current.castImpacts[event.id]).map((event) => [`${event.id}${suffix}`, current.castImpacts[event.id]!] as const),
+      ].slice(-CAST_IMPACT_LIMIT)),
     }))
   },
   advanceEvent: () =>
