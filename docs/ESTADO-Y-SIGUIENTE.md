@@ -2,11 +2,31 @@
 
 ## Portada, navegación y Torre — 1 de noviembre de 2026 (Codex)
 
+**PUBLICADO Y COMPROBADO EN LA WEB.** Implementación en `5817113` y nota de
+publicación en `c482c72`, ambos subidos a `origin/main`. El flujo
+[41294375177](https://github.com/sefiro888/magicfable/actions/runs/41294375177)
+terminó con compilación y despliegue correctos. Se abrieron la portada pública
+y la Torre desde su navegación y se comprobó que aparece el arte nuevo.
+No queda pendiente subir este rediseño ni repetir pruebas por esa publicación.
+
+**Punto de retoma:** el propietario va a probar el resultado. Esperar sus
+observaciones para el siguiente cambio; esta entrega no cierra las 39 tareas
+parciales de renovación visual de batalla ni autoriza a cambiar el equilibrio.
+El arreglo móvil del duelo también está publicado; no volver a tratarlo como
+un commit local pendiente.
+
+**Continuidad entre Claude y Codex:** ambos usan este registro y `AGENTS.md`.
+`CLAUDE.md` remite a estos mismos documentos. Al cerrar un bloque, anotar aquí
+fecha, cambios, decisiones, pruebas, publicación y siguiente paso, conservando
+el historial del otro agente. Un clon incluye el código y los WebP; los maestros
+PNG y capturas requieren la copia local y no se deben dar por perdidos ni
+regenerar sin comprobar antes sus carpetas.
+
 Nueva petición del propietario: rediseño conjunto inspirado en sus capturas
 de pruebas de otra carpeta, con dirección artística propia y todas las
 facciones presentes. Implementación en el proyecto principal, guardada en
-`5817113`. El propietario solicita después publicar todo para probarlo en
-la web; esta actualización documental acompaña esa publicación. No se ha
+`5817113`. El propietario solicitó después publicar todo para probarlo en
+la web; la publicación quedó cerrada como se indica arriba. No se ha
 modificado `Cronicasargon`. Los maestros privados siguen ignorados: se suben
 los doce WebP optimizados necesarios para las seis escenas.
 

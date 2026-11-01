@@ -14,8 +14,10 @@ trabajo local y diseños pendientes: tener un dosier no significa ser jugable.
 **Rediseño del 1 de noviembre:** portada y navegación renovadas, atlas
 ilustrado con las 19 facciones y Torre del Nexo con escena de conquista,
 selección de expedición y bendiciones ilustradas. Se han creado seis escenas
-originales y se conserva el funcionamiento del juego. El propietario ha
-solicitado publicar esta entrega completa para probarla en la web. Véanse el
+originales y se conserva el funcionamiento del juego. **La entrega está
+publicada y comprobada en la web**, con compilación y despliegue correctos en
+[GitHub Actions](https://github.com/sefiro888/magicfable/actions/runs/41294375177).
+Véanse el
 [registro actual de continuidad](docs/ESTADO-Y-SIGUIENTE.md) y el
 [inventario de escenas y prompts](docs/INTERFAZ-MUNDOS-2026-11-01.md).
 Las referencias a pausa, prototipos sin publicar y última entrega del

@@ -59,6 +59,11 @@ quedan comprobadas y 43 sondas opcionales permanecen omitidas. Capturas en
 `tools/captures/interface-2026-11/` a 1920 × 1080, 1366 × 768 y 390 × 844.
 El arte nuevo se incluye en la caché bajo demanda de la PWA.
 
+Publicación completada en `main`: implementación `5817113`, nota de entrega
+`c482c72`. [Compilación y despliegue correctos](https://github.com/sefiro888/magicfable/actions/runs/41294375177).
+Se comprobaron la portada y la Torre en la web pública. El propietario va a
+probar el resultado; no hay una publicación del rediseño pendiente.
+
 ## Prompts completos
 
 ### nexo-convergencia-v1
