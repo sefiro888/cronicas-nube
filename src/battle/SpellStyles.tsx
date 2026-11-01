@@ -98,6 +98,45 @@ export function Fireball({ from, targets, tone, durationMs }: SpellProps) {
   )
 }
 
+/**
+ * Aviso de zona: antes de que caiga un hechizo de área, cada casilla que va
+ * a golpear se ilumina con un círculo de runas que late y se cierra hasta el
+ * impacto. Así se ve DÓNDE va a caer antes de que caiga.
+ */
+export function TargetZone({ targets, tone, durationMs, until = 0.42 }: { targets: readonly (readonly [number, number])[]; tone: string; durationMs: number; until?: number }) {
+  const clock = useClock(durationMs)
+  const group = useRef<Group>(null)
+  useFrame(() => {
+    const t = clock()
+    const k = phase(t, 0, until)
+    group.current?.children.forEach((child, index) => {
+      const pulse = 0.5 + 0.5 * Math.sin(t * 40 + index)
+      child.visible = t < until + 0.06
+      const [fill, ring] = child.children as [Mesh, Mesh]
+      ;(fill.material as MeshBasicMaterial).opacity = (0.18 + pulse * 0.2) * (t > until ? 1 - (t - until) / 0.06 : 1)
+      // El anillo se cierra sobre la casilla: el impacto llega cuando toca el centro.
+      ring.scale.setScalar(1.6 - k * 1.1)
+      ;(ring.material as MeshBasicMaterial).opacity = 0.4 + k * 0.5
+    })
+  })
+  return (
+    <group ref={group}>
+      {targets.map((target, index) => (
+        <group key={index} position={[target[0], 0.19, target[1]]} rotation={[-Math.PI / 2, 0, 0]}>
+          <mesh>
+            <planeGeometry args={[0.94, 0.94]} />
+            <meshBasicMaterial color={tone} transparent opacity={0} blending={AdditiveBlending} depthWrite={false} side={DoubleSide} />
+          </mesh>
+          <mesh>
+            <ringGeometry args={[0.36, 0.44, 6]} />
+            <meshBasicMaterial color="#ffffff" transparent opacity={0} blending={AdditiveBlending} depthWrite={false} side={DoubleSide} />
+          </mesh>
+        </group>
+      ))}
+    </group>
+  )
+}
+
 /** Tormenta: del cielo cae un meteoro (o rayo) sobre cada objetivo, escalonados. */
 export function Storm({ from, targets, tone, durationMs }: SpellProps) {
   const clock = useClock(durationMs)
@@ -107,15 +146,16 @@ export function Storm({ from, targets, tone, durationMs }: SpellProps) {
   useFrame(() => {
     const t = clock()
     group.current?.children.forEach((child, index) => {
-      const start = 0.1 + (index / Math.max(1, points.length)) * 0.45
-      const k = phase(t, start, start + 0.28)
+      // Los meteoros esperan a que el aviso de zona se haya cerrado.
+      const start = 0.3 + (index / Math.max(1, points.length)) * 0.3
+      const k = phase(t, start, start + 0.18)
       child.visible = k > 0 && k < 1
       const target = points[index]!
       child.position.set(target[0] + (1 - k) * 1.2, 0.4 + (1 - k) * 7, target[1] - (1 - k) * 0.8)
     })
     rings.current?.children.forEach((child, index) => {
-      const start = 0.1 + (index / Math.max(1, points.length)) * 0.45 + 0.28
-      const k = phase(t, start, start + 0.25)
+      const start = 0.3 + (index / Math.max(1, points.length)) * 0.3 + 0.18
+      const k = phase(t, start, start + 0.22)
       child.visible = k > 0 && k < 1
       child.scale.setScalar(0.3 + k * 1.8)
       ;((child as Mesh).material as MeshBasicMaterial).opacity = (1 - k) * 0.85
@@ -123,6 +163,7 @@ export function Storm({ from, targets, tone, durationMs }: SpellProps) {
   })
   return (
     <>
+      <TargetZone targets={points} tone="#ff3a1f" durationMs={durationMs} until={0.36} />
       <group ref={group}>
         {points.map((_, index) => (
           <group key={index} visible={false}>
@@ -245,6 +286,7 @@ export function FrostWave({ from, targets, durationMs }: SpellProps) {
   })
   return (
     <>
+      {points.length > 1 && <TargetZone targets={points} tone="#7fd8ff" durationMs={durationMs} until={0.32} />}
       <mesh ref={wave} position={[from[0], 0.2, from[1]]} rotation={[-Math.PI / 2, 0, 0]} visible={false}>
         <ringGeometry args={[0.4, 0.55, 64]} />
         <meshBasicMaterial color="#bff0ff" transparent opacity={0} blending={AdditiveBlending} depthWrite={false} side={DoubleSide} />
