@@ -537,3 +537,81 @@
   .gallery .rules { -webkit-line-clamp: 4; }
   .gallery .flavor { display: none; }
 }
+
+/* ── Cartas vivas ──────────────────────────────────────────────────────────
+   La ilustración de las raras y míticas respira (zoom y paneo lentos) y la
+   cruza un destello de luz de vez en cuando; la mítica, además, deja subir
+   motas doradas. Se animan `scale` y `translate`, no `transform`, para que
+   se sumen al zoom que ya hace el cursor al pasar por encima. */
+.card[data-rarity='rare'] .artImage,
+.card[data-rarity='mythic'] .artImage { animation: artBreath 9s ease-in-out infinite alternate; }
+.card[data-rarity='mythic'] .artImage { animation-duration: 7s; }
+.card[data-rarity='rare'] .artwork::before,
+.card[data-rarity='mythic'] .artwork::before {
+  content: '';
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(115deg, transparent 38%, rgba(255, 250, 230, 0.32) 48%, transparent 58%);
+  background-size: 260% 100%;
+  animation: artGlint 6.5s ease-in-out infinite;
+}
+.card[data-rarity='mythic'] .artwork::before {
+  background:
+    radial-gradient(2px 2px at 20% 80%, rgba(255, 230, 150, 0.95), transparent),
+    radial-gradient(2px 2px at 62% 90%, rgba(255, 230, 150, 0.9), transparent),
+    radial-gradient(1.5px 1.5px at 80% 70%, rgba(255, 240, 190, 0.9), transparent),
+    radial-gradient(1.5px 1.5px at 38% 95%, rgba(255, 240, 190, 0.85), transparent),
+    linear-gradient(115deg, transparent 38%, rgba(255, 240, 210, 0.38) 48%, transparent 58%);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 260% 100%;
+  animation: artGlint 5s ease-in-out infinite, motesRise 4s linear infinite;
+}
+
+/* ── Holográfico ampliado ──────────────────────────────────────────────────
+   Bandas tornasoladas que se desplazan con el cursor (--foil-x/y) además del
+   brillo que ya había; la poco común estrena un reflejo tenue y la mítica
+   brilla un poco incluso sin cursor. */
+.foil::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: repeating-linear-gradient(
+    calc(110deg + (var(--foil-x, 50%) - 50%) * 0.4),
+    rgba(255, 120, 140, 0.0) 0 6%, rgba(255, 220, 120, 0.35) 9%, rgba(120, 255, 200, 0.35) 12%,
+    rgba(120, 190, 255, 0.35) 15%, rgba(200, 130, 255, 0.0) 19%);
+  background-size: 200% 200%;
+  background-position: var(--foil-x, 50%) var(--foil-y, 50%);
+  mix-blend-mode: color-dodge;
+}
+.card[data-rarity='uncommon'] .foil { display: block; }
+.card[data-rarity='uncommon']:hover .foil,
+.card[data-rarity='uncommon']:focus-visible .foil { opacity: 0.18; }
+.card[data-rarity='mythic'] .foil { animation: foilIdle 4.5s ease-in-out infinite alternate; }
+
+@keyframes artBreath {
+  from { scale: 1; translate: 0 0; }
+  to { scale: 1.045; translate: -1.5% -1%; }
+}
+@keyframes artGlint {
+  0%, 62% { background-position: 130% 0; }
+  100% { background-position: -30% 0; }
+}
+@keyframes motesRise {
+  from { background-position: 0 0, 0 0, 0 0, 0 0, 130% 0; }
+  to { background-position: 0 -110%, 0 -120%, 0 -100%, 0 -130%, -30% 0; }
+}
+@keyframes foilIdle {
+  from { --foil-x: 30%; --foil-y: 30%; }
+  to { --foil-x: 70%; --foil-y: 70%; }
+}
+@property --foil-x { syntax: '<percentage>'; inherits: true; initial-value: 50%; }
+@property --foil-y { syntax: '<percentage>'; inherits: true; initial-value: 50%; }
+
+.card[data-reduced-motion] .artImage,
+.card[data-reduced-motion] .artwork::before,
+.card[data-reduced-motion] .foil { animation: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  .card .artImage, .card .artwork::before, .card .foil { animation: none !important; }
+}

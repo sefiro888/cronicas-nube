@@ -16,8 +16,9 @@ import { ArrowVolley, BarbVolley, ClawStrike, CrushStrike, DragonBreath, GunShot
 import { attackKindFor, attackWeight } from './attackStyle'
 import { DeathFlourish, HitSpill } from './CreatureReactions'
 import { StepRipple } from './BattleSkies'
-import { ImpactDebris, materialOf } from './ImpactDebris'
+import { RarityArrival } from './RarityArrival'
 import { ARRIVAL_LANDING } from './arrivalMotion'
+import { ImpactDebris, materialOf } from './ImpactDebris'
 
 /** Color y textura de brillo por facción — a juego con `accentColor` en `factions.ts`. */
 const FACTION_TONE: Readonly<Record<FactionId, { readonly color: string; readonly glow: GlowTint }>> = {
@@ -408,7 +409,10 @@ export function EventEffects({ event, reducedMotion }: EventEffectsProps) {
       return event.to ? (
         <>
           <SummonRitual cell={event.to} tone={tone} timing={timing} faction={event.faction} />
-          <LandingShock cell={event.to} tone={tone} timing={timing} heavy={Boolean(event.cast)} />
+          <LandingShock cell={event.to} tone={tone} timing={timing} heavy={Boolean(event.cast) || card?.rarity === 'mythic'} />
+          {card && !reducedMotion && (
+            <RarityArrival at={[boardX(event.to.x), boardZ(event.to.y)]} rarity={card.rarity} tone={tone} durationMs={event.durationMs} landing={ARRIVAL_LANDING} />
+          )}
         </>
       ) : null
     case 'attack': {

@@ -152,7 +152,7 @@ export function CastSpotlight({ spotlight, me, reducedMotion, onDismiss }: CastS
                 ))}
               </span>
             )}
-            <Card card={spotlight.card} size="inspect" reducedMotion />
+            <Card card={spotlight.card} size="inspect" reducedMotion={reducedMotion} />
             <span className={styles.sheen} />
           </div>
 

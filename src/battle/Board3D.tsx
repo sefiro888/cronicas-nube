@@ -712,6 +712,8 @@ const BoardCard = memo(function BoardCard({ piece, runo, formationBonus, selecte
   const infected = piece.statuses.some((status) => status.kind === 'infected')
   const shielded = piece.statuses.reduce((total, status) => total + (status.kind === 'shielded' ? status.amount : 0), 0)
   const spent = active && piece.attackedThisTurn
+  const flyer = Boolean(card?.keywords.includes('flying') || piece.grantedKeywords?.includes('flying'))
+  const idlePhase = useMemo(() => [...piece.instanceId].reduce((sum, char) => sum + char.charCodeAt(0), 0) % 628 / 100, [piece.instanceId])
   useFrame(({ clock, camera }, delta) => {
     const node = group.current
     if (!node) return
@@ -759,7 +761,13 @@ const BoardCard = memo(function BoardCard({ piece, runo, formationBonus, selecte
     } else {
       node.position.x = MathUtils.damp(node.position.x, target.x, speed, delta)
       node.position.z = MathUtils.damp(node.position.z, target.z, speed, delta)
-      node.position.y = MathUtils.damp(node.position.y, lift, speed, delta)
+      // Reposo vivo: las voladoras flotan más altas y se mecen; el resto
+      // respira apenas. El desfase por ficha evita que todo el tablero suba
+      // y baje a la vez como un único bloque.
+      const idle = flyer
+        ? 0.09 + Math.sin(clock.elapsedTime * 1.7 + idlePhase) * 0.05
+        : Math.sin(clock.elapsedTime * 1.1 + idlePhase) * 0.012
+      node.position.y = MathUtils.damp(node.position.y, lift + idle, speed, delta)
     }
     const turnAngle = selected ? (piece.owner === 'player' ? -0.08 : 0.08) : 0
     node.rotation.y = reducedMotion ? turnAngle : MathUtils.damp(node.rotation.y, turnAngle, speed, delta)
@@ -868,6 +876,12 @@ const BoardCard = memo(function BoardCard({ piece, runo, formationBonus, selecte
     >
       <group ref={strike}>
       <group ref={arrivalGroup}>
+      {/* Aura de rareza en reposo: la rara suelta alguna mota; la mítica, un
+          enjambre dorado. Así una mítica se reconoce en el tablero de lejos. */}
+      {card && !reducedMotion && (card.rarity === 'mythic' || card.rarity === 'rare') && (
+        <Sparkles count={card.rarity === 'mythic' ? 14 : 5} scale={[0.9, 1.1, 0.5]} position={[0, 0.55, 0]} size={card.rarity === 'mythic' ? 3.2 : 2.2}
+          speed={0.35} opacity={0.8} color={card.rarity === 'mythic' ? '#ffd76a' : '#9fd0ff'} />
+      )}
       <group ref={facing}>
       {/* Standee: frame + arte, inclinados (prueba) en vez de tumbados del todo.
           Se eleva CARD_STAND_RISE para que, al girar desde su centro, el borde
