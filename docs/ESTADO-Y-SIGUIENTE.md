@@ -1,5 +1,44 @@
 # Estado del proyecto y por dónde seguir
 
+## Once mejoras de claridad y facciones — 1 de noviembre de 2026, noche (Claude Code, nube)
+
+**Misma rama y PR** (`claude/sweet-clarke-76ugku`, vista previa en
+https://sefiro888.github.io/cronicas-nube/). El propietario eligió y pidió
+hacerlas «punto por punto de manera impresionante». Todo es presentación.
+
+1. **Previsión al apuntar** (`attackPieceVerdicts` en `battleHints.ts`):
+   sello en cada ficha («Muere», «Sobrevive con N», «Devuelve N», «Muere en
+   el contragolpe», «+N al Nexo», «¡Golpe letal!»).
+2. y 3. **Flechas de amenaza y mapa de peligro** (`threats.ts`,
+   `ThreatOverlay.tsx`): estado hipotético en el que le toca al dueño y se
+   pregunta al motor; el mapa sale al decidir dónde mover o desplegar.
+4. **Habilidades que hablan** (`TraitFlourish.tsx`): lanza de Perforar,
+   corazón de Vínculo vital, estrellas de Aturdir, muro de Guardia, placas
+   de Escudo; se disparan desde el duelo.
+5. **Reacción en cadena** (director, `CHAIN_EFFECT`): «×N» con cada muerte
+   que llega detrás de un daño de explosión.
+6. **Animación por hechizo** (`spellStyle.ts`, `SpellStyles.tsx`): bola de
+   fuego, rayo, tormenta, curación, robo, escarcha, bendición, juicio y
+   empuje; el lanzamiento dura ×1,8 (`SPELL_CAST_STRETCH`).
+7. **Zona marcada** (`TargetZone`) antes de los hechizos de área.
+8. **Respuesta**: en las reglas NO hay contrahechizos (comprobado); se
+   rotulan las reacciones que sí existen: Escudo, Petardazo y silencio.
+9. **Firma por facción** (`FactionSignature.tsx`) al invocar, golpear y morir.
+10. **Marco del tablero** (`FactionFrame.tsx`): bordes, estandartes y
+    costura con el color de cada facción.
+11. **Frases de comandantes** (`commanderQuotes.ts`, `CommanderQuote.tsx`):
+    textos originales por facción al usar el poder, al recibir 3+ en el
+    Nexo y al ganar.
+
+**Pruebas:** 742 unitarias correctas (5 omitidas), lint y build correctos;
+prueba de humo en navegador sin errores de consola. Se rebajó la columna de
+luz del Nexo en reposo porque la del propio cruzaba el tablero.
+
+**Pendiente:** que el propietario lo pruebe con GPU y diga qué ajustar.
+Si quiere contrahechizos de verdad, es un cambio de reglas: pedir permiso.
+
+---
+
 ## Batería de mejoras visuales — 1 de noviembre de 2026, tarde (Claude Code, nube)
 
 **Misma rama y PR que la nota siguiente** (`sefiro888/cronicas-nube`, rama

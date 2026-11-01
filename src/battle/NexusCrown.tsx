@@ -96,7 +96,9 @@ export function NexusCrown({ color, damage, hitAt, collapsing, reducedMotion }: 
       const material = column.current.material as MeshBasicMaterial
       material.color.copy(tint)
       const burst = fall > 0.3 ? Math.sin(Math.PI * Math.min(1, (fall - 0.3) / 0.7)) : 0
-      material.opacity = fall > 0 ? burst * 0.85 : 0.06 + (1 - damage) * 0.08 + hit * 0.2
+      // En reposo, casi invisible: la columna del Nexo propio, el más cercano a la
+      // cámara, cruzaba el centro del tablero como una franja.
+      material.opacity = fall > 0 ? burst * 0.85 : 0.025 + (1 - damage) * 0.03 + hit * 0.22
       column.current.scale.set(1 + burst * 2.2, 1 + burst * 0.6, 1 + burst * 2.2)
     }
     if (light.current) {
