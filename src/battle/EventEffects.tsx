@@ -15,6 +15,7 @@ import { AttackTrail } from './AttackTrail'
 import { ArrowVolley, BarbVolley, ClawStrike, CrushStrike, DragonBreath, GunShot, LightningBolt, SlashStrike, SpectralStrike } from './AttackStyles'
 import { attackKindFor, attackWeight } from './attackStyle'
 import { DeathFlourish, HitSpill } from './CreatureReactions'
+import { StepRipple } from './BattleSkies'
 import { ImpactDebris, materialOf } from './ImpactDebris'
 import { ARRIVAL_LANDING } from './arrivalMotion'
 
@@ -453,6 +454,11 @@ export function EventEffects({ event, reducedMotion }: EventEffectsProps) {
         {!reducedMotion && <HitSpill at={[boardX(event.to.x), boardZ(event.to.y)]} cardId={event.targetCardId} durationMs={event.durationMs} amount={event.amount ?? 1} />}
         </>
       ) : null
+    case 'move':
+      // Casillas vivas: al pisar la losa se levanta un anillo de polvo.
+      return event.to && !reducedMotion
+        ? <StepRipple at={[boardX(event.to.x), boardZ(event.to.y)]} tone={tone} durationMs={event.durationMs} />
+        : null
     case 'shield':
       return event.to ? (
         <ImpactBurst cell={[boardX(event.to.x), boardZ(event.to.y)]} tone="#a8ecff" timing={timing} />

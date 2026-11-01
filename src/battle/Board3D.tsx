@@ -46,6 +46,7 @@ import { CardFrameTrim, CardPlinth, CardSurfaceWear, CardWard } from './CardFini
 import { RitualSeal } from './RitualSeal'
 import { NexusFractures } from './NexusFractures'
 import { NexusCrown } from './NexusCrown'
+import { BattleSkies } from './BattleSkies'
 import { MaterialEnvironment } from './MaterialEnvironment'
 import { arrivalMotion } from './arrivalMotion'
 import { FACTION_BY_ID } from '../game/factions'
@@ -1631,6 +1632,9 @@ function Scene(props: Board3DProps) {
         )}
       </Suspense>
       </group>
+      {/* Clima, luz de tensión, criaturas lejanas y cicatrices: dentro del
+          proveedor de clima porque leen su tensión. */}
+      <BattleSkies style={terrainStyle} quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} turn={props.state.turn} />
       </BattleClimateProvider>
       <group name="battle-view" rotation={[0, props.localPlayerId === 'ai' ? Math.PI : 0, 0]}>
       <BoardRim style={terrainStyle} />
