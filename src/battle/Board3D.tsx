@@ -50,6 +50,7 @@ import { BattleSkies } from './BattleSkies'
 import type { PreviewVerdict } from './ui/battleHints'
 import { DangerHeat, ThreatArrows, type ThreatFocus } from './ThreatOverlay'
 import { TraitFlourishes, type TraitFx } from './TraitFlourish'
+import { FactionFrame } from './FactionFrame'
 import { MaterialEnvironment } from './MaterialEnvironment'
 import { arrivalMotion } from './arrivalMotion'
 import { FACTION_BY_ID } from '../game/factions'
@@ -1760,6 +1761,13 @@ function Scene(props: Board3DProps) {
       })}
       {props.cursorCell && <CursorMarker position={props.cursorCell} reducedMotion={props.reducedMotion} hazard={props.movementHazards?.get(cellKey(props.cursorCell))} />}
       <Midline terrainStyle={terrainStyle} />
+      <FactionFrame
+        factions={{
+          player: COMMANDER_BY_ID[props.state.players.player.commanderId]?.faction,
+          ai: COMMANDER_BY_ID[props.state.players.ai.commanderId]?.faction,
+        }}
+        reducedMotion={props.reducedMotion}
+      />
       <BoardAtmosphere terrainStyle={terrainStyle} quality={props.quality} reducedMotion={props.reducedMotion} />
       {/* Y encima, lo que se mueve con dirección: la brasa sube, la nieve cae
           de lado, la hoja baja dando tumbos. `BoardAtmosphere` solo titila en
