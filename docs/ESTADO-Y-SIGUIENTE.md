@@ -1,5 +1,55 @@
 # Estado del proyecto y por dónde seguir
 
+## Batería de mejoras visuales — 1 de noviembre de 2026, tarde (Claude Code, nube)
+
+**Misma rama y PR que la nota siguiente** (`sefiro888/cronicas-nube`, rama
+`claude/sweet-clarke-76ugku`). El propietario hizo público el repositorio y
+activó GitHub Pages: cada push a una rama `claude/**` se publica en
+https://sefiro888.github.io/cronicas-nube/ (`.github/workflows/vista-previa.yml`,
+rama `gh-pages`). No es el juego oficial ni toca `magicfable`.
+
+**Decisiones del propietario:** quiere todo el texto en español, también los
+mensajes de trabajo. Pidió hacer TODAS las mejoras de la batería salvo la 19
+(figuras 3D en lugar de fichas). No se cambia el equilibrio.
+
+- **Ataques distintos** (`attackStyle.ts`, `AttackStyles.tsx`): tajos,
+  zarpazos, mazazo, espíritus, flechas, disparo, rayo, aliento de dragón y
+  púas según tipo, alcance, facción y fuerza de la carta.
+- **Nexo**: monolito de cristal en el duelo (`CombatDuel`) y corona 3D
+  (`NexusCrown.tsx`): cristal flotante, satélites, columna de luz, cúpula de
+  escudo, desgaste (humo, esquirlas, satélites que caen), fase de peligro
+  con un cuarto de Vida (también viñeta roja en pantalla) e implosión al caer.
+- **Combate**: golpe final a cámara lenta (`isFinisher` mira la cola ya
+  resuelta), contraataque, combos, reacción por criatura y muertes propias
+  (`creatureFx.ts`, `CreatureReactions.tsx`), números de daño por tipo y
+  crítico desde 5.
+- **Escenario** (`BattleSkies.tsx`): clima por escenario que arrecia con la
+  tensión y reacciona a golpes, luz de tensión, cicatrices que duran cuatro
+  turnos, polvo al pisar, aves o dragones lejanos que se espantan.
+- **Cartas**: ilustración viva en raras y míticas, holográfico ampliado,
+  reposo vivo de las fichas, aura de rareza e invocación por rareza
+  (`RarityArrival.tsx`). El evento `summon` lleva ahora `cardId` (solo
+  presentación; las 490 pruebas del motor siguen correctas).
+- **Interfaz**: cámara que acompaña con `setViewOffset`, capa de tensión en
+  la música (`setBattleTension`), un sonido por tipo de ataque, barrido del
+  comandante en el cambio de turno, vitrina de la mejor jugada y «Ver el
+  golpe decisivo», botón «↺ Repetir jugada» (eventos copiados con el sufijo
+  `REPLAY_MARK`, a cámara lenta y sin tocar el estado) y presentación cara a
+  cara al empezar (`BattleIntro`).
+
+**Pruebas:** 734 unitarias correctas (5 omitidas), `lint` y `build`
+correctos en cada bloque. Prueba de humo en navegador: la batalla carga sin
+errores de consola y se ven las coronas del Nexo. La batería e2e completa
+dio 101 correctas y 7 fallos que **también fallan en `main`** sin estos
+cambios (máquina de la nube sin GPU: animaciones 3D que no acaban a tiempo).
+
+**Pendiente:** que el propietario lo pruebe en la web de vista previa con un
+equipo con GPU, sobre todo el rendimiento del clima y la corona en calidad
+alta; ajustar intensidades según lo que diga. La presentación cara a cara
+dura 3,6 s y se puede saltar.
+
+---
+
 ## Espectáculo de batalla — 1 de noviembre de 2026 (Claude Code, nube)
 
 **Hecho en el repositorio de pruebas `sefiro888/cronicas-nube`, rama
