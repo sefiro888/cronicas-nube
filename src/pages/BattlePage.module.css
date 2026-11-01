@@ -993,3 +993,33 @@
 .dangerVignette[data-reduced-motion] { animation: none; opacity: 0.6; }
 @keyframes dangerPulse { from { opacity: 0.35; } to { opacity: 0.85; } }
 @media (prefers-reduced-motion: reduce) { .dangerVignette { animation: none; opacity: 0.6; } }
+
+/* Reacción en cadena: rótulo que estalla y crece con cada muerte encadenada. */
+.chain {
+  position: absolute;
+  z-index: 46;
+  top: 26%;
+  left: 50%;
+  display: grid;
+  justify-items: center;
+  color: #ffe0a0;
+  font: 800 clamp(14px, 1.4vw, 19px) var(--display);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  text-shadow: 0 0 16px #ff7a1f, 0 3px 6px #000;
+  transform: translateX(-50%);
+  pointer-events: none;
+  animation: chainPop 2200ms cubic-bezier(.2, 1.4, .4, 1) both;
+}
+.chain strong { color: #fff; font-size: clamp(38px, 4.4vw, 64px); letter-spacing: 0.02em; text-shadow: 0 0 22px #ff5a1f, 0 0 50px #ff3a00, 0 4px 10px #000; }
+.chain[data-level='3'] strong { color: #ffd76a; }
+.chain[data-level='4'] strong { color: #ff9a3a; }
+.chain[data-level='5'] strong { color: #ff5a3c; }
+@keyframes chainPop {
+  0% { opacity: 0; transform: translateX(-50%) scale(2.4) rotate(-6deg); }
+  14% { opacity: 1; transform: translateX(-50%) scale(0.9) rotate(2deg); }
+  22% { transform: translateX(-50%) scale(1) rotate(0); }
+  80% { opacity: 1; }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-14px); }
+}
+@media (prefers-reduced-motion: reduce) { .chain { animation: none; } }

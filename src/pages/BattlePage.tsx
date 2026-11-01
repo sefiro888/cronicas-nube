@@ -1069,6 +1069,13 @@ export function BattlePage() {
             </div>
           )}
           {!photoMode && <RecentPlays plays={director.recentPlays} me={ME} onInspect={inspectCard} />}
+          {/* Reacción en cadena: crece y se calienta con cada muerte encadenada. */}
+          {director.chain && !photoMode && (
+            <div key={director.chain.key} className={styles.chain} data-level={Math.min(director.chain.count, 5)} role="status">
+              <span>¡Reacción en cadena!</span>
+              <strong>×{director.chain.count}</strong>
+            </div>
+          )}
           {director.exchange && !photoMode && (
             <CombatDuel
               exchange={director.exchange}

@@ -10,6 +10,9 @@ import { eventDuration } from '../eventTiming'
 import { clashExchange, duelIntroDuration, endsExchange, foldExchange, isFinisher, openExchange, pushRecentPlay, recentPlayFor, spotlightFor, type CombatExchange, type RecentPlay, type Spotlight } from '../presentation'
 
 /** Traduce un evento del motor a su señal sonora. `me` es el bando que controla este navegador. */
+/** Daños que salen de una muerte o una explosión y pueden encadenar más muertes. */
+const CHAIN_EFFECT = /petardazo|mine|splash|explos|deathburst/
+
 const cueForEvent = (event: AnimationEvent, me: PlayerId): SoundCue | undefined => {
   switch (event.type) {
     case 'draw': return 'draw'
@@ -89,6 +92,8 @@ export interface EventDirector {
   dismissDuel: () => void
   /** Quién golpea a quién en el intercambio que se está reproduciendo. */
   exchange?: CombatExchange
+  /** Reacción en cadena en curso (desde la segunda muerte encadenada). */
+  chain?: { readonly key: string; readonly count: number }
   /** Racha de ataques del mismo bando en este turno (desde el segundo). */
   combo?: { readonly key: string; readonly count: number; readonly owner: PlayerId }
   /** Sacudida de pantalla: clave nueva por golpe y su fuerza. */
@@ -136,6 +141,13 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
    */
   const [combo, setCombo] = useState<{ readonly key: string; readonly count: number; readonly owner: PlayerId }>()
   const comboRef = useRef<{ owner?: PlayerId; count: number }>({ count: 0 })
+  /**
+   * Reacción en cadena: una muerte que provoca otra (el Petardazo de una
+   * unidad que cae mata a su vecina, que a su vez estalla...). Se cuenta
+   * cada destrucción que llega justo detrás de un daño de explosión.
+   */
+  const [chain, setChain] = useState<{ readonly key: string; readonly count: number }>()
+  const chainRef = useRef({ count: 0, splash: false })
 
   // 1) Si no hay evento en reproducción, avanza la cola. Antes de una carta
   // lanzada se detiene a presentarla: es el único momento en que ambos bandos
@@ -210,6 +222,17 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
     // Los canales laterales actualizan estado de React fuera del cuerpo del
     // efecto para no encadenar renders síncronos.
     const sideChannel = window.setTimeout(() => {
+      // Reacción en cadena (ver chainRef): se reinicia con cada jugada nueva.
+      const run = chainRef.current
+      if (currentEvent.type === 'attack' || currentEvent.cast || currentEvent.type === 'turn') {
+        chainRef.current = { count: 0, splash: false }
+      } else if (currentEvent.type === 'damage' && CHAIN_EFFECT.test(currentEvent.effectId ?? '')) {
+        run.splash = true
+      } else if (currentEvent.type === 'destroy') {
+        run.count = run.splash ? Math.max(1, run.count) + 1 : Math.max(1, run.count)
+        if (run.splash && run.count >= 2) setChain({ key: currentEvent.id, count: run.count })
+        run.splash = false
+      }
       if (currentEvent.type === 'turn') {
         comboRef.current = { count: 0 }
         setCombo(undefined)
@@ -280,6 +303,12 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
       window.clearTimeout(landing)
     }
   }, [currentEvent, preferences.animationSpeed, preferences.effectsVolume, preferences.masterVolume, preferences.muted, preferences.reducedMotion, preferences.presentationPace, me])
+
+  useEffect(() => {
+    if (!chain) return
+    const timer = window.setTimeout(() => setChain(undefined), 2200)
+    return () => window.clearTimeout(timer)
+  }, [chain])
 
   // Cada habilidad que se enciende en el duelo suena una vez: el brillo
   // dorado se ve, pero entre el golpe y el daño se perdía sin un aviso sonoro.
@@ -406,6 +435,7 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
     dismissDuel,
     exchange,
     combo,
+    chain,
     impact,
     recentPlays,
     resetBanners,
