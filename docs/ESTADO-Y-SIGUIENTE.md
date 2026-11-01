@@ -4,8 +4,11 @@
 
 Nueva petición del propietario: rediseño conjunto inspirado en sus capturas
 de pruebas de otra carpeta, con dirección artística propia y todas las
-facciones presentes. Implementación local en el proyecto principal; no se ha
-modificado `Cronicasargon` ni se ha hecho push.
+facciones presentes. Implementación en el proyecto principal, guardada en
+`5817113`. El propietario solicita después publicar todo para probarlo en
+la web; esta actualización documental acompaña esa publicación. No se ha
+modificado `Cronicasargon`. Los maestros privados siguen ignorados: se suben
+los doce WebP optimizados necesarios para las seis escenas.
 
 - Seis escenas originales de ImageGen: convergencia del Nexo, asedio de una
   Torre colosal y cuatro paisajes que agrupan las 19 facciones. Cada facción

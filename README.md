@@ -11,11 +11,11 @@ También se puede instalar como PWA.
 para entender el juego y continuar su desarrollo. Distingue contenido integrado,
 trabajo local y diseños pendientes: tener un dosier no significa ser jugable.
 
-**Avance local del 1 de noviembre:** portada y navegación renovadas, atlas
+**Rediseño del 1 de noviembre:** portada y navegación renovadas, atlas
 ilustrado con las 19 facciones y Torre del Nexo con escena de conquista,
 selección de expedición y bendiciones ilustradas. Se han creado seis escenas
-originales y se conserva el funcionamiento del juego. Esta entrega todavía
-no está publicada. Véanse el
+originales y se conserva el funcionamiento del juego. El propietario ha
+solicitado publicar esta entrega completa para probarla en la web. Véanse el
 [registro actual de continuidad](docs/ESTADO-Y-SIGUIENTE.md) y el
 [inventario de escenas y prompts](docs/INTERFAZ-MUNDOS-2026-11-01.md).
 Las referencias a pausa, prototipos sin publicar y última entrega del
