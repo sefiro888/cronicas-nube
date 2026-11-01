@@ -1,12 +1,12 @@
-import { CARD_BY_ID, getValidAttacks, getValidMoves, BOARD_SIZE, type MatchState, type PlayerId, type Position } from '../game'
+import { CARD_BY_ID, getValidAttacks, type MatchState, type PlayerId } from '../game'
 
 /**
- * Amenazas del tablero: a quién puede atacar una unidad, quién puede
- * atacarla y qué casillas puede golpear el rival en su próximo turno.
+ * Amenazas del tablero: a quién puede atacar una unidad y quién puede
+ * atacarla.
  *
  * No duplica reglas: prepara un estado hipotético en el que le toca al
  * dueño de la unidad, con sus fichas descansadas, y pregunta al motor
- * (getValidAttacks / getValidMoves). Así la Guardia, el alcance mínimo o la
+ * (getValidAttacks). Así la Guardia, el alcance mínimo o la
  * línea de tiro se respetan solos. Es una previsión: si el rival juega una
  * carta que lo cambia todo, el mapa no lo sabe.
  */
@@ -47,36 +47,4 @@ const attackersOf = (state: MatchState, pieceId: string, owner: PlayerId): reado
     .filter((candidate) => candidate.owner === enemy && CARD_BY_ID[candidate.cardId]?.type === 'unit')
     .filter((candidate) => getValidAttacks(ready, candidate.instanceId).pieceIds.includes(pieceId))
     .map((candidate) => candidate.instanceId)
-}
-
-const key = (position: Position) => `${position.x},${position.y}`
-const manhattan = (a: Position, b: Position) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y)
-
-/**
- * Casillas que el rival de `me` puede golpear en su próximo turno, moviendo
- * y atacando, con cuántas unidades distintas llegan a cada una. Se aproxima
- * el ataque por alcance (pasos) desde cada casilla a la que puede llegar;
- * la línea de tiro exacta depende de dónde acabe todo el mundo.
- */
-export const dangerCells = (state: MatchState, me: PlayerId): ReadonlyMap<string, number> => {
-  const enemy: PlayerId = me === 'player' ? 'ai' : 'player'
-  const ready = readyState(state, enemy)
-  const danger = new Map<string, number>()
-  for (const piece of ready.board) {
-    if (piece.owner !== enemy) continue
-    const card = CARD_BY_ID[piece.cardId]
-    if (!card || card.type !== 'unit') continue
-    const range = card.range ?? 1
-    const reach = new Set<string>()
-    for (const from of [piece.position, ...getValidMoves(ready, piece.instanceId)]) {
-      for (let y = 0; y < BOARD_SIZE; y += 1) {
-        for (let x = 0; x < BOARD_SIZE; x += 1) {
-          const distance = manhattan(from, { x, y })
-          if (distance > 0 && distance <= range) reach.add(key({ x, y }))
-        }
-      }
-    }
-    for (const cell of reach) danger.set(cell, (danger.get(cell) ?? 0) + 1)
-  }
-  return danger
 }

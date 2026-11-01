@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { CARD_BY_ID, STARTER_DECKS, createMatch, type BoardPiece, type MatchState, type PlayerId, type Position } from '../game'
-import { dangerCells, threatLinks } from './threats'
+import { threatLinks } from './threats'
 
 const melee = Object.values(CARD_BY_ID).find((card) => card.type === 'unit' && (card.range ?? 1) === 1 && !card.keywords.includes('guard') && card.effects.length === 0)!
 
@@ -21,11 +21,8 @@ describe('amenazas', () => {
     expect(links.attackers).toEqual(['suya'])
   })
 
-  it('una unidad lejana no amenaza, pero su alcance tras moverse marca peligro', () => {
+  it('una unidad lejana no amenaza', () => {
     const state = scene([piece('mia', 'player', { x: 0, y: 7 }), piece('suya', 'ai', { x: 7, y: 0 })])
     expect(threatLinks(state, 'mia').attackers).toEqual([])
-    const danger = dangerCells(state, 'player')
-    expect(danger.get('6,0')).toBe(1)
-    expect(danger.has('0,7')).toBe(false)
   })
 })

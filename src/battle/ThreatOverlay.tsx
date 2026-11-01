@@ -1,19 +1,18 @@
 import { useFrame } from '@react-three/fiber'
 import { memo, useMemo, useRef } from 'react'
-import { AdditiveBlending, DoubleSide, QuadraticBezierCurve3, Vector3 } from 'three'
+import { AdditiveBlending, QuadraticBezierCurve3, Vector3 } from 'three'
 import type { Group, Mesh, MeshBasicMaterial } from 'three'
 import type { BoardPiece, PlayerId } from '../game'
 import { gridToWorldX, gridToWorldZ } from './grid/gridCoordinates'
 
 /**
- * Flechas de amenaza y mapa de peligro sobre el tablero.
+ * Flechas de amenaza sobre el tablero. (El mapa rojo de peligro se quitó a
+ * petición del propietario: hacía el juego demasiado predecible.)
  *
  * - Flechas: al seleccionar (o señalar) una unidad, arcos dorados hacia lo
  *   que puede atacar y arcos rojos desde quien puede atacarla. Por los arcos
  *   corren pulsos de luz en el sentido del golpe para que se lea quién
  *   amenaza a quién sin pensar.
- * - Peligro: las casillas que el rival puede golpear en su próximo turno se
- *   tiñen de rojo, más intenso cuantas más unidades llegan a ellas.
  */
 export interface ThreatFocus {
   readonly pieceId: string
@@ -105,34 +104,6 @@ export const ThreatArrows = memo(function ThreatArrows({ focus, board, nexusZ, r
   return (
     <group>
       {arcs.map((arc) => <Arc key={arc.key} from={arc.from} to={arc.to} color={arc.color} reducedMotion={reducedMotion} />)}
-    </group>
-  )
-})
-
-/** Casillas en peligro: rojo que respira, más intenso cuantas más unidades llegan. */
-export const DangerHeat = memo(function DangerHeat({ cells, reducedMotion }: { cells?: ReadonlyMap<string, number>; reducedMotion: boolean }) {
-  const group = useRef<Group>(null)
-  const entries = useMemo(() => [...(cells ?? new Map<string, number>()).entries()].map(([key, count]) => {
-    const [x, y] = key.split(',').map(Number) as [number, number]
-    return { key, x: gridToWorldX(x), z: gridToWorldZ(y), count }
-  }), [cells])
-  useFrame(({ clock }) => {
-    const breath = reducedMotion ? 1 : 0.8 + Math.sin(clock.elapsedTime * 2.2) * 0.2
-    group.current?.children.forEach((child, index) => {
-      const entry = entries[index]
-      if (!entry) return
-      ;((child as Mesh).material as MeshBasicMaterial).opacity = Math.min(0.42, 0.12 + entry.count * 0.09) * breath
-    })
-  })
-  if (entries.length === 0) return null
-  return (
-    <group ref={group}>
-      {entries.map((entry) => (
-        <mesh key={entry.key} position={[entry.x, 0.172, entry.z]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={1}>
-          <planeGeometry args={[0.92, 0.92]} />
-          <meshBasicMaterial color="#ff2a1a" transparent opacity={0.2} depthWrite={false} side={DoubleSide} />
-        </mesh>
-      ))}
     </group>
   )
 })

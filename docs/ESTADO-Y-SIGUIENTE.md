@@ -1,5 +1,23 @@
 # Estado del proyecto y por dónde seguir
 
+## Ajustes tras probar el propietario — 1 de noviembre de 2026 (Claude Code, nube)
+
+- **Quitado el mapa rojo de peligro** (punto 3 de las once mejoras). Decisión
+  del propietario: no hace falta saber dónde te pueden atacar; el juego es
+  mejor menos predecible. Se borró `dangerCells` y `DangerHeat`. **Se
+  conservan las flechas de amenaza**, que le gustaron (alcance y si hay
+  contragolpe).
+- **Despliegue entre dos fichas:** desde el ángulo de cámara, las cartas de
+  pie tapaban parte de la casilla de detrás y se quedaban el clic, así que
+  no se podía desplegar en una casilla válida rodeada de fichas. Ahora, al
+  colocar una carta, si la ficha no es objetivo y detrás hay una casilla
+  válida (`userData.validCell`), el clic sigue hasta la casilla.
+- Recordatorio para quien retome: las casillas verdes brillantes son las de
+  despliegue válidas (fila propia y alrededor de unidades propias que ya
+  llevan un turno o han actuado). El verde apagado del fondo es el terreno.
+
+---
+
 ## Sobres, álbum, perfil y racha — 1 de noviembre de 2026, noche (Claude Code, nube)
 
 **Misma rama y PR.** El propietario pidió los puntos 12, 14 y 15.

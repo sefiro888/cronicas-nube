@@ -48,7 +48,7 @@ import { NexusFractures } from './NexusFractures'
 import { NexusCrown } from './NexusCrown'
 import { BattleSkies } from './BattleSkies'
 import type { PreviewVerdict } from './ui/battleHints'
-import { DangerHeat, ThreatArrows, type ThreatFocus } from './ThreatOverlay'
+import { ThreatArrows, type ThreatFocus } from './ThreatOverlay'
 import { TraitFlourishes, type TraitFx } from './TraitFlourish'
 import { FactionFrame } from './FactionFrame'
 import { MaterialEnvironment } from './MaterialEnvironment'
@@ -145,8 +145,6 @@ interface Board3DProps {
   castImpact?: CastImpact
   /** Unidad señalada y sus amenazas (flechas). */
   threatFocus?: ThreatFocus
-  /** Casillas que el rival puede golpear en su próximo turno. */
-  dangerCells?: ReadonlyMap<string, number>
   /** Animaciones de palabras clave que acaban de actuar. */
   traitFx?: readonly TraitFx[]
   /** Casilla enfocada con el teclado (flechas). Undefined = se está jugando con ratón. */
@@ -426,6 +424,7 @@ const BoardCell = memo(function BoardCell({ position, valid, hazard, occupied, s
       position={[boardX(position.x), 0, boardZ(position.y)]}
       receiveShadow
       castShadow
+      userData={{ validCell: valid }}
       onClick={(event) => { event.stopPropagation(); onClick() }}
       onPointerEnter={() => { setHovered(true); onHover?.(position) }}
       onPointerLeave={() => { setHovered(false); onHover?.(undefined) }}
@@ -675,7 +674,7 @@ function VerdictBadges({ verdicts }: { verdicts: readonly PreviewVerdict[] }) {
   )
 }
 
-const BoardCard = memo(function BoardCard({ piece, runo, formationBonus, selected, targetable, ready, active, mine, crowded, stackSafe, onPiece, onInspect, onHover, previewLines, reducedMotion, impulse, impact, arrival, waiting }: { piece: BoardPiece; runo: number; formationBonus: number; selected: boolean; targetable: boolean; ready: boolean; active: boolean; mine: boolean; crowded: boolean; stackSafe: boolean; onPiece: (pieceId: string) => void; onInspect?: (cardId: string, pieceId?: string) => void; onHover?: (pieceId?: string) => void; previewLines?: readonly PreviewVerdict[]; reducedMotion: boolean; impulse?: Impulse; impact?: AnimationEvent; arrival?: AnimationEvent; waiting: boolean }) {
+const BoardCard = memo(function BoardCard({ deploying = false, piece, runo, formationBonus, selected, targetable, ready, active, mine, crowded, stackSafe, onPiece, onInspect, onHover, previewLines, reducedMotion, impulse, impact, arrival, waiting }: { deploying?: boolean; piece: BoardPiece; runo: number; formationBonus: number; selected: boolean; targetable: boolean; ready: boolean; active: boolean; mine: boolean; crowded: boolean; stackSafe: boolean; onPiece: (pieceId: string) => void; onInspect?: (cardId: string, pieceId?: string) => void; onHover?: (pieceId?: string) => void; previewLines?: readonly PreviewVerdict[]; reducedMotion: boolean; impulse?: Impulse; impact?: AnimationEvent; arrival?: AnimationEvent; waiting: boolean }) {
   const card = CARD_BY_ID[piece.cardId]
   const displayedAttack = Math.max(0, (card?.attack ?? 0) + piece.attackModifier + (card?.type === 'unit' ? runoAttackBonus(runo) : 0) + formationBonus)
   const texture = useTexture(withBase(card?.art.webp ?? '/assets/cards/art/fuente-furia.webp'))
@@ -903,7 +902,15 @@ const BoardCard = memo(function BoardCard({ piece, runo, formationBonus, selecte
     <group
       ref={group}
       position={[target.x, 0.15, target.z]}
-      onClick={(event: ThreeEvent<MouseEvent>) => { event.stopPropagation(); onClick() }}
+      onClick={(event: ThreeEvent<MouseEvent>) => {
+        // Al colocar una carta, las fichas de pie tapaban desde la cámara la
+        // casilla de detrás y se quedaban el clic: no se podía desplegar entre
+        // dos fichas aunque la casilla fuera válida. Si la ficha no es objetivo
+        // y detrás hay una casilla válida, el clic sigue hasta ella.
+        if (deploying && !targetable && event.intersections.some((hit) => hit.object.userData?.validCell)) return
+        event.stopPropagation()
+        onClick()
+      }}
       onDoubleClick={onDoubleClick}
       onPointerEnter={() => { setHovered(true); onHover?.(piece.instanceId) }}
       onPointerLeave={() => { setHovered(false); onHover?.(undefined) }}
@@ -1777,6 +1784,7 @@ function Scene(props: Board3DProps) {
         {props.state.board.map((piece) => (
           <BoardCard
             key={piece.instanceId}
+            deploying={props.cellIntent === 'deploy' && props.validCells.length > 0}
             piece={piece}
             runo={props.state.players[piece.owner].runo ?? 0}
             formationBonus={formationAttackBonus(props.state, piece)}
@@ -1843,7 +1851,6 @@ function Scene(props: Board3DProps) {
       <DamageNumbers event={props.activeEvent} reducedMotion={props.reducedMotion} />
       <ImpactMarks event={props.activeEvent} impact={props.castImpact} reducedMotion={props.reducedMotion} />
       {!props.photoMode && <ThreatArrows focus={props.threatFocus} board={props.state.board} nexusZ={nexusWorldZ} reducedMotion={props.reducedMotion} />}
-      {!props.photoMode && <DangerHeat cells={props.dangerCells} reducedMotion={props.reducedMotion} />}
       <TraitFlourishes effects={props.traitFx ?? []} reducedMotion={props.reducedMotion} />
       <RecentHits event={props.activeEvent} reducedMotion={props.reducedMotion} />
       </group>

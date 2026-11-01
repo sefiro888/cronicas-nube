@@ -47,7 +47,7 @@ import { inspectionStatuses } from '../battle/inspectionStatuses'
 import { useNetworkSync } from '../multiplayer/useNetworkSync'
 import { useBattleTension, useSoundtrack } from '../services/useAudioMix'
 import { REPLAY_MARK } from '../store/match'
-import { dangerCells, threatLinks } from '../battle/threats'
+import { threatLinks } from '../battle/threats'
 import { TRAIT_FX_MS, type TraitFx } from '../battle/TraitFlourish'
 import { gridToWorldX, gridToWorldZ, nexusWorldZ } from '../battle/grid/gridCoordinates'
 import { battleStrain } from '../battle/scenarios/BattleClimate'
@@ -532,13 +532,6 @@ export function BattlePage() {
     return { pieceId, ...links }
   }, [match, selectedPiece, selectedCard, hoveredTargetId])
 
-  // Mapa de peligro: solo cuando decides dónde poner o mover una unidad
-  // propia en tu turno, que es cuando importa; fijo todo el rato ensuciaría.
-  const dangerMap = useMemo(() => {
-    if (!match || match.winner || match.activePlayer !== ME) return undefined
-    const deciding = (selectedPiece && selectedPiece.owner === ME) || (selectedCard && selectedCard.type === 'unit')
-    return deciding ? dangerCells(match, ME) : undefined
-  }, [match, selectedPiece, selectedCard, ME])
 
   // Unidades propias que aún pueden mover o atacar: reciben un anillo de
   // disponibilidad en el tablero. Se recalcula solo cuando cambia la partida.
@@ -1018,7 +1011,6 @@ export function BattlePage() {
             castImpact={visualEvent ? store.castImpacts[visualEvent.id] : undefined}
             threatFocus={queueBusy ? undefined : threatFocus}
             traitFx={traitFx}
-            dangerCells={queueBusy ? undefined : dangerMap}
             pendingEvents={store.pendingAnimations}
             cursorCell={boardCursor.cell}
           />
