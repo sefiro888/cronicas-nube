@@ -58,6 +58,68 @@ const hitWord = (side: CombatSide): string | undefined => {
   return undefined
 }
 
+/** Fragmentos que orbitan el cristal: fijos para que no tiemblen entre renders. */
+const ORBIT = Array.from({ length: 7 }, (_, index) => ({ angle: index * (360 / 7), radius: 46 + (index % 3) * 6, speed: 7 + (index % 4) * 2 }))
+
+/**
+ * El Nexo como monolito de cristal. Sustituye a una plaquita con un retrato
+ * redondo que, según el propietario, «no es nada imponente» justo en el
+ * momento más importante: cuando le pegan. El retrato del comandante queda
+ * dentro del cristal, rodeado de runas; la Vida es una barra que se vacía con
+ * el golpe; el cristal se agrieta según la Vida perdida y por debajo de un
+ * cuarto late en rojo.
+ */
+function NexusMonolith({ artUrl, name, health, maxHealth, damage }: {
+  artUrl?: string
+  name?: string
+  health: number
+  maxHealth?: number
+  damage: number
+}) {
+  // La Torre puede dar más Vida que la del comandante: el máximo nunca baja de la actual.
+  const max = Math.max(1, maxHealth ?? health, health + damage)
+  const ratio = Math.max(0, Math.min(1, health / max))
+  const wear = ratio > 0.75 ? 0 : ratio > 0.5 ? 1 : ratio > 0.25 ? 2 : 3
+  return (
+    <div className={styles.monolith} data-wear={wear} data-critical={ratio <= 0.25 || undefined} data-hit={damage > 0 || undefined}>
+      <span className={styles.monolithAura} />
+      <span className={styles.orbit} aria-hidden="true">
+        {ORBIT.map((shard, index) => (
+          <i key={index} style={{ '--a': `${shard.angle}deg`, '--r': `${shard.radius}%`, '--t': `${shard.speed}s` } as CSSProperties} />
+        ))}
+      </span>
+      <div className={styles.crystal}>
+        <span className={styles.facets} />
+        <span className={styles.core} />
+        <div className={styles.portrait}>
+          <svg className={styles.runes} viewBox="0 0 100 100" aria-hidden="true">
+            <circle cx="50" cy="50" r="47" />
+            <circle cx="50" cy="50" r="41" strokeDasharray="2 5" />
+          </svg>
+          {artUrl && <img src={artUrl} alt="" />}
+        </div>
+        <svg className={styles.nexusCracks} viewBox="0 0 100 160" aria-hidden="true">
+          <path d="M50 18 L44 40 L54 56 L46 78" data-wear="1" />
+          <path d="M44 40 L26 52 L22 74 M54 56 L74 64 L80 88" data-wear="2" />
+          <path d="M46 78 L40 104 L52 126 M46 78 L64 100 L60 140 M26 52 L14 40" data-wear="3" />
+        </svg>
+        <strong className={styles.nexusTitle}>Nexo</strong>
+        <small className={styles.nexusName}>{name}</small>
+      </div>
+      {damage > 0 && (
+        <span key={`burst${damage}`} className={styles.crystalBurst} aria-hidden="true">
+          {Array.from({ length: 12 }, (_, index) => <i key={index} style={{ '--a': `${index * 30 + 8}deg` } as CSSProperties} />)}
+        </span>
+      )}
+      <div className={styles.lifeBar}>
+        <span className={styles.lifeFill} style={{ '--ratio': ratio } as CSSProperties} />
+        {damage > 0 && <span key={`loss${damage}`} className={styles.lifeLoss} style={{ '--from': Math.min(1, (health + damage) / max), '--ratio': ratio } as CSSProperties} />}
+        <span key={health} className={styles.lifeValue}>{health}<small>/{max}</small></span>
+      </div>
+    </div>
+  )
+}
+
 function Fighter({ side, role, me, commanderIds, nexusHealth, phase, holding, foeRarity }: {
   side: CombatSide
   role: 'attacker' | 'defender'
@@ -106,12 +168,13 @@ function Fighter({ side, role, me, commanderIds, nexusHealth, phase, holding, fo
         {card
           ? <Card card={card} size="hand" reducedMotion statusEffects={inspectionStatuses(side.piece)} />
           : (
-            <div className={styles.nexusPlate}>
-              {commander && <img src={withBase(commander.art.webp)} alt="" />}
-              <strong>Nexo</strong>
-              <small>{commander?.name}</small>
-              <span className={styles.nexusLife}>♥ {nexusHealth[side.owner]}</span>
-            </div>
+            <NexusMonolith
+              artUrl={commander ? withBase(commander.art.webp) : undefined}
+              name={commander?.name}
+              health={nexusHealth[side.owner]}
+              maxHealth={commander?.nexusHealth}
+              damage={side.damage}
+            />
           )}
         {hit && (
           <>

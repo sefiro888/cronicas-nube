@@ -12,6 +12,8 @@ import {
 import { glowTexture, type GlowTint } from './textures'
 import { RitualSeal } from './RitualSeal'
 import { AttackTrail } from './AttackTrail'
+import { ArrowVolley, BarbVolley, ClawStrike, CrushStrike, DragonBreath, GunShot, LightningBolt, SlashStrike, SpectralStrike } from './AttackStyles'
+import { attackKindFor, attackWeight } from './attackStyle'
 import { ImpactDebris, materialOf } from './ImpactDebris'
 import { ARRIVAL_LANDING } from './arrivalMotion'
 
@@ -413,7 +415,22 @@ export function EventEffects({ event, reducedMotion }: EventEffectsProps) {
       const from: readonly [number, number] | undefined = event.from ? [boardX(event.from.x), boardZ(event.from.y)] : undefined
       const to: readonly [number, number] | undefined = event.to ? [boardX(event.to.x), boardZ(event.to.y)] : target
       const melee = card ? (card.range ?? 1) <= 1 : Boolean(from && to && Math.hypot(to[0] - from[0], to[1] - from[1]) < 1.9)
-      return from && to ? <AttackTrail from={from} to={to} tone={tone} faction={event.faction} durationMs={event.durationMs} melee={melee} /> : null
+      if (!from || !to) return null
+      // Cada tipo de criatura golpea a su manera (ver attackStyle.ts); el
+      // arco con estela queda para los proyectiles mágicos.
+      const style = { from, to, tone, durationMs: event.durationMs, weight: attackWeight(card?.attack) }
+      switch (attackKindFor(card, melee)) {
+        case 'slash': return <SlashStrike {...style} />
+        case 'claw': return <ClawStrike {...style} />
+        case 'crush': return <CrushStrike {...style} />
+        case 'spectral': return <SpectralStrike {...style} />
+        case 'arrow': return <ArrowVolley {...style} />
+        case 'shot': return <GunShot {...style} />
+        case 'bolt': return <LightningBolt {...style} />
+        case 'breath': return <DragonBreath {...style} />
+        case 'barbs': return <BarbVolley {...style} />
+        default: return <AttackTrail from={from} to={to} tone={tone} faction={event.faction} durationMs={event.durationMs} melee={melee} />
+      }
     }
     case 'spell': {
       if (reducedMotion) return null

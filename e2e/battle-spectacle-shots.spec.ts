@@ -167,3 +167,66 @@ test('duelo: una mítica destruye a una común', async ({ page }) => {
     await page.screenshot({ path: `${DIR}/duelo-${index + 1}.png` })
   }
 })
+
+/** Una unidad propia frente a una rival (o al Nexo) para fotografiar un estilo de ataque. */
+const attackScene = async (page: Page, name: string, attacker: CardDefinition, distance: number, nexus = false) => {
+  const base = createMatch(STARTER_DECKS[0]!, STARTER_DECKS[1]!, 1311657807)
+  const victim = unitOf((card) => card.rarity === 'common' && (card.health ?? 0) >= 6 && !card.keywords.includes('flying'))
+    ?? unitOf((card) => !card.keywords.includes('flying'))
+  const from = { x: 3, y: nexus ? 0 : 4 }
+  const match: MatchState = {
+    ...base,
+    turn: 6,
+    phase: 'main',
+    activePlayer: 'player',
+    board: [
+      pieza('mio', attacker.id, 'player', from),
+      ...(nexus ? [] : [pieza('presa', victim.id, 'ai', { x: 3, y: 4 - distance })]),
+    ],
+  }
+  await seed(page, match, STARTER_DECKS[0]!.id)
+  await frozenClock(page)
+  await page.setViewportSize({ width: 1366, height: 768 })
+  await page.goto('/battle')
+  await runUntil(page, async () => (await page.getByTestId('battle-board').count()) > 0, 500, 80)
+  await page.clock.runFor(2500)
+  if (nexus) {
+    await page.keyboard.press('ArrowUp')
+    for (let i = 0; i < 8; i += 1) await page.keyboard.press('ArrowUp')
+    await page.keyboard.press('Enter')
+    await page.clock.runFor(300)
+    await page.keyboard.press('n')
+  } else {
+    await page.keyboard.press('ArrowUp')
+    await page.keyboard.press('Enter')
+    await page.clock.runFor(300)
+    for (let i = 0; i < distance; i += 1) await page.keyboard.press('ArrowUp')
+    await page.keyboard.press('Enter')
+  }
+  for (let index = 0; index < 16; index += 1) {
+    await page.clock.runFor(160)
+    await page.screenshot({ path: `${DIR}/${name}-${String(index).padStart(2, '0')}.png` })
+  }
+}
+
+const sub = (word: string, range: number) => unitOf((card) => (card.subtype ?? '').toLowerCase().includes(word) && (card.range ?? 1) === range)
+
+test('estilos de ataque', async ({ page }) => {
+  test.setTimeout(900_000)
+  const kind = process.env.ATTACK_KIND ?? 'shot'
+  const scenes: Record<string, [CardDefinition, number]> = {
+    shot: [sub('arcabucero', 2), 2],
+    bolt: [sub('hechicera', 2), 2],
+    breath: [sub('dragón', 2), 2],
+    arrow: [sub('cazador', 2), 2],
+    crush: [sub('constructo', 1), 1],
+    claw: [sub('bestia', 1), 1],
+  }
+  const [card, distance] = scenes[kind]!
+  await attackScene(page, `ataque-${kind}`, card, distance)
+})
+
+test('ataque al Nexo', async ({ page }) => {
+  test.setTimeout(600_000)
+  await attackScene(page, 'nexo', sub('bestia', 1), 1, true)
+})

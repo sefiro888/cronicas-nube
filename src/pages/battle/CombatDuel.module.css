@@ -94,44 +94,6 @@
   animation: glowPulse 1.4s ease-in-out infinite alternate;
 }
 
-.nexusPlate {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  justify-items: center;
-  gap: 4px;
-  width: clamp(9.5rem, 13vw, 12rem);
-  padding: 12px 10px 14px;
-  border-radius: 14px;
-  background: linear-gradient(180deg, #241a12, #0e0b09);
-  box-shadow: 0 0 0 2px var(--side), 0 0 28px color-mix(in srgb, var(--side) 55%, transparent);
-}
-.nexusPlate img {
-  width: 82%;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  object-fit: cover;
-  box-shadow: 0 0 0 3px var(--accent);
-}
-.nexusPlate strong {
-  color: #f6e7bf;
-  font: 800 20px var(--display);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-.nexusPlate small {
-  color: #b8ad92;
-  font: 600 12px var(--display);
-}
-.nexusLife {
-  margin-top: 4px;
-  padding: 2px 12px;
-  border-radius: 20px;
-  color: #fff;
-  background: rgba(150, 30, 25, 0.75);
-  box-shadow: 0 0 14px rgba(255, 80, 60, 0.5);
-  font: 800 18px var(--display);
-}
 
 /* El daño entra como un sello grande que rebota; el escudo, en cian. */
 .damage {
@@ -171,7 +133,6 @@
 .fighter[data-hit][data-heavy] .cardWrap > article { animation: hitFlash 520ms ease-out, hitShake 620ms cubic-bezier(.36, .07, .19, .97); }
 /* Destruida: la carta estalla en fragmentos (.shards) y queda su fantasma. */
 .fighter[data-destroyed] .cardWrap > article { animation: hitFlash 300ms ease-out, ghost 520ms ease-out 160ms forwards; }
-.fighter[data-destroyed][data-rarity='nexus'] .cardWrap > .nexusPlate { filter: grayscale(0.5) brightness(0.7); }
 .fighter[data-destroyed] .glow { opacity: 0.2; animation: none; }
 .stamp {
   position: absolute;
@@ -576,10 +537,240 @@
   initial-value: 0deg;
 }
 
+
+/* ── Nexo: monolito de cristal ────────────────────────────────────────────
+   Más alto que una carta y con el retrato del comandante dentro del
+   cristal. Se agrieta según la Vida perdida (data-wear 0–3) y por debajo de
+   un cuarto late en rojo (data-critical). */
+.monolith {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  width: clamp(10rem, 14vw, 13rem);
+}
+.monolithAura {
+  position: absolute;
+  top: 38%;
+  left: 50%;
+  width: 170%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, color-mix(in srgb, var(--accent) 45%, transparent) 0, transparent 60%),
+    repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--accent) 22%, transparent) 0deg 4deg, transparent 4deg 18deg);
+  mask-image: radial-gradient(circle, #000 25%, transparent 66%);
+  transform: translate(-50%, -50%);
+  animation: auraTurn 18s linear infinite, auraBreath 2.6s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+.crystal {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  width: 100%;
+  aspect-ratio: 10 / 15;
+  padding-top: 17%;
+  clip-path: polygon(50% 0, 92% 16%, 100% 62%, 74% 100%, 26% 100%, 0 62%, 8% 16%);
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.22), transparent 30%),
+    linear-gradient(200deg, transparent 55%, rgba(255, 255, 255, 0.12) 70%, transparent 80%),
+    radial-gradient(ellipse at 50% 42%, color-mix(in srgb, var(--accent) 70%, #fff) 0, color-mix(in srgb, var(--accent) 45%, #0b0f1a) 34%, #070a12 78%);
+  filter: drop-shadow(0 0 18px var(--accent)) drop-shadow(0 18px 30px rgba(0, 0, 0, 0.7));
+  animation: crystalFloat 3.2s ease-in-out infinite alternate;
+}
+/* Facetas: líneas de corte del cristal, que es lo que lo hace leerse como
+   piedra tallada y no como una placa. */
+.facets {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(118deg, transparent 49.4%, rgba(255, 255, 255, 0.35) 50%, transparent 50.6%),
+    linear-gradient(62deg, transparent 49.4%, rgba(255, 255, 255, 0.25) 50%, transparent 50.6%),
+    linear-gradient(180deg, transparent 61.5%, rgba(255, 255, 255, 0.22) 62%, transparent 62.5%);
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+.core {
+  position: absolute;
+  top: 36%;
+  left: 50%;
+  width: 70%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.9), color-mix(in srgb, var(--accent) 60%, transparent) 30%, transparent 68%);
+  transform: translate(-50%, -50%);
+  filter: blur(4px);
+  animation: corePulse 1.8s ease-in-out infinite alternate;
+}
+.portrait {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 64%;
+  aspect-ratio: 1;
+}
+.portrait img {
+  width: 82%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 80%, #fff), 0 0 26px var(--accent);
+}
+.runes {
+  position: absolute;
+  inset: 0;
+  fill: none;
+  stroke: color-mix(in srgb, var(--accent) 70%, #fff);
+  stroke-width: 1.4;
+  filter: drop-shadow(0 0 4px var(--accent));
+  animation: runeSpin 9s linear infinite;
+}
+.nexusTitle {
+  position: relative;
+  margin-top: 6%;
+  color: #fff6dc;
+  font: 900 clamp(18px, 1.7vw, 24px) var(--display);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  text-shadow: 0 0 14px var(--accent), 0 2px 6px rgba(0, 0, 0, 0.9);
+}
+.nexusName {
+  position: relative;
+  color: color-mix(in srgb, var(--accent) 40%, #f4e8c8);
+  font: 700 12px var(--display);
+  letter-spacing: 0.12em;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
+}
+.orbit {
+  position: absolute;
+  top: 38%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+.orbit i {
+  position: absolute;
+  width: 9px;
+  height: 16px;
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  background: linear-gradient(160deg, #fff, var(--accent));
+  box-shadow: 0 0 10px var(--accent);
+  transform: rotate(var(--a)) translateX(calc(var(--r) * 1.9)) rotate(calc(var(--a) * -1));
+  animation: orbit var(--t) linear infinite;
+}
+.nexusCracks {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: rgba(255, 250, 240, 0.85);
+  stroke-width: 1.2;
+  filter: drop-shadow(0 0 3px rgba(255, 90, 60, 0.9));
+  pointer-events: none;
+}
+.nexusCracks path { display: none; }
+.monolith[data-wear='1'] .nexusCracks path[data-wear='1'],
+.monolith[data-wear='2'] .nexusCracks path:not([data-wear='3']),
+.monolith[data-wear='3'] .nexusCracks path { display: inline; }
+
+.monolith[data-critical] .crystal { animation: crystalFloat 3.2s ease-in-out infinite alternate, criticalFlicker 0.9s steps(2) infinite; }
+.monolith[data-critical] .core { background: radial-gradient(circle, #fff, rgba(255, 60, 40, 0.8) 30%, transparent 68%); }
+.monolith[data-critical] .monolithAura { background: radial-gradient(circle, rgba(255, 50, 30, 0.5) 0, transparent 60%); }
+.monolith[data-hit] .crystal { animation: crystalHit 620ms cubic-bezier(.36, .07, .19, .97), crystalFloat 3.2s ease-in-out 620ms infinite alternate; }
+
+/* Esquirlas que salen del cristal con cada golpe. */
+.crystalBurst {
+  position: absolute;
+  top: 38%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+.crystalBurst i {
+  position: absolute;
+  width: 8px;
+  height: 18px;
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  background: linear-gradient(#fff, var(--accent));
+  box-shadow: 0 0 12px var(--accent);
+  animation: shardOut 800ms cubic-bezier(.1, .8, .3, 1) forwards;
+}
+
+.lifeBar {
+  position: relative;
+  width: 100%;
+  height: 22px;
+  overflow: hidden;
+  border-radius: 12px;
+  background: rgba(10, 6, 6, 0.85);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.7), 0 0 0 3px color-mix(in srgb, var(--accent) 60%, transparent), 0 8px 18px rgba(0, 0, 0, 0.6);
+}
+.lifeFill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: calc(var(--ratio) * 100%);
+  background: linear-gradient(90deg, #ff3b2f, #ff8a3a 40%, #ffd76a);
+  box-shadow: 0 0 14px rgba(255, 120, 60, 0.8);
+  transition: width 700ms cubic-bezier(.2, .8, .2, 1) 250ms;
+}
+.monolith[data-critical] .lifeFill { background: linear-gradient(90deg, #8f0d08, #ff3b2f); animation: lifePulse 0.8s ease-in-out infinite alternate; }
+/* Lo que se acaba de perder parpadea en blanco antes de vaciarse. */
+.lifeLoss {
+  position: absolute;
+  inset: 0 auto 0 0;
+  left: calc(var(--ratio) * 100%);
+  width: calc((var(--from) - var(--ratio)) * 100%);
+  background: #fff;
+  animation: lossFade 900ms ease-out forwards;
+}
+.lifeValue {
+  position: relative;
+  display: block;
+  color: #fff;
+  font: 900 15px/22px var(--display);
+  text-align: center;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95);
+  animation: valuePop 420ms cubic-bezier(.2, 1.6, .4, 1);
+}
+.lifeValue small { color: rgba(255, 255, 255, 0.6); font-size: 11px; }
+
+@keyframes auraTurn { to { transform: translate(-50%, -50%) rotate(360deg); } }
+@keyframes auraBreath { from { opacity: 0.6; } to { opacity: 1; } }
+@keyframes crystalFloat { from { transform: translateY(0); } to { transform: translateY(-6px); } }
+@keyframes corePulse { from { opacity: 0.7; transform: translate(-50%, -50%) scale(0.92); } to { opacity: 1; transform: translate(-50%, -50%) scale(1.06); } }
+@keyframes runeSpin { to { transform: rotate(360deg); } }
+@keyframes orbit {
+  from { transform: rotate(var(--a)) translateX(calc(var(--r) * 1.9)) rotate(0deg); }
+  to { transform: rotate(calc(var(--a) + 360deg)) translateX(calc(var(--r) * 1.9)) rotate(-360deg); }
+}
+@keyframes criticalFlicker { 50% { filter: drop-shadow(0 0 24px #ff3b2f) drop-shadow(0 18px 30px rgba(0, 0, 0, 0.7)) brightness(1.15); } }
+@keyframes crystalHit {
+  0%, 100% { transform: none; }
+  10% { transform: translateX(-10px) rotate(-3deg) scale(0.96); filter: brightness(2.6) drop-shadow(0 0 30px #fff); }
+  30% { transform: translateX(9px) rotate(2deg); }
+  50% { transform: translateX(-6px); }
+  70% { transform: translateX(3px); }
+}
+@keyframes shardOut {
+  0% { opacity: 1; transform: rotate(var(--a)) translateY(0) scale(1); }
+  100% { opacity: 0; transform: rotate(var(--a)) translateY(-120px) scale(0.4) rotate(160deg); }
+}
+@keyframes lifePulse { from { filter: brightness(0.8); } to { filter: brightness(1.4); } }
+@keyframes lossFade { 0%, 35% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes valuePop { 0% { transform: scale(1.8); color: #ffdfa0; } 100% { transform: scale(1); } }
+
 @media (prefers-reduced-motion: reduce) {
   .fighter, .cardWrap, .glow, .damage, .absorbed, .stamp, .swords, .traits li,
   .duel, .rarityFrame, .rarityTag, .traitGlyph, .hitWord, .cardWrap > article { animation: none !important; }
-  .slash, .sparks, .shards, .embers, .clashFlash { display: none; }
+  .slash, .sparks, .shards, .embers, .clashFlash, .orbit, .crystalBurst { display: none; }
+  .monolithAura, .crystal, .core, .runes, .lifeValue, .lifeLoss { animation: none !important; }
   .cracks { animation: none; stroke-dashoffset: 0; }
 }
 
@@ -592,8 +783,11 @@
   .duel { position: fixed; inset: 0; align-items: flex-start; padding: 64px 8px 0; }
   .fighter { width: 112px; gap: 4px; }
   .cardWrap > article { --card-width: 6.4rem; }
-  .nexusPlate { width: 6.4rem; padding: 8px 6px; }
-  .nexusPlate strong { font-size: 14px; }
+  .monolith { width: 6.8rem; gap: 4px; }
+  .nexusTitle { font-size: 13px; letter-spacing: 0.2em; }
+  .nexusName { display: none; }
+  .lifeBar { height: 16px; }
+  .lifeValue { font-size: 12px; line-height: 16px; }
   .traits small { display: none; }
   .damage { font-size: 22px; min-width: 44px; }
   .fighter[data-rarity='mythic'] .cardWrap > article { --card-width: 6.8rem; }
