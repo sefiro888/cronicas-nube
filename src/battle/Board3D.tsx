@@ -1824,7 +1824,7 @@ function Scene(props: Board3DProps) {
         reducedMotion={props.reducedMotion}
         terminal={terminal}
       />
-      {props.activeEvent && <EventEffects key={props.activeEvent.id} event={props.activeEvent} reducedMotion={props.reducedMotion} />}
+      {props.activeEvent && <EventEffects key={props.activeEvent.id} event={props.activeEvent} reducedMotion={props.reducedMotion} impact={props.castImpact} />}
       <FallenPieces
         event={props.activeEvent}
         pendingEvents={props.pendingEvents ?? EMPTY_EVENTS}

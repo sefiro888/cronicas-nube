@@ -17,6 +17,10 @@ import { attackKindFor, attackWeight } from './attackStyle'
 import { DeathFlourish, HitSpill } from './CreatureReactions'
 import { StepRipple } from './BattleSkies'
 import { RarityArrival } from './RarityArrival'
+import { Blessing, DrawCards, Fireball, FrostWave, HealingLight, PushWave, SkyJudgement, Storm } from './SpellStyles'
+import { spellKindFor } from './spellStyle'
+import { SPELL_CAST_STRETCH } from './eventTiming'
+import type { CastImpact } from './castImpact'
 import { ARRIVAL_LANDING } from './arrivalMotion'
 import { ImpactDebris, materialOf } from './ImpactDebris'
 
@@ -382,6 +386,8 @@ function NexusShock({ at, tone, timing }: { at: readonly [number, number]; tone:
 interface EventEffectsProps {
   readonly event: AnimationEvent
   readonly reducedMotion: boolean
+  /** A quién afectó la carta lanzada (ver castImpact): da los objetivos de los hechizos de área. */
+  readonly impact?: CastImpact
 }
 
 /**
@@ -400,7 +406,7 @@ const powerFor = (amount?: number): number => Math.max(0, Math.min(1, ((amount ?
 const RARITY_POWER: Readonly<Record<string, number>> = { common: 0, uncommon: 0.15, rare: 0.4, mythic: 0.75 }
 const rarityPower = (cardId?: string): number => RARITY_POWER[cardId ? CARD_BY_ID[cardId]?.rarity ?? 'common' : 'common'] ?? 0
 
-export function EventEffects({ event, reducedMotion }: EventEffectsProps) {
+export function EventEffects({ event, reducedMotion, impact }: EventEffectsProps) {
   const timing: TimedProps = { durationMs: event.durationMs, reducedMotion }
   const tone = toneOf(event.effectId, event.faction)
   const card = event.cardId ? CARD_BY_ID[event.cardId] : undefined
@@ -446,6 +452,26 @@ export function EventEffects({ event, reducedMotion }: EventEffectsProps) {
       const to: readonly [number, number] | undefined = event.to
         ? [boardX(event.to.x), boardZ(event.to.y)]
         : event.targetId ? NEXUS_POSITION[event.targetId] : undefined
+      // Cada hechizo con su propia animación (ver spellStyle.ts). Los
+      // objetivos salen de lo que la carta cambió de verdad en el tablero.
+      if (event.cast && from) {
+        const targets = (impact?.pieces ?? []).map((piece) => [boardX(piece.position.x), boardZ(piece.position.y)] as const)
+        const aimed = targets.length > 0 ? targets : to ? [to] : []
+        const castMs = event.durationMs * SPELL_CAST_STRETCH
+        const props = { from, targets: aimed, tone, durationMs: castMs }
+        switch (spellKindFor(event.cast.sourceId, event.cast.kind)) {
+          case 'fireball': return <Fireball {...props} />
+          case 'bolt': return aimed[0] ? <LightningBolt from={from} to={aimed[0]} tone={tone} durationMs={castMs} weight={0.6} /> : null
+          case 'storm': return <Storm {...props} />
+          case 'heal': return <HealingLight {...props} />
+          case 'draw': return <DrawCards {...props} />
+          case 'frost': return <FrostWave {...props} />
+          case 'blessing': return <Blessing {...props} />
+          case 'judgement': return <SkyJudgement {...props} />
+          case 'push': return <PushWave {...props} />
+          default: break
+        }
+      }
       // El viaje anuncia el lanzamiento; el impacto pertenece al evento de
       // daño ya resuelto, evitando que la víctima estalle antes del proyectil.
       return from && to ? <AttackTrail from={from} to={to} tone={tone} faction={event.faction} durationMs={event.durationMs} melee={false} spell /> : null
