@@ -471,7 +471,16 @@ export function BattlePage() {
   const [hoveredTargetId, setHoveredTargetId] = useState<string>()
   const onHoverPiece = useCallback((pieceId?: string) => setHoveredTargetId(pieceId), [])
   const onHoverNexus = useCallback((playerId?: PlayerId) => setHoveredTargetId(playerId ? `${playerId}-nexus` : undefined), [])
+  // La casilla de un objetivo cuenta como el objetivo: desde la cámara, la
+  // carta rival que está justo detrás de la propia puede quedar tapada del
+  // todo, pero su losa casi siempre asoma.
+  const hoveredOccupantId = useMemo(() => {
+    if (!match || !hoveredCell) return undefined
+    return match.board.find((piece) => piece.position.x === hoveredCell.x && piece.position.y === hoveredCell.y)?.instanceId
+  }, [match, hoveredCell])
+  const aimedTargetId = hoveredTargetId ?? hoveredOccupantId
   const attackPreview = useMemo(() => {
+    const hoveredTargetId = aimedTargetId
     if (!match || !selectedPiece || selectedCard || !hoveredTargetId) return undefined
     if (hoveredTargetId === `${RIVAL}-nexus` && attacks.canAttackNexus) {
       const preview = previewAttackNexus(match, selectedPiece.instanceId)
@@ -487,7 +496,7 @@ export function BattlePage() {
       return { targetId: hoveredTargetId, attackerId: selectedPiece.instanceId, lines: attackPiecePreviewLines(preview), ...verdicts }
     }
     return undefined
-  }, [match, selectedPiece, selectedCard, hoveredTargetId, attacks, RIVAL])
+  }, [match, selectedPiece, selectedCard, aimedTargetId, attacks, RIVAL])
 
   // Habilidades que «hablan»: cada palabra clave que actúa en el duelo lanza
   // su animación sobre el tablero una sola vez (ver TraitFlourish).
@@ -666,6 +675,18 @@ export function BattlePage() {
 
   const onCell = useCallback((position: Position) => {
     if (photoMode) return
+    // Pulsar la losa de un objetivo es pulsar el objetivo (ver hoveredOccupantId).
+    const occupant = match?.board.find((piece) => piece.position.x === position.x && piece.position.y === position.y)
+    if (occupant && match?.activePlayer === ME) {
+      if (selectedInstance && selectedCard && !isBoardCard(selectedCard)) {
+        if (doAction({ type: 'play-card', playerId: ME, cardInstanceId: selectedInstance.instanceId, target: { kind: 'piece', pieceId: occupant.instanceId }, offering })) finishSelection()
+        return
+      }
+      if (selectedPiece && attacks.pieceIds.includes(occupant.instanceId)) {
+        if (doAction({ type: 'attack-piece', playerId: ME, attackerId: selectedPiece.instanceId, defenderId: occupant.instanceId })) finishSelection()
+        return
+      }
+    }
     if (selectedInstance && selectedCard && isBoardCard(selectedCard)) {
       if (doAction({ type: 'play-card', playerId: ME, cardInstanceId: selectedInstance.instanceId, position, target: { kind: 'none' }, offering })) finishSelection()
       return
@@ -678,7 +699,7 @@ export function BattlePage() {
     if (selectedPiece && selectedPiece.owner === ME && match?.activePlayer === ME) {
       useMatchStore.setState({ message: moves.length > 0 ? 'No puede ir ahí: elige una de las casillas resaltadas.' : 'Esta unidad ya no puede moverse este turno.' })
     }
-  }, [photoMode, selectedInstance, selectedCard, selectedPiece, moves, doAction, finishSelection, ME, offering, match])
+  }, [photoMode, selectedInstance, selectedCard, selectedPiece, moves, attacks, doAction, finishSelection, ME, offering, match])
 
   const onPiece = useCallback((pieceId: string) => {
     if (photoMode || !match) return

@@ -2,7 +2,7 @@ import { Html, OrbitControls, Sparkles, useCursor, useTexture } from '@react-thr
 import { Canvas, type ThreeElements, type ThreeEvent, useFrame, useThree } from '@react-three/fiber'
 import { lazy, memo, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { AdditiveBlending, DoubleSide, MathUtils, PerspectiveCamera as ThreePerspectiveCamera, Plane, Raycaster, SRGBColorSpace, Vector2, Vector3 } from 'three'
-import type { Group, Mesh, MeshBasicMaterial, MeshStandardMaterial, PointLight, Texture } from 'three'
+import type { Group, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, PointLight, Texture } from 'three'
 import { BOARD_CELL_COUNT, BOARD_SIZE, CARD_BY_ID, COMMANDER_BY_ID } from '../game'
 import type { AnimationEvent, BoardPiece, MatchState, PlayerId, Position } from '../game'
 import { runoAttackBonus } from '../game/kalevala'
@@ -674,8 +674,23 @@ function VerdictBadges({ verdicts }: { verdicts: readonly PreviewVerdict[] }) {
   )
 }
 
-/** Altura de mundo a partir de la cual un clic en una carta de pie apunta a la casilla de detrás. */
-const HIT_UPPER_HALF = 0.62
+/**
+ * Ficha a la que va de verdad el puntero cuando hay varias cartas de pie una
+ * detrás de otra: la primera que sea objetivo válido o, si ninguna lo es, la
+ * más cercana. Cada grupo de ficha lleva en userData su id y si es objetivo.
+ */
+const preferredPiece = (event: ThreeEvent<MouseEvent | PointerEvent>): string | undefined => {
+  let first: string | undefined
+  for (const hit of event.intersections) {
+    let node: Object3D | null = hit.object
+    while (node && node.userData?.pieceId === undefined) node = node.parent
+    if (!node) continue
+    const id = node.userData.pieceId as string
+    if (node.userData.targetable) return id
+    first ??= id
+  }
+  return first
+}
 
 const BoardCard = memo(function BoardCard({ deploying = false, piece, runo, formationBonus, selected, targetable, ready, active, mine, crowded, stackSafe, onPiece, onInspect, onHover, previewLines, reducedMotion, impulse, impact, arrival, waiting }: { deploying?: boolean; piece: BoardPiece; runo: number; formationBonus: number; selected: boolean; targetable: boolean; ready: boolean; active: boolean; mine: boolean; crowded: boolean; stackSafe: boolean; onPiece: (pieceId: string) => void; onInspect?: (cardId: string, pieceId?: string) => void; onHover?: (pieceId?: string) => void; previewLines?: readonly PreviewVerdict[]; reducedMotion: boolean; impulse?: Impulse; impact?: AnimationEvent; arrival?: AnimationEvent; waiting: boolean }) {
   const card = CARD_BY_ID[piece.cardId]
@@ -906,30 +921,39 @@ const BoardCard = memo(function BoardCard({ deploying = false, piece, runo, form
       ref={group}
       position={[target.x, 0.15, target.z]}
       onClick={(event: ThreeEvent<MouseEvent>) => {
-        // Al colocar una carta, las fichas de pie tapaban desde la cámara la
-        // casilla de detrás y se quedaban el clic: no se podía desplegar entre
-        // dos fichas aunque la casilla fuera válida. Si la ficha no es objetivo
-        // y detrás hay una casilla válida, el clic sigue hasta ella.
-        const validBehind = !targetable && event.intersections.some((hit) => hit.object.userData?.validCell)
-        // Al desplegar, cualquier clic sobre una ficha que tapa una casilla
-        // válida sigue hasta la casilla. Al mover, solo si se pulsa la parte
-        // alta de la carta (la que tapa la casilla de detrás): la de abajo
-        // sigue seleccionando la ficha.
-        if (validBehind && (deploying || event.point.y > HIT_UPPER_HALF)) return
+        // Al colocar una carta desde la mano ninguna ficha es objetivo: el
+        // clic sobre una carta de pie que tapa una casilla válida sigue hasta
+        // la casilla (si no, no se podía desplegar entre dos fichas).
+        if (deploying && !targetable && event.intersections.some((hit) => hit.object.userData?.validCell)) return
+        // Un objetivo tapado por otra carta (la propia atacante, casi siempre:
+        // el rival está justo detrás desde la cámara) tiene prioridad. Esta
+        // ficha deja pasar el clic y lo recibe el objetivo de detrás.
+        const preferred = preferredPiece(event)
+        if (preferred && preferred !== piece.instanceId) return
         event.stopPropagation()
         onClick()
       }}
       onDoubleClick={onDoubleClick}
-      onPointerEnter={() => { setHovered(true); onHover?.(piece.instanceId) }}
+      onPointerEnter={(event: ThreeEvent<PointerEvent>) => { setHovered(true); onHover?.(preferredPiece(event) ?? piece.instanceId) }}
+      onPointerMove={(event: ThreeEvent<PointerEvent>) => {
+        // Se recalcula al moverse: al pasar por encima de dos cartas solapadas
+        // el aviso de ataque sale para el objetivo aunque asome poco.
+        const preferred = preferredPiece(event)
+        if (preferred) onHover?.(preferred)
+      }}
       onPointerLeave={() => { setHovered(false); onHover?.(undefined) }}
+      userData={{ pieceId: piece.instanceId, targetable }}
     >
       <group ref={strike}>
       <group ref={arrivalGroup}>
       {/* Aura de rareza en reposo: la rara suelta alguna mota; la mítica, un
           enjambre dorado. Así una mítica se reconoce en el tablero de lejos. */}
       {card && !reducedMotion && (card.rarity === 'mythic' || card.rarity === 'rare') && (
+        // Sin raycast: los puntos cuentan como parte de la ficha para el clic y
+        // three los toca con un margen de 1 unidad de mundo, así que el aura se
+        // tragaba los clics y el hover de las casillas y fichas vecinas.
         <Sparkles count={card.rarity === 'mythic' ? 14 : 5} scale={[0.9, 1.1, 0.5]} position={[0, 0.55, 0]} size={card.rarity === 'mythic' ? 3.2 : 2.2}
-          speed={0.35} opacity={0.8} color={card.rarity === 'mythic' ? '#ffd76a' : '#9fd0ff'} />
+          speed={0.35} opacity={0.8} color={card.rarity === 'mythic' ? '#ffd76a' : '#9fd0ff'} raycast={() => null} />
       )}
       <group ref={facing}>
       {/* Standee: frame + arte, inclinados (prueba) en vez de tumbados del todo.

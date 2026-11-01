@@ -1,5 +1,28 @@
 # Estado del proyecto y por dónde seguir
 
+## Fichas pegadas: seleccionar y atacar — 1 de noviembre de 2026 (Claude Code, nube)
+
+El propietario: con cartas en casillas pegadas costaba mucho seleccionar la
+propia, el aviso de ataque solo salía en un punto y el clic no atacaba.
+**Regresión causada por cambios de esta misma rama**, corregida:
+
+1. El aura de motas (`Sparkles`) de raras y míticas estaba dentro del grupo
+   con manejadores de la ficha; three toca los puntos con margen de 1 unidad
+   y se tragaba clics y hover de lo que había alrededor. Ahora `raycast={() => null}`.
+2. Se quitó el «clic que atraviesa» la mitad alta de la carta al mover
+   (quedaba solo al desplegar desde la mano).
+3. La rival justo detrás de la propia quedaba tapada desde la cámara:
+   `preferredPiece` da prioridad al objetivo válido entre todo lo que hay
+   bajo el puntero (clic y aviso), y la losa de un objetivo cuenta como el
+   objetivo (`hoveredOccupantId` y `onCell`).
+
+Prueba nueva permanente `e2e/stacked-pieces.spec.ts` (ratón real:
+seleccionar junto a otra, sello al apuntar, atacar): pasa. `battle-ui`
+falla por tiempo en esta máquina también sin estos cambios (comprobado con
+`git stash`).
+
+---
+
 ## Selección de carta y casilla más fiable — 1 de noviembre de 2026 (Claude Code, nube)
 
 El propietario: «a veces le doy clic y no coge la carta que quiero o no va
