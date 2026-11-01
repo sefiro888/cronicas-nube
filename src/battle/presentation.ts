@@ -210,6 +210,38 @@ export interface CombatExchange {
   readonly phase: 'intro' | 'clash'
   readonly attacker: CombatSide & { readonly id: string }
   readonly defender: CombatSide & { readonly id: string }
+  /**
+   * Golpe decisivo: la defensora va a caer o el Nexo queda a un cuarto de
+   * Vida o menos. Se presenta a cámara lenta. Se sabe de antemano porque el
+   * motor ya ha resuelto la jugada y sus consecuencias esperan en la cola.
+   */
+  readonly finisher?: boolean
+}
+
+/** Fracción de Vida del Nexo por debajo de la cual un golpe se trata como decisivo. */
+export const FINISHER_NEXUS_RATIO = 0.25
+
+/**
+ * ¿Es decisivo el intercambio que abre `attack`? Mira la cola pendiente hasta
+ * el siguiente suceso que cierre el duelo.
+ */
+export const isFinisher = (
+  attack: AnimationEvent,
+  pending: readonly AnimationEvent[],
+  match?: Pick<MatchState, 'players'>,
+): boolean => {
+  const start = pending.indexOf(attack)
+  for (const event of pending.slice(start + 1)) {
+    if (endsExchange(event)) break
+    if (event.type === 'destroy' && event.targetId === attack.targetId) return true
+    if (event.type === 'nexus-damage' && match && event.targetId?.endsWith('-nexus')) {
+      const owner = event.targetId.replace('-nexus', '') as PlayerId
+      const player = match.players[owner]
+      const max = COMMANDER_BY_ID[player.commanderId]?.nexusHealth ?? player.nexusHealth
+      if (player.nexusHealth <= max * FINISHER_NEXUS_RATIO) return true
+    }
+  }
+  return false
 }
 
 const opponent = (player: PlayerId): PlayerId => (player === 'player' ? 'ai' : 'player')

@@ -766,10 +766,121 @@
 @keyframes lossFade { 0%, 35% { opacity: 1; } 100% { opacity: 0; } }
 @keyframes valuePop { 0% { transform: scale(1.8); color: #ffdfa0; } 100% { transform: scale(1); } }
 
+
+/* ── Golpe decisivo ────────────────────────────────────────────────────────
+   Franjas de cine, viñeta y choque a cámara lenta. Se reconoce de antemano
+   (ver isFinisher) para poder ralentizar también la carga, no solo el final. */
+.cineTop, .cineBottom {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 6;
+  height: 9vh;
+  background: #000;
+  pointer-events: none;
+  animation: cineIn 500ms cubic-bezier(.2, .9, .3, 1) both;
+}
+.cineTop { top: 0; }
+.cineBottom { bottom: 0; animation-name: cineInBottom; }
+.finisherVignette {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: radial-gradient(ellipse 55% 60% at 50% 50%, transparent 30%, rgba(0, 0, 0, 0.72));
+  pointer-events: none;
+  animation: vignetteIn 600ms ease both;
+}
+.duel[data-finisher][data-phase='clash'] .fighter[data-role='attacker'] .cardWrap { animation-duration: 1500ms; }
+.duel[data-finisher][data-phase='clash'] .fighter[data-role='defender'] .cardWrap { animation-duration: 1500ms; }
+.duel[data-finisher] .shards i { animation-duration: 1700ms; }
+.duel[data-finisher] .slash { animation-duration: 1000ms; }
+.duel[data-finisher] .clashFlash { animation-duration: 1400ms; }
+.finisherTitle {
+  position: absolute;
+  top: 13vh;
+  left: 50%;
+  z-index: 7;
+  color: #fff3d6;
+  font: 900 clamp(26px, 3.6vw, 52px) var(--display);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  text-shadow: 0 0 20px #ff5a3c, 0 0 50px #ff8a3a, 0 4px 10px rgba(0, 0, 0, 0.95);
+  transform: translateX(-50%);
+  pointer-events: none;
+  animation: finisherTitle 1600ms cubic-bezier(.2, 1.2, .3, 1) both;
+}
+
+/* Contraataque: la defensora devuelve el golpe y se nota en la atacante. */
+.counterTag {
+  position: absolute;
+  z-index: 5;
+  bottom: -4%;
+  left: 50%;
+  padding: 2px 10px;
+  border-radius: 4px;
+  color: #fff;
+  background: linear-gradient(90deg, #8c1d12, #d4462c);
+  box-shadow: 0 0 16px rgba(255, 80, 50, 0.8);
+  font: 800 12px var(--display);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transform: translateX(-50%);
+  animation: wordPop 600ms cubic-bezier(.2, 1.6, .4, 1) both;
+}
+.duel[data-counter][data-phase='clash'] .fighter[data-role='defender'] .cardWrap { animation-name: braceCounter; }
+
+/* Combo: crece y se calienta con cada golpe encadenado. */
+.combo {
+  position: absolute;
+  top: 20vh;
+  left: 50%;
+  z-index: 7;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  color: #ffe6a6;
+  font: 800 clamp(16px, 1.6vw, 22px) var(--display);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  text-shadow: 0 0 14px rgba(255, 170, 60, 0.9), 0 3px 6px rgba(0, 0, 0, 0.9);
+  transform: translateX(-50%);
+  pointer-events: none;
+  animation: comboPop 700ms cubic-bezier(.2, 1.6, .4, 1) both;
+}
+.combo strong { font-size: calc(1.6em + var(--combo, 2) * 0.12em); color: #fff; }
+.combo[data-level='3'] strong { color: #ffd76a; }
+.combo[data-level='4'] strong { color: #ff9a3a; }
+.combo[data-level='5'] strong { color: #ff5a3c; text-shadow: 0 0 20px #ff3b2f, 0 0 40px #ff8a3a; }
+
+@keyframes cineIn { from { transform: translateY(-100%); } to { transform: none; } }
+@keyframes cineInBottom { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes vignetteIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes finisherTitle {
+  0% { opacity: 0; transform: translateX(-50%) scale(2.2); filter: blur(8px); }
+  35% { opacity: 1; transform: translateX(-50%) scale(0.95); filter: none; }
+  80% { opacity: 1; }
+  100% { opacity: 0.0; transform: translateX(-50%) scale(1.05); }
+}
+@keyframes braceCounter {
+  0%, 38% { transform: none; }
+  46% { transform: translateX(26px) rotate(6deg) scale(0.95); }
+  66% { transform: translateX(-40px) rotate(-4deg) scale(1.06); }
+  80% { transform: translateX(-36px) rotate(-3deg) scale(1.05); }
+  100% { transform: none; }
+}
+@keyframes comboPop {
+  0% { opacity: 0; transform: translateX(-50%) scale(2); }
+  60% { opacity: 1; transform: translateX(-50%) scale(0.92); }
+  100% { opacity: 1; transform: translateX(-50%) scale(1); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .fighter, .cardWrap, .glow, .damage, .absorbed, .stamp, .swords, .traits li,
   .duel, .rarityFrame, .rarityTag, .traitGlyph, .hitWord, .cardWrap > article { animation: none !important; }
   .slash, .sparks, .shards, .embers, .clashFlash, .orbit, .crystalBurst { display: none; }
+  .cineTop, .cineBottom, .finisherVignette, .finisherTitle, .counterTag, .combo { animation: none !important; }
   .monolithAura, .crystal, .core, .runes, .lifeValue, .lifeLoss { animation: none !important; }
   .cracks { animation: none; stroke-dashoffset: 0; }
 }

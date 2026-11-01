@@ -1,6 +1,7 @@
 import { test, type Page } from '@playwright/test'
 import { CARD_BY_ID, STARTER_DECKS, createMatch } from '../src/game'
 import type { BoardPiece, CardDefinition, MatchState, PlayerId, Position } from '../src/game'
+import type { useMatchStore as MatchStore } from '../src/store/match'
 
 /**
  * Capturas del espectáculo de batalla: el poder de comandante con sus
@@ -190,19 +191,17 @@ const attackScene = async (page: Page, name: string, attacker: CardDefinition, d
   await page.goto('/battle')
   await runUntil(page, async () => (await page.getByTestId('battle-board').count()) > 0, 500, 80)
   await page.clock.runFor(2500)
-  if (nexus) {
-    await page.keyboard.press('ArrowUp')
-    for (let i = 0; i < 8; i += 1) await page.keyboard.press('ArrowUp')
-    await page.keyboard.press('Enter')
-    await page.clock.runFor(300)
-    await page.keyboard.press('n')
-  } else {
-    await page.keyboard.press('ArrowUp')
-    await page.keyboard.press('Enter')
-    await page.clock.runFor(300)
-    for (let i = 0; i < distance; i += 1) await page.keyboard.press('ArrowUp')
-    await page.keyboard.press('Enter')
-  }
+  // El ataque se despacha directamente al almacén (el servidor de Vite deja
+  // importar el módulo): con el reloj congelado, el cursor de teclado no
+  // siempre respondía y la captura salía sin ataque.
+  await page.evaluate(async (toNexus) => {
+    // Ruta en variable para que TypeScript no intente resolverla en Node.
+    const path = '/src/store/match.ts'
+    const { useMatchStore } = await import(/* @vite-ignore */ path) as { useMatchStore: typeof MatchStore }
+    useMatchStore.getState().dispatch(toNexus
+      ? { type: 'attack-nexus', playerId: 'player', attackerId: 'mio' }
+      : { type: 'attack-piece', playerId: 'player', attackerId: 'mio', defenderId: 'presa' })
+  }, nexus)
   for (let index = 0; index < 16; index += 1) {
     await page.clock.runFor(160)
     await page.screenshot({ path: `${DIR}/${name}-${String(index).padStart(2, '0')}.png` })

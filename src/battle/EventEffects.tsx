@@ -14,6 +14,7 @@ import { RitualSeal } from './RitualSeal'
 import { AttackTrail } from './AttackTrail'
 import { ArrowVolley, BarbVolley, ClawStrike, CrushStrike, DragonBreath, GunShot, LightningBolt, SlashStrike, SpectralStrike } from './AttackStyles'
 import { attackKindFor, attackWeight } from './attackStyle'
+import { DeathFlourish, HitSpill } from './CreatureReactions'
 import { ImpactDebris, materialOf } from './ImpactDebris'
 import { ARRIVAL_LANDING } from './arrivalMotion'
 
@@ -449,6 +450,7 @@ export function EventEffects({ event, reducedMotion }: EventEffectsProps) {
         <>
         <ImpactBurst cell={[boardX(event.to.x), boardZ(event.to.y)]} tone={tone} timing={timing} power={Math.min(1.6, powerFor(event.amount) + rarityPower(event.cardId))} />
         {!reducedMotion && <ImpactDebris at={[boardX(event.to.x), boardZ(event.to.y)]} cardId={event.targetCardId} durationMs={event.durationMs} />}
+        {!reducedMotion && <HitSpill at={[boardX(event.to.x), boardZ(event.to.y)]} cardId={event.targetCardId} durationMs={event.durationMs} amount={event.amount ?? 1} />}
         </>
       ) : null
     case 'shield':
@@ -461,6 +463,7 @@ export function EventEffects({ event, reducedMotion }: EventEffectsProps) {
       return event.to ? <>
         <DestroyEmbers cell={event.to} tone={tone} timing={timing} cardId={event.cardId} />
         {!reducedMotion && <ImpactDebris at={[boardX(event.to.x), boardZ(event.to.y)]} cardId={event.cardId} durationMs={event.durationMs} destruction />}
+        {!reducedMotion && <DeathFlourish at={[boardX(event.to.x), boardZ(event.to.y)]} cardId={event.cardId} durationMs={event.durationMs} />}
       </> : null
     case 'nexus-damage': {
       const at = event.targetId ? NEXUS_POSITION[event.targetId] : undefined

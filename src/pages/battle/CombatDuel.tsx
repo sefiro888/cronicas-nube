@@ -17,6 +17,8 @@ interface CombatDuelProps {
   /** El golpe aún no ha caído: se puede adelantar con un clic. */
   readonly holding: boolean
   readonly onSkip: () => void
+  /** Ataques seguidos del mismo bando en este turno, desde el segundo. */
+  readonly combo?: number
 }
 
 /** Habilidad del duelo → término del glosario que le da icono y color. */
@@ -212,6 +214,7 @@ function Fighter({ side, role, me, commanderIds, nexusHealth, phase, holding, fo
         )}
         {hit && <span key={side.damage} className={styles.damage}>−{side.damage}</span>}
         {word && <span key={`w${side.damage}`} className={styles.hitWord}>{word}</span>}
+        {role === 'attacker' && hit && <span key={`c${side.damage}`} className={styles.counterTag}>¡Contraataque!</span>}
         {side.absorbed > 0 && <span key={`a${side.absorbed}`} className={styles.absorbed}>⬡ {side.absorbed}</span>}
         {side.destroyed && <span className={styles.stamp}>{side.nexus ? 'Herido' : 'Destruida'}</span>}
       </div>
@@ -251,7 +254,7 @@ function Fighter({ side, role, me, commanderIds, nexusHealth, phase, holding, fo
  * golpeada se agrieta y, si cae, estalla en fragmentos. La rareza de quien
  * golpea cambia el color del tajo y la cantidad de chispas.
  */
-export function CombatDuel({ exchange, me, commanderIds, nexusHealth, holding, onSkip }: CombatDuelProps) {
+export function CombatDuel({ exchange, me, commanderIds, nexusHealth, holding, onSkip, combo }: CombatDuelProps) {
   const { attacker, defender } = exchange
 
   useEffect(() => {
@@ -277,7 +280,9 @@ export function CombatDuel({ exchange, me, commanderIds, nexusHealth, holding, o
       data-holding={holding || undefined}
       data-struck={totalDamage > 0 || undefined}
       data-attacker-rarity={rarityOf(attacker)}
-      style={{ '--shake': `${Math.min(14, 3 + totalDamage * 2)}px` } as CSSProperties}
+      data-finisher={exchange.finisher || undefined}
+      data-counter={(attacker.damage > 0 && !defender.nexus) || undefined}
+      style={{ '--shake': `${Math.min(18, 3 + totalDamage * 2 + (combo ?? 0) * 1.5)}px`, '--combo': combo ?? 0 } as CSSProperties}
       onClick={holding ? onSkip : undefined}
       data-testid="combat-duel"
     >
@@ -286,6 +291,14 @@ export function CombatDuel({ exchange, me, commanderIds, nexusHealth, holding, o
           justo lo que hay que ver cuando es el objetivo. El destello del
           choque cruza la pantalla sin quedarse. */}
       {exchange.phase === 'clash' && <span key={`flash${totalDamage}`} className={styles.clashFlash} aria-hidden="true" />}
+      {/* Golpe decisivo: franjas de cine y viñeta; el CSS ralentiza el choque. */}
+      {exchange.finisher && <><span className={styles.cineTop} aria-hidden="true" /><span className={styles.cineBottom} aria-hidden="true" /><span className={styles.finisherVignette} aria-hidden="true" /></>}
+      {exchange.finisher && exchange.phase === 'clash' && <span className={styles.finisherTitle} aria-hidden="true">{defender.nexus ? '¡Golpe al corazón!' : '¡Golpe final!'}</span>}
+      {combo && combo >= 2 && (
+        <span key={`combo${combo}`} className={styles.combo} data-level={Math.min(combo, 5)} aria-hidden="true">
+          Combo <strong>×{combo}</strong>
+        </span>
+      )}
       <Fighter side={attacker} role="attacker" me={me} commanderIds={commanderIds} nexusHealth={nexusHealth} phase={exchange.phase} holding={holding} foeRarity={rarityOf(defender)} />
       <Fighter side={defender} role="defender" me={me} commanderIds={commanderIds} nexusHealth={nexusHealth} phase={exchange.phase} holding={holding} foeRarity={rarityOf(attacker)} />
     </div>

@@ -5,7 +5,7 @@ import { useMatchStore } from '../../store/match'
 import type { PreferencesState } from '../../store/preferences'
 import { ARRIVAL_LANDING } from '../arrivalMotion'
 import { eventDuration } from '../eventTiming'
-import { clashExchange, duelIntroDuration, endsExchange, foldExchange, openExchange, pushRecentPlay, recentPlayFor, spotlightFor, type CombatExchange, type RecentPlay, type Spotlight } from '../presentation'
+import { clashExchange, duelIntroDuration, endsExchange, foldExchange, isFinisher, openExchange, pushRecentPlay, recentPlayFor, spotlightFor, type CombatExchange, type RecentPlay, type Spotlight } from '../presentation'
 
 /** Traduce un evento del motor a su señal sonora. `me` es el bando que controla este navegador. */
 const cueForEvent = (event: AnimationEvent, me: PlayerId): SoundCue | undefined => {
@@ -82,6 +82,8 @@ export interface EventDirector {
   dismissDuel: () => void
   /** Quién golpea a quién en el intercambio que se está reproduciendo. */
   exchange?: CombatExchange
+  /** Racha de ataques del mismo bando en este turno (desde el segundo). */
+  combo?: { readonly key: string; readonly count: number; readonly owner: PlayerId }
   /** Sacudida de pantalla: clave nueva por golpe y su fuerza. */
   impact?: { readonly key: string; readonly strength: 'light' | 'heavy' }
   /** Últimas jugadas de ambos bandos, la más reciente primero. */
@@ -120,6 +122,13 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
   const [impact, setImpact] = useState<{ readonly key: string; readonly strength: 'light' | 'heavy' }>()
   const [duelHold, setDuelHold] = useState<{ readonly key: string; readonly durationMs: number }>()
   const [recentPlays, setRecentPlays] = useState<readonly RecentPlay[]>([])
+  /**
+   * Ataques encadenados por el mismo bando en un turno. A partir del segundo
+   * se enseña «Combo ×N» y los efectos del duelo crecen: el propietario quería
+   * que encadenar golpes se sintiera como una racha.
+   */
+  const [combo, setCombo] = useState<{ readonly key: string; readonly count: number; readonly owner: PlayerId }>()
+  const comboRef = useRef<{ owner?: PlayerId; count: number }>({ count: 0 })
 
   // 1) Si no hay evento en reproducción, avanza la cola. Antes de una carta
   // lanzada se detiene a presentarla: es el único momento en que ambos bandos
@@ -134,12 +143,15 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
     const introMs = duelIntroDuration(preferences.presentationPace, preferences.animationSpeed)
     if (next?.type === 'attack' && introMs > 0 && !preferences.reducedMotion && !presentedRef.current.has(next.id)) {
       const attacker = state.match?.board.find((piece) => piece.instanceId === next.actorId)
-      const opened = openExchange(next, attacker?.owner ?? state.match?.activePlayer ?? me, state.match?.board)
+      const base = openExchange(next, attacker?.owner ?? state.match?.activePlayer ?? me, state.match?.board)
+      const finisher = base ? isFinisher(next, state.pendingAnimations, state.match) : false
+      const opened = base && finisher ? { ...base, finisher } : base
       if (opened) {
         const deferred = window.setTimeout(() => {
           presentedRef.current.add(next.id)
           setExchange(opened)
-          setDuelHold({ key: next.id, durationMs: introMs })
+          // El golpe decisivo se queda un poco más en pantalla antes de caer.
+          setDuelHold({ key: next.id, durationMs: finisher ? introMs * 1.35 : introMs })
         }, 0)
         return () => window.clearTimeout(deferred)
       }
@@ -192,6 +204,8 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
     // efecto para no encadenar renders síncronos.
     const sideChannel = window.setTimeout(() => {
       if (currentEvent.type === 'turn') {
+        comboRef.current = { count: 0 }
+        setCombo(undefined)
         setBanner(currentEvent.actorId === me ? 'Tu turno' : 'Turno rival')
       }
       if (currentEvent.type === 'spell' && currentEvent.effectId === 'scry-top-cards' && currentEvent.actorId === me) {
@@ -217,6 +231,11 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
         // El dueño se lee de la pieza: el turno activo falla con golpes que
         // ocurren fuera de turno (represalias, efectos al inicio del turno).
         const attacker = state.match?.board.find((piece) => piece.instanceId === currentEvent.actorId)
+        const owner = attacker?.owner ?? state.match?.activePlayer ?? me
+        const run = comboRef.current
+        run.count = run.owner === owner ? run.count + 1 : 1
+        run.owner = owner
+        if (run.count >= 2) setCombo({ key: currentEvent.id, count: run.count, owner })
         setExchange((open) => {
           if (open?.key === currentEvent.id) return clashExchange(open)
           const opened = openExchange(currentEvent, attacker?.owner ?? state.match?.activePlayer ?? me, state.match?.board)
@@ -378,6 +397,7 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
     duelHolding: Boolean(duelHold),
     dismissDuel,
     exchange,
+    combo,
     impact,
     recentPlays,
     resetBanners,

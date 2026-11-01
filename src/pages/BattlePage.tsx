@@ -984,6 +984,7 @@ export function BattlePage() {
               nexusHealth={displayedNexusHealth}
               holding={director.duelHolding}
               onSkip={director.dismissDuel}
+              combo={director.combo?.key === director.exchange.key ? director.combo.count : undefined}
             />
           )}
           {director.eventBanner && !director.exchange && (

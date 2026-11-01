@@ -5,6 +5,7 @@ import type { AnimationEvent } from '../game'
 import { gridToWorldX, gridToWorldZ, NEXUS_WORLD } from './grid/gridCoordinates'
 import styles from './DamageNumbers.module.css'
 import { useTransientEntries } from './useTransientEntries'
+import { CRITICAL_DAMAGE, damageKind, type DamageKind } from './creatureFx'
 
 interface FloatingNumber {
   readonly id: string
@@ -14,6 +15,17 @@ interface FloatingNumber {
   readonly color: 'damage' | 'heal' | 'shield'
   /** Tamaño relativo del número, creciente con la cantidad (ver `scaleFor`). */
   readonly scale: number
+  /** Tipo de daño: cada uno con su color, icono y forma de subir. */
+  readonly kind: DamageKind
+  readonly critical: boolean
+}
+
+/**
+ * Icono delante de la cifra. Antes todos los números eran el mismo rojo y
+ * no se distinguía una quemadura de una congelación ni de un veneno.
+ */
+const KIND_ICON: Readonly<Record<DamageKind, string>> = {
+  physical: '', fire: '🔥', ice: '❄', poison: '☠', shadow: '◆', arcane: '✦',
 }
 
 /**
@@ -70,7 +82,9 @@ export const DamageNumbers = memo(function DamageNumbers({ event, reducedMotion 
       z: position[1],
       value,
       color: event.type === 'shield' ? 'shield' : 'damage',
-      scale: scaleFor(value),
+      scale: scaleFor(value) * (value >= CRITICAL_DAMAGE ? 1.25 : 1),
+      kind: event.type === 'shield' ? 'physical' : damageKind(event),
+      critical: event.type !== 'shield' && value >= CRITICAL_DAMAGE,
     }
     append(entry)
   }, [event, append])
@@ -79,7 +93,9 @@ export const DamageNumbers = memo(function DamageNumbers({ event, reducedMotion 
     <group>
       {numbers.map((num) => (
         <Html key={num.id} center position={[num.x, SPAWN_HEIGHT, num.z]} distanceFactor={8} zIndexRange={[16, 0]}>
-          <div className={styles.number} data-color={num.color} data-reduced-motion={reducedMotion || undefined} style={{ '--num-scale': num.scale } as CSSProperties}>
+          <div className={styles.number} data-color={num.color} data-kind={num.kind} data-critical={num.critical || undefined} data-reduced-motion={reducedMotion || undefined} style={{ '--num-scale': num.scale } as CSSProperties}>
+            {num.critical && <span className={styles.critLabel}>¡Crítico!</span>}
+            {KIND_ICON[num.kind] && <span className={styles.kindIcon}>{KIND_ICON[num.kind]}</span>}
             {num.color === 'shield' ? '+' : '−'}{num.value}
           </div>
         </Html>
