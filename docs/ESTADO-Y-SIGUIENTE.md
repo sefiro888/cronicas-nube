@@ -1,5 +1,33 @@
 # Estado del proyecto y por dónde seguir
 
+## Mazos, menú y carga del tablero — 2 de noviembre de 2026 (Claude Code, nube) · PUNTO DE RETOMA
+
+**Sesión cerrada por saldo de la nube (quedaban ~5 $).** Todo está subido a
+`claude/sweet-clarke-76ugku` y publicado en la vista previa.
+
+- **Mazos** (`DecksPage`): galería de 19 estandartes con retrato del
+  comandante, sello y color de facción (antes, pestañas de texto partidas
+  en cinco líneas); estandarte del comandante en el panel; curva de coste;
+  al elegir mazo baja sola a la lista. La galería es `div role=group` (con
+  `<nav>` el e2e del menú encontraba dos «activos»).
+- **Menú** (`AppShell`): icono propio por sección en vez de 01–08, gema en
+  la activa y «Jugar» como botón dorado principal.
+- **Resumen final en móvil:** textos cortos para que los botones quepan.
+- **Carga del tablero:** la decoración (clima, corona del Nexo, marco) se
+  monta 1,2 s después (`useDeferredDecor`) y la lava de la Caldera carga en
+  su propio `Suspense` (antes retrasaba todo el tablero).
+
+**Abierto:** `e2e/mobile.spec.ts` «las chapas de las unidades no se pisan
+en móvil» es intermitente aquí (1 de 2 pasa; en `main` pasa): espera 3 s a
+que aparezcan las fichas y en la Caldera, sin GPU, tardan más. Revisar con
+GPU; si sigue, medir el primer fotograma de la escena.
+
+**Siguiente recomendado:** control de intensidad de efectos y calidad
+automática; repaso en móvil; IA de Goblins y Tercios; suelos por facción
+con imágenes del propietario (Gemini, 2048 px, vista cenital, sin marco).
+
+---
+
 ## Epitafios y golpe de gracia — 2 de noviembre de 2026 (Claude Code, nube)
 
 Elegidas por el propietario de una lista de 51 ideas.

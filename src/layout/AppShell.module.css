@@ -5,24 +5,39 @@
 .header::after { content: ''; position: absolute; bottom: -1px; left: 25%; right: 25%; height: 1px; background: linear-gradient(90deg, transparent, #e9ce9c80, transparent); pointer-events: none; }
 .brand { display: flex; align-items: center; gap: 15px; width: max-content; }
 .brandMark { width: 33px; height: 40px; display: grid; place-items: center; color: #e3c78e; border: 1px solid #d9bd8059; background: radial-gradient(ellipse at center, #c5e6ff30, #75644115 70%); clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); }
-.brandMark > span { font-size: 26px; filter: drop-shadow(0 0 7px #8ec6ed90); }
+.brandMark > span { font-size: 26px; filter: drop-shadow(0 0 7px #8ec6ed90); animation: brandPulse 3.2s ease-in-out infinite alternate; }
+@keyframes brandPulse { from { filter: drop-shadow(0 0 5px #8ec6ed70); } to { filter: drop-shadow(0 0 12px #bfe4ffcc); } }
 .brandText strong { display: block; font: 400 14px var(--display); letter-spacing: .14em; color: #f3e7cf; }
 .brandText small { display: block; color: #a6aaa7; font-size: 7px; letter-spacing: .22em; text-transform: uppercase; margin-top: 7px; }
 .nav { display: flex; align-items: stretch; height: 100%; gap: 2px; min-width: 0; }
-.navLink { position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 7px; padding: 0 14px; color: #bac0c0; font-size: 10px; font-weight: 500; letter-spacing: .13em; text-transform: uppercase; white-space: nowrap; transition: color .2s, background .2s; }
-.navNumber { font-family: var(--display); font-size: 9px; color: #a9936a; letter-spacing: .12em; }
-.navNumber::before { content: attr(data-number); }
-.navLink:hover { color: #f6e4bd; background: #d9b57808; }
-.navLink[data-active='true'] { color: #f4dfb7; background: linear-gradient(0deg, #e9bd5821, transparent 90%); }
-.navLink::after { content: ''; position: absolute; left: 14px; right: 14px; bottom: -1px; height: 2px; background: #e6c389; transform: scaleX(0); transition: transform .2s; box-shadow: 0 0 16px #d1a35566; }
-.navLink[data-active='true']::after { transform: scaleX(1); }
+.navLink { position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 6px; padding: 0 15px; color: #bac0c0; font-size: 10px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; white-space: nowrap; transition: color .2s, background .2s; }
+/* Icono de sección: trazo dorado que se enciende y sube al pasar el ratón. */
+.navIcon { width: 22px; height: 22px; fill: none; stroke: #a9936a; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; transition: stroke .2s, transform .25s cubic-bezier(.2, 1.4, .4, 1), filter .2s; }
+.navLink:hover { color: #f6e4bd; background: radial-gradient(ellipse at 50% 100%, #d9b57818, transparent 70%); }
+.navLink:hover .navIcon { stroke: #f2d38a; transform: translateY(-2px); filter: drop-shadow(0 0 6px #e9bd5899); }
+/* Sección activa: placa como una gema engastada, con brillo arriba y abajo. */
+.navLink[data-active='true'] { color: #fff1cf; background: linear-gradient(180deg, transparent 0%, #e9bd5814 35%, #e9bd5833 100%); }
+.navLink[data-active='true'] .navIcon { stroke: #ffe3a0; filter: drop-shadow(0 0 8px #f0c060cc); }
+.navLink::before { content: ''; position: absolute; top: 6px; left: 50%; width: 6px; height: 6px; background: #ffe3a0; box-shadow: 0 0 10px #f0c060; transform: translateX(-50%) rotate(45deg) scale(0); transition: transform .25s cubic-bezier(.2, 1.6, .4, 1); }
+.navLink[data-active='true']::before { transform: translateX(-50%) rotate(45deg) scale(1); }
+.navLink::after { content: ''; position: absolute; left: 12px; right: 12px; bottom: -1px; height: 2px; background: linear-gradient(90deg, transparent, #f2cf86, transparent); transform: scaleX(0); transition: transform .25s; box-shadow: 0 0 16px #d1a35599; }
+.navLink[data-active='true']::after, .navLink:hover::after { transform: scaleX(1); }
+.navLink:hover:not([data-active='true'])::after { opacity: .45; }
+/* «Jugar» es la acción principal: botón dorado que destaca entre las secciones. */
+.navLink[data-primary] { margin: 14px 6px; padding: 0 20px; border: 1px solid #e9c46a; border-radius: 10px; color: #1a1006; background: linear-gradient(180deg, #ffe7a6, #d9a441 60%, #a8741f); box-shadow: 0 0 18px #e9bd5855, inset 0 1px 0 #fff6d6; animation: playGlow 2.4s ease-in-out infinite alternate; }
+.navLink[data-primary] .navIcon { stroke: #2a1806; filter: none; }
+.navLink[data-primary]::before, .navLink[data-primary]::after { display: none; }
+.navLink[data-primary]:hover { color: #000; background: linear-gradient(180deg, #fff2c8, #e6b354 60%, #b98026); }
+.navLink[data-primary][data-active='true'] { box-shadow: 0 0 26px #f0c060cc, inset 0 1px 0 #fff6d6; }
+@keyframes playGlow { from { box-shadow: 0 0 10px #e9bd5840, inset 0 1px 0 #fff6d6; } to { box-shadow: 0 0 24px #e9bd58aa, inset 0 1px 0 #fff6d6; } }
+@media (prefers-reduced-motion: reduce) { .navLink[data-primary] { animation: none; } .navIcon { transition: none; } }
 .actions { display: flex; justify-self: end; gap: 8px; }
 .iconButton { display: grid; place-items: center; min-width: 40px; height: 40px; color: #e5d7ba; border: 1px solid #c3b18b40; border-radius: 50%; background: #c1d5f005; cursor: pointer; }
 .iconButton:hover { color: #fff0ce; border-color: #d9b77e; background: #d9b77e13; }
 .main { position: relative; min-height: calc(100vh - 82px); }
 .footer { position: relative; display: flex; justify-content: space-between; gap: 20px; align-items: center; padding: 26px max(24px, 6.5vw); color: #98a8b1; border-top: 1px solid #c9ab762a; background: #0c1722df; font-size: 8px; letter-spacing: .2em; }
 .footerBrand { font: 12px var(--display); color: #d3bd94; letter-spacing: .16em; }
-@media (max-width: 1260px) { .header { grid-template-columns: minmax(190px, 1fr) auto auto; padding-inline: 20px; gap: 10px; } .brandText strong { font-size: 11px; letter-spacing: .1em; } .brandText small { font-size: 6px; } .brand { gap: 10px; } .navLink { padding-inline: 11px; font-size: 9px; letter-spacing: .08em; } .iconButton { min-width: 36px; height: 36px; } }
+@media (max-width: 1260px) { .header { grid-template-columns: minmax(190px, 1fr) auto auto; padding-inline: 20px; gap: 10px; } .brandText strong { font-size: 11px; letter-spacing: .1em; } .brandText small { font-size: 6px; } .brand { gap: 10px; } .navLink { padding-inline: 11px; font-size: 9px; letter-spacing: .08em; } .navIcon { width: 20px; height: 20px; } .iconButton { min-width: 36px; height: 36px; } }
 @media (max-width: 980px) and (min-width: 721px) { .header { grid-template-columns: 45px 1fr auto; gap: 10px; } .brandText { display: none; } .nav { justify-content: center; } .navLink { padding-inline: 9px; font-size: 9px; } }
 @media (max-width: 720px) {
   .header { height: auto; min-height: 106px; grid-template-columns: 1fr auto; grid-template-areas: 'brand actions' 'nav nav'; gap: 0; padding: 10px 16px 0; }
@@ -36,7 +51,8 @@
   .nav { grid-area: nav; margin-top: 3px; height: 48px; justify-content: start; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; overscroll-behavior-x: contain; mask-image: linear-gradient(90deg, #000 0%, #000 calc(100% - 12px), transparent); }
   .nav::-webkit-scrollbar { display: none; }
   .navLink { flex: 0 0 auto; padding: 0 12px; gap: 0; font-size: 9px; letter-spacing: .08em; }
-  .navNumber { display: none; }
+  .navIcon { width: 18px; height: 18px; }
+  .navLink[data-primary] { margin: 6px 4px; padding: 0 14px; }
   .navLink::after { left: 12px; right: 12px; }
   .main { min-height: calc(100vh - 106px); }
   .footer { padding: 23px 18px; flex-direction: column; gap: 10px; text-align: center; font-size: 7px; }

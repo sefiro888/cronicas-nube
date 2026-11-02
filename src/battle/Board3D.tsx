@@ -383,18 +383,46 @@ const LAVA_GLOW_MAP = '/assets/terrain/lava-caldera-brillo-v1.webp'
 
 function DetailedTileMaterial({ variant, material, terrainStyle }: { variant: number; material: ThreeElements['meshStandardMaterial']; terrainStyle: keyof typeof NATURAL_TILE_MAPS }) {
   const source = useTexture(withBase(NATURAL_TILE_MAPS[terrainStyle]))
-  const glowSource = useTexture(withBase(LAVA_GLOW_MAP))
   const maps = useMemo(() => tileVariantsOf(source), [source])
-  const glows = useMemo(() => tileVariantsOf(glowSource), [glowSource])
   // En la Caldera, en reposo, solo brillan las grietas de lava. Cuando la
   // losa se resalta (despliegue, movimiento, peligro...) vuelve al brillo de
   // siempre en toda la losa, para que el resaltado se lea igual que en el
-  // resto de escenarios.
+  // resto de escenarios. Va en un componente aparte para cargar el mapa de
+  // brillo solo en la Caldera: cargarlo en todos los tableros retrasaba la
+  // aparición de las fichas varios segundos en equipos lentos.
   const highlighted = typeof material.emissiveIntensity === 'number' && material.emissiveIntensity > 0
   if (terrainStyle === 'basalt' && !highlighted) {
-    return <meshStandardMaterial {...material} map={maps[variant]} emissiveMap={glows[variant]} emissive="#ff7a2a" emissiveIntensity={1.4} />
+    // Mientras llega el mapa de brillo, la losa se pinta con su roca sin
+    // brillo: así la carga de la lava no detiene todo el tablero.
+    return (
+      <Suspense fallback={<meshStandardMaterial {...material} map={maps[variant]} />}>
+        <LavaTileMaterial map={maps[variant]!} variant={variant} material={material} />
+      </Suspense>
+    )
   }
   return <meshStandardMaterial {...material} map={maps[variant]} emissiveMap={maps[variant]} />
+}
+
+function LavaTileMaterial({ map, variant, material }: { map: Texture; variant: number; material: ThreeElements['meshStandardMaterial'] }) {
+  const glowSource = useTexture(withBase(LAVA_GLOW_MAP))
+  const glows = useMemo(() => tileVariantsOf(glowSource), [glowSource])
+  return <meshStandardMaterial {...material} map={map} emissiveMap={glows[variant]} emissive="#ff7a2a" emissiveIntensity={1.4} />
+}
+
+/**
+ * Monta lo decorativo un momento después que el tablero. Con todo lo nuevo
+ * (clima, coronas, marco, estandartes...) el primer fotograma tardaba tanto
+ * en dibujarse que las fichas aparecían segundos tarde en equipos lentos.
+ * Así se juega igual de pronto que antes y la decoración entra después.
+ */
+const DECOR_DELAY_MS = 1200
+function useDeferredDecor(): boolean {
+  const [ready, setReady] = useState(false)
+  useEffect(() => {
+    const timer = window.setTimeout(() => setReady(true), DECOR_DELAY_MS)
+    return () => window.clearTimeout(timer)
+  }, [])
+  return ready
 }
 
 const BoardCell = memo(function BoardCell({ position, valid, hazard, occupied, scorched, rubble, cover, terrainStyle, organicForest, own, deployRow, threatened, intent, colorblindMode, reducedMotion, onCell, onHover }: { position: Position; valid: boolean; hazard?: MovementHazard; occupied: boolean; scorched: boolean; rubble: boolean; cover: boolean; terrainStyle: BoardTileStyle; organicForest: boolean; own: boolean; deployRow: boolean; threatened: boolean; intent: 'move' | 'deploy'; colorblindMode?: boolean; reducedMotion: boolean; onCell: (position: Position) => void; onHover?: (position?: Position) => void }) {
@@ -1172,6 +1200,7 @@ function Nexus({
   reducedMotion: boolean
   terminal: boolean
 }) {
+  const decorReady = useDeferredDecor()
   const [hovered, setHovered] = useState(false)
   useCursor(hovered && targetable)
   const [justHit, setJustHit] = useState(false)
@@ -1311,7 +1340,7 @@ function Nexus({
       })}
       </group>
       </group>
-      {!collapse?.settled && <NexusCrown color={color} damage={damage} hitAt={hitAt} collapsing={Boolean(collapse)} reducedMotion={reducedMotion} />}
+      {decorReady && !collapse?.settled && <NexusCrown color={color} damage={damage} hitAt={hitAt} collapsing={Boolean(collapse)} reducedMotion={reducedMotion} />}
       {collapse && <NexusRupture key={collapse.id} durationMs={collapse.durationMs} tone={color}
         stoneColors={[stone.base, stone.shaft, stone.crown]} reducedMotion={reducedMotion || Boolean(collapse.settled)} />}
       {/* Volumen invisible: conserva el clic/hover en 3D sin gastar una textura. */}
@@ -1677,6 +1706,7 @@ function LoadingStage() {
 }
 
 function Scene(props: Board3DProps) {
+  const decorReady = useDeferredDecor()
   // Conjuntos O(1) precalculados una vez por cambio de estado: evitan el
   // barrido .some() por cada una de las 64 casillas en cada render.
   const validSet = useMemo(() => new Set(props.validCells.map(cellKey)), [props.validCells])
@@ -1788,7 +1818,7 @@ function Scene(props: Board3DProps) {
       </group>
       {/* Clima, luz de tensión, criaturas lejanas y cicatrices: dentro del
           proveedor de clima porque leen su tensión. */}
-      <BattleSkies style={terrainStyle} quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} turn={props.state.turn} />
+      {decorReady && <BattleSkies style={terrainStyle} quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} turn={props.state.turn} />}
       </BattleClimateProvider>
       <group name="battle-view" rotation={[0, props.localPlayerId === 'ai' ? Math.PI : 0, 0]}>
       <BoardRim style={terrainStyle} />
@@ -1820,14 +1850,14 @@ function Scene(props: Board3DProps) {
       })}
       {props.cursorCell && <CursorMarker position={props.cursorCell} reducedMotion={props.reducedMotion} hazard={props.movementHazards?.get(cellKey(props.cursorCell))} />}
       {/* En la Caldera, la costura es un río de lava que parte el tablero. */}
-      {props.scenario === 'caldera' ? <LavaRiver reducedMotion={props.reducedMotion} /> : <Midline terrainStyle={terrainStyle} />}
-      <FactionFrame
+      {props.scenario === 'caldera' ? <Suspense fallback={<Midline terrainStyle={terrainStyle} />}><LavaRiver reducedMotion={props.reducedMotion} /></Suspense> : <Midline terrainStyle={terrainStyle} />}
+      {decorReady && <FactionFrame
         factions={{
           player: COMMANDER_BY_ID[props.state.players.player.commanderId]?.faction,
           ai: COMMANDER_BY_ID[props.state.players.ai.commanderId]?.faction,
         }}
         reducedMotion={props.reducedMotion}
-      />
+      />}
       <BoardAtmosphere terrainStyle={terrainStyle} quality={props.quality} reducedMotion={props.reducedMotion} />
       {/* Y encima, lo que se mueve con dirección: la brasa sube, la nieve cae
           de lado, la hoja baja dando tumbos. `BoardAtmosphere` solo titila en

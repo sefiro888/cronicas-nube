@@ -129,11 +129,11 @@ export function MatchResultDialog(props: MatchResultDialogProps) {
             negativo para pegarse a la gráfica) se montaba sobre el botón. */}
         {((won && !props.isPvp) || props.onReplay) && (
           <div className={heroStyles.rewardRow}>
-            {won && !props.isPvp && <Link to="/album" className={heroStyles.packReward}>🎁 +1 sobre · ábrelo en el álbum</Link>}
+            {won && !props.isPvp && <Link to="/album" className={heroStyles.packReward}>🎁 +1 sobre<span className={heroStyles.longText}> · ábrelo en el álbum</span></Link>}
             {won && !props.isPvp && <StreakEmblem streak={streak} />}
             {props.onReplay && (
               <button type="button" className={heroStyles.replayDecisive} onClick={props.onReplay}>
-                🎬 Ver el golpe decisivo
+                🎬 <span className={heroStyles.longText}>Ver el golpe decisivo</span><span className={heroStyles.shortText}>Repetir golpe</span>
               </button>
             )}
           </div>
