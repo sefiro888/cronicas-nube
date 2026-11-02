@@ -1070,3 +1070,34 @@
 @keyframes pfFlame { 50% { filter: brightness(1.15); } }
 @keyframes pfPrism { to { filter: hue-rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .portraitFrame[data-profile-frame] { animation: none; } }
+
+/* Rematar: botón grande y dorado que late sobre la mano cuando el remate es
+   posible. No tapa el tablero: va pegado al borde inferior del campo. */
+.finishButton {
+  position: absolute;
+  z-index: 48;
+  bottom: 14px;
+  left: 50%;
+  display: grid;
+  justify-items: center;
+  padding: 10px 30px 8px;
+  border: 2px solid #ffd76a;
+  border-radius: 14px;
+  color: #fff6dc;
+  background: linear-gradient(180deg, #8a2a10, #3a0e06);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.6), 0 0 30px rgba(255, 120, 40, 0.8);
+  font: 900 22px var(--display);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-shadow: 0 0 12px #ff8a3a, 0 2px 4px #000;
+  transform: translateX(-50%);
+  cursor: pointer;
+  animation: finishCall 1s ease-in-out infinite alternate;
+}
+.finishButton small { color: #ffd9a8; font: 600 10px var(--display); letter-spacing: 0.16em; }
+.finishButton:hover { filter: brightness(1.2); }
+@keyframes finishCall {
+  from { box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.6), 0 0 18px rgba(255, 120, 40, 0.6); transform: translateX(-50%) scale(1); }
+  to { box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.6), 0 0 44px rgba(255, 150, 60, 1); transform: translateX(-50%) scale(1.05); }
+}
+@media (prefers-reduced-motion: reduce) { .finishButton { animation: none; } }

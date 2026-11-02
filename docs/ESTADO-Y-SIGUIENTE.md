@@ -1,5 +1,19 @@
 # Estado del proyecto y por dónde seguir
 
+## Epitafios y golpe de gracia — 2 de noviembre de 2026 (Claude Code, nube)
+
+Elegidas por el propietario de una lista de 51 ideas.
+
+- **Epitafio** (`battle/Epitaphs.tsx`): al destruirse una unidad rara o
+  mítica, su `flavor` sale en cursiva sobre la casilla y sube despacio.
+- **Rematar** (`pages/battle/FinishingBlow.tsx`): si una unidad propia
+  puede derribar ya el Nexo rival (`getValidAttacks.canAttackNexus` +
+  `previewAttackNexus.lethal`), sale un botón dorado «Rematar». Lanza una
+  escena de 2,2 s con el comandante y después el `attack-nexus` normal.
+  Probado en navegador hasta la pantalla de Victoria.
+
+---
+
 ## Suelo de lava de la Caldera — 2 de noviembre de 2026 (Claude Code, nube)
 
 Imagen **creada por el propietario con Gemini** (procedencia confirmada por

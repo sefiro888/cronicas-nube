@@ -18,6 +18,7 @@ import { stoneMaps } from './materials/stoneMaterial'
 import { forgedMetalMaps } from './materials/forgedMetal'
 import { DamageNumbers } from './DamageNumbers'
 import { ImpactMarks } from './ImpactMarks'
+import { Epitaphs } from './Epitaphs'
 import type { CastImpact } from './castImpact'
 import { FallenPieces } from './FallenPieces'
 import { RecentHits } from './RecentHits'
@@ -1902,6 +1903,7 @@ function Scene(props: Board3DProps) {
       />
       <DamageNumbers event={props.activeEvent} reducedMotion={props.reducedMotion} />
       <ImpactMarks event={props.activeEvent} impact={props.castImpact} reducedMotion={props.reducedMotion} />
+      <Epitaphs event={props.activeEvent} reducedMotion={props.reducedMotion} />
       {!props.photoMode && <ThreatArrows focus={props.threatFocus} board={props.state.board} nexusZ={nexusWorldZ} reducedMotion={props.reducedMotion} />}
       <TraitFlourishes effects={props.traitFx ?? []} reducedMotion={props.reducedMotion} />
       <RecentHits event={props.activeEvent} reducedMotion={props.reducedMotion} />

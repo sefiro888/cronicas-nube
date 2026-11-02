@@ -1,0 +1,76 @@
+.scene { position: fixed; inset: 0; z-index: 75; overflow: hidden; pointer-events: none; }
+.darken {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 40% 50%, color-mix(in srgb, var(--accent) 25%, transparent), rgba(0, 0, 0, 0.82) 70%);
+  animation: darkenLife 2200ms ease forwards;
+}
+.commander {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 96vh;
+  max-width: 62vw;
+  object-fit: cover;
+  object-position: center 20%;
+  mask-image: linear-gradient(90deg, #000 55%, transparent), linear-gradient(0deg, transparent, #000 18%);
+  mask-composite: intersect;
+  filter: drop-shadow(0 0 40px var(--accent)) saturate(1.2);
+  animation: commanderIn 2200ms cubic-bezier(.2, .9, .2, 1) forwards;
+}
+.slash {
+  position: absolute;
+  top: 50%;
+  left: -20%;
+  width: 140%;
+  height: 10px;
+  border-radius: 50%;
+  background: linear-gradient(90deg, transparent, #fff, var(--accent), #fff, transparent);
+  box-shadow: 0 0 30px var(--accent), 0 0 80px #fff;
+  transform: rotate(-14deg) scaleX(0);
+  animation: slashCut 2200ms cubic-bezier(.3, .8, .2, 1) forwards;
+}
+.flash { position: absolute; inset: 0; background: #fff; opacity: 0; animation: flashPop 2200ms ease-out forwards; }
+.title {
+  position: absolute;
+  top: 34%;
+  right: 7%;
+  display: grid;
+  justify-items: end;
+  gap: 6px;
+  text-align: right;
+  animation: titleIn 2200ms cubic-bezier(.2, 1.3, .3, 1) forwards;
+}
+.title small { color: var(--accent); font: 800 14px var(--display); letter-spacing: 0.3em; text-transform: uppercase; }
+.title strong {
+  color: #fff6dc;
+  font: 900 clamp(38px, 6vw, 92px) var(--display);
+  font-style: italic;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-shadow: 0 0 24px var(--accent), 0 0 60px #ff5a2a, 0 6px 14px #000;
+}
+.title span { color: #e8dcc0; font: italic 600 clamp(14px, 1.4vw, 20px) Georgia, serif; text-shadow: 0 2px 6px #000; }
+@keyframes darkenLife { 0% { opacity: 0; } 12%, 85% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes commanderIn {
+  0% { opacity: 0; transform: translateX(-30vw) scale(1.1); }
+  18% { opacity: 1; transform: translateX(0) scale(1); }
+  70% { opacity: 1; transform: translateX(2vw) scale(1.02); }
+  100% { opacity: 0; transform: translateX(6vw) scale(1.04); }
+}
+@keyframes slashCut { 0%, 38% { transform: rotate(-14deg) scaleX(0); opacity: 1; } 52% { transform: rotate(-14deg) scaleX(1); opacity: 1; } 100% { transform: rotate(-14deg) scaleX(1); opacity: 0; } }
+@keyframes flashPop { 0%, 48% { opacity: 0; } 52% { opacity: 0.85; } 66%, 100% { opacity: 0; } }
+@keyframes titleIn {
+  0%, 20% { opacity: 0; transform: translateX(60px) scale(1.4); filter: blur(6px); }
+  36% { opacity: 1; transform: none; filter: none; }
+  85% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .darken, .commander, .slash, .flash, .title { animation: none; }
+  .flash, .slash { display: none; }
+}
+@media (max-width: 760px) {
+  .commander { height: 60vh; max-width: 90vw; }
+  .title { top: auto; bottom: 10%; right: 5%; }
+}

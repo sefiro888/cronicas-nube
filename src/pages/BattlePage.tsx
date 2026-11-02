@@ -75,6 +75,7 @@ import { MatchResultDialog } from './battle/MatchResultDialog'
 import { MulliganDialog } from './battle/MulliganDialog'
 import { BattleIntro } from './battle/BattleIntro'
 import { CommanderQuote } from './battle/CommanderQuote'
+import { FinishingBlow } from './battle/FinishingBlow'
 import { useProfile } from '../components/useProfile'
 import { StreakEmblem } from '../components/ProfileBadges'
 import { ScryDialog } from './battle/ScryDialog'
@@ -498,6 +499,21 @@ export function BattlePage() {
     return undefined
   }, [match, selectedPiece, selectedCard, aimedTargetId, attacks, RIVAL])
 
+  // Golpe de gracia: la unidad propia que puede derribar el Nexo rival ya,
+  // con el golpe más fuerte. Usa la misma previsión del motor que el sello
+  // «¡Golpe letal!», así que el botón solo sale si el remate es seguro.
+  const finisher = useMemo(() => {
+    if (!match || match.winner || match.activePlayer !== ME || queueBusy) return undefined
+    let best: { readonly pieceId: string; readonly damage: number } | undefined
+    for (const piece of match.board) {
+      if (piece.owner !== ME || !getValidAttacks(match, piece.instanceId).canAttackNexus) continue
+      const preview = previewAttackNexus(match, piece.instanceId)
+      if (preview?.lethal && (!best || preview.damage > best.damage)) best = { pieceId: piece.instanceId, damage: preview.damage }
+    }
+    return best
+  }, [match, ME, queueBusy])
+  const [finishing, setFinishing] = useState<string>()
+
   // Habilidades que «hablan»: cada palabra clave que actúa en el duelo lanza
   // su animación sobre el tablero una sola vez (ver TraitFlourish).
   const [traitFx, setTraitFx] = useState<readonly TraitFx[]>([])
@@ -594,6 +610,12 @@ export function BattlePage() {
     state.selectHand(undefined)
     state.selectPiece(undefined)
   }, [])
+  // Al acabar la escena del golpe de gracia se lanza el ataque al Nexo de verdad.
+  const launchFinisher = useCallback(() => {
+    const pieceId = finishing
+    setFinishing(undefined)
+    if (pieceId && doAction({ type: 'attack-nexus', playerId: ME, attackerId: pieceId })) finishSelection()
+  }, [finishing, doAction, finishSelection, ME])
 
   // Soltar una carta sobre una casilla la juega ahí directamente. Se mantiene
   // en un ref porque quien lo dispara es el hook de arrastre, montado antes de
@@ -1074,6 +1096,14 @@ export function BattlePage() {
           >
             {preferences.presentationPace === 'cinematic' ? '🎬' : preferences.presentationPace === 'normal' ? '▶' : '⏩'}
           </button>
+          {/* Rematar: sale cuando una unidad propia puede derribar el Nexo
+              rival este turno; lanza la escena del comandante y luego el golpe. */}
+          {finisher && !finishing && !photoMode && (
+            <button type="button" className={styles.finishButton} onClick={() => setFinishing(finisher.pieceId)}>
+              <span aria-hidden="true">⚔</span> Rematar
+              <small>Golpe de gracia al Nexo rival</small>
+            </button>
+          )}
           {/* Repetir la última jugada a cámara lenta: el estado no cambia, solo
               se vuelven a reproducir sus eventos con el ritmo cinemático. */}
           {store.lastPlay && !photoMode && (
@@ -1485,6 +1515,13 @@ export function BattlePage() {
         />
       )}
 
+      {finishing && COMMANDER_BY_ID[match.players[ME].commanderId] && (
+        <FinishingBlow
+          commander={COMMANDER_BY_ID[match.players[ME].commanderId]!}
+          attackerName={CARD_BY_ID[match.board.find((piece) => piece.instanceId === finishing)?.cardId ?? '']?.name ?? 'Tu unidad'}
+          onDone={launchFinisher}
+        />
+      )}
       {/* Cara a cara al empezar: una vez por partida, antes del mulligan. */}
       {match.turn <= 1 && introSeed !== match.seed && !photoMode && COMMANDER_BY_ID[match.players[ME].commanderId] && COMMANDER_BY_ID[match.players[ME === 'player' ? 'ai' : 'player'].commanderId] && (
         <BattleIntro
