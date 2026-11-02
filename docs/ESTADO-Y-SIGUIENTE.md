@@ -1,5 +1,27 @@
 # Estado del proyecto y por dónde seguir
 
+## Suelo de lava de la Caldera — 2 de noviembre de 2026 (Claude Code, nube)
+
+Imagen **creada por el propietario con Gemini** (procedencia confirmada por
+él; sin licencia de terceros). Original de 1024 px en el chat, no en Git.
+Se eligió la opción A propuesta: losas de roca + río en la costura.
+
+- `public/assets/terrain/lava-caldera-roca-v1.webp`: recorte de la roca sin
+  el río (esquina superior derecha, sin el filete dorado del borde),
+  ampliado a 1024. Sustituye a `basalto-caldera-v1.webp` en
+  `NATURAL_TILE_MAPS.basalt` (el antiguo sigue en el repositorio).
+- `lava-caldera-brillo-v1.webp`: solo las grietas naranjas; en reposo es el
+  `emissiveMap` de las losas de la Caldera. Al resaltar una losa vuelve el
+  brillo de siempre para que el resaltado se lea igual.
+- `lava-caldera-rio-v1.webp`: el río girado 50° y recortado con bordes
+  suaves; `LavaRiver.tsx` lo pone en la costura central de la Caldera
+  (sustituye a `Midline` solo ahí), fluye y su resplandor late.
+
+Pendiente: que el propietario confirme si las cartas se leen bien sobre la
+lava; si quiere, misma técnica para el suelo de otras facciones.
+
+---
+
 ## Fichas pegadas: seleccionar y atacar — 1 de noviembre de 2026 (Claude Code, nube)
 
 El propietario: con cartas en casillas pegadas costaba mucho seleccionar la

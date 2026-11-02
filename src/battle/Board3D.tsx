@@ -51,6 +51,7 @@ import type { PreviewVerdict } from './ui/battleHints'
 import { ThreatArrows, type ThreatFocus } from './ThreatOverlay'
 import { TraitFlourishes, type TraitFx } from './TraitFlourish'
 import { FactionFrame } from './FactionFrame'
+import { LavaRiver } from './LavaRiver'
 import { MaterialEnvironment } from './MaterialEnvironment'
 import { arrivalMotion } from './arrivalMotion'
 import { FACTION_BY_ID } from '../game/factions'
@@ -340,7 +341,9 @@ const tileVariantFor = (position: Position): number =>
 const photographicTileVariants = new WeakMap<Texture, readonly Texture[]>()
 const NATURAL_TILE_MAPS = {
   stone: '/assets/terrain/marmol-ciudadela-v1.webp',
-  basalt: '/assets/terrain/basalto-caldera-v1.webp',
+  // Roca de lava creada por el propietario (Gemini), recortada de una imagen
+  // suya sin el río; el río va aparte en la costura central (LavaRiver).
+  basalt: '/assets/terrain/lava-caldera-roca-v1.webp',
   ice: '/assets/terrain/hielo-fiordo-v1.webp',
   moss: '/assets/terrain/granito-santuario-v1.webp',
   sand: '/assets/terrain/arenisca-duna-v1.webp',
@@ -351,29 +354,45 @@ const NATURAL_TILE_MAPS = {
   glaze: '/assets/terrain/celadon-jade-v1.webp',
   sandstone: '/assets/terrain/arenisca-escalinata-v2.webp',
 } as const
+/** Los 24 recortes girados y desplazados de una foto de terreno (uno por variante de losa). */
+const tileVariantsOf = (source: Texture): readonly Texture[] => {
+  let cached = photographicTileVariants.get(source)
+  if (!cached) {
+    cached = Array.from({ length: 24 }, (_, index) => {
+      const map = source.clone()
+      map.colorSpace = SRGBColorSpace
+      map.anisotropy = 4
+      map.repeat.set(0.48, 0.48)
+      // Girar el recorte dentro de la textura evita que las vetas de las
+      // 64 casillas formen diagonales repetidas. No se cruza el borde del
+      // mapa, de modo que no aparecen costuras en mitad de una losa.
+      map.center.set(0.5, 0.5)
+      map.rotation = Math.floor(index / 6) * Math.PI / 2
+      map.offset.set((index % 3) * 0.26 - 0.26, (Math.floor(index / 3) % 2) * 0.52 - 0.26)
+      map.needsUpdate = true
+      return map
+    })
+    photographicTileVariants.set(source, cached)
+  }
+  return cached
+}
+
+/** Mapa de brillo de las grietas de lava de la Caldera (mismos recortes que la roca). */
+const LAVA_GLOW_MAP = '/assets/terrain/lava-caldera-brillo-v1.webp'
+
 function DetailedTileMaterial({ variant, material, terrainStyle }: { variant: number; material: ThreeElements['meshStandardMaterial']; terrainStyle: keyof typeof NATURAL_TILE_MAPS }) {
   const source = useTexture(withBase(NATURAL_TILE_MAPS[terrainStyle]))
-  const maps = useMemo(() => {
-    let cached = photographicTileVariants.get(source)
-    if (!cached) {
-      cached = Array.from({ length: 24 }, (_, index) => {
-        const map = source.clone()
-        map.colorSpace = SRGBColorSpace
-        map.anisotropy = 4
-        map.repeat.set(0.48, 0.48)
-        // Girar el recorte dentro de la textura evita que las vetas de las
-        // 64 casillas formen diagonales repetidas. No se cruza el borde del
-        // mapa, de modo que no aparecen costuras en mitad de una losa.
-        map.center.set(0.5, 0.5)
-        map.rotation = Math.floor(index / 6) * Math.PI / 2
-        map.offset.set((index % 3) * 0.26 - 0.26, (Math.floor(index / 3) % 2) * 0.52 - 0.26)
-        map.needsUpdate = true
-        return map
-      })
-      photographicTileVariants.set(source, cached)
-    }
-    return cached
-  }, [source])
+  const glowSource = useTexture(withBase(LAVA_GLOW_MAP))
+  const maps = useMemo(() => tileVariantsOf(source), [source])
+  const glows = useMemo(() => tileVariantsOf(glowSource), [glowSource])
+  // En la Caldera, en reposo, solo brillan las grietas de lava. Cuando la
+  // losa se resalta (despliegue, movimiento, peligro...) vuelve al brillo de
+  // siempre en toda la losa, para que el resaltado se lea igual que en el
+  // resto de escenarios.
+  const highlighted = typeof material.emissiveIntensity === 'number' && material.emissiveIntensity > 0
+  if (terrainStyle === 'basalt' && !highlighted) {
+    return <meshStandardMaterial {...material} map={maps[variant]} emissiveMap={glows[variant]} emissive="#ff7a2a" emissiveIntensity={1.4} />
+  }
   return <meshStandardMaterial {...material} map={maps[variant]} emissiveMap={maps[variant]} />
 }
 
@@ -1799,7 +1818,8 @@ function Scene(props: Board3DProps) {
         )
       })}
       {props.cursorCell && <CursorMarker position={props.cursorCell} reducedMotion={props.reducedMotion} hazard={props.movementHazards?.get(cellKey(props.cursorCell))} />}
-      <Midline terrainStyle={terrainStyle} />
+      {/* En la Caldera, la costura es un río de lava que parte el tablero. */}
+      {props.scenario === 'caldera' ? <LavaRiver reducedMotion={props.reducedMotion} /> : <Midline terrainStyle={terrainStyle} />}
       <FactionFrame
         factions={{
           player: COMMANDER_BY_ID[props.state.players.player.commanderId]?.faction,
