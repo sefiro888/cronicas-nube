@@ -145,9 +145,9 @@
 .bestShowcase span { color: #cfc4a8; font-size: 13px; }
 .bestShowcase b { color: #ffd76a; font-size: 18px; }
 .replayDecisive {
-  display: block;
-  margin: 6px auto 0;
-  padding: 7px 18px;
+  display: inline-block;
+  margin: 0;
+  padding: 6px 16px;
   border: 1px solid #e9c46a;
   border-radius: 20px;
   color: #ffe6a6;
@@ -160,5 +160,5 @@
 @keyframes showcaseIn { from { opacity: 0; transform: translateY(12px) scale(0.96); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .bestShowcase { animation: none; } }
 
-.rewardRow { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px; margin: 8px 0 2px; }
-.packReward { padding: 6px 16px; border: 1px solid #e9c46a; border-radius: 18px; color: #ffe6a6; background: linear-gradient(90deg, rgba(120, 80, 20, 0.7), rgba(30, 20, 8, 0.9)); font-weight: 700; text-decoration: none; box-shadow: 0 0 18px rgba(255, 200, 90, 0.5); animation: showcaseIn 700ms cubic-bezier(.2, 1.3, .4, 1) 700ms both; }
+.rewardRow { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px; margin: 10px 0 24px; }
+.packReward { padding: 6px 14px; font-size: 14px; border: 1px solid #e9c46a; border-radius: 18px; color: #ffe6a6; background: linear-gradient(90deg, rgba(120, 80, 20, 0.7), rgba(30, 20, 8, 0.9)); font-weight: 700; text-decoration: none; box-shadow: 0 0 18px rgba(255, 200, 90, 0.5); animation: showcaseIn 700ms cubic-bezier(.2, 1.3, .4, 1) 700ms both; }

@@ -124,16 +124,19 @@ export function MatchResultDialog(props: MatchResultDialogProps) {
           )
         })()}
         {/* Recompensas de la victoria: el sobre ganado y la racha. */}
-        {won && !props.isPvp && (
+        {/* Recompensas y repetición en una sola fila: apiladas hacían la
+            pantalla final muy alta, y el recuento de debajo (con margen
+            negativo para pegarse a la gráfica) se montaba sobre el botón. */}
+        {((won && !props.isPvp) || props.onReplay) && (
           <div className={heroStyles.rewardRow}>
-            <Link to="/album" className={heroStyles.packReward}>🎁 +1 sobre · ábrelo en el álbum</Link>
-            <StreakEmblem streak={streak} />
+            {won && !props.isPvp && <Link to="/album" className={heroStyles.packReward}>🎁 +1 sobre · ábrelo en el álbum</Link>}
+            {won && !props.isPvp && <StreakEmblem streak={streak} />}
+            {props.onReplay && (
+              <button type="button" className={heroStyles.replayDecisive} onClick={props.onReplay}>
+                🎬 Ver el golpe decisivo
+              </button>
+            )}
           </div>
-        )}
-        {props.onReplay && (
-          <button type="button" className={heroStyles.replayDecisive} onClick={props.onReplay}>
-            🎬 Ver el golpe decisivo
-          </button>
         )}
         {props.tally.played > 1 && (
           <p className={styles.resultTally}>
