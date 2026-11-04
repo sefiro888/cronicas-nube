@@ -7,6 +7,7 @@ import { FactionSigil, FACTION_LABELS } from './FactionSigil';
 import { GlossaryText } from './GlossaryText';
 import { RarityGem, RARITY_LABELS } from './RarityGem';
 import styles from './Card.module.css';
+import { FIMBUL_ART_CLIP, FIMBUL_FRAME, frameRuleSize } from '../presentation/cardFrames';
 
 export type CardSize = 'thumbnail' | 'hand' | 'board' | 'gallery' | 'inspect';
 export type CardStatusId =
@@ -26,7 +27,10 @@ export interface CardStatusEffect {
 
 export type CardStatus = CardStatusId | CardStatusEffect;
 
+export type CardStatValues = Readonly<Pick<CardDefinition, 'attack' | 'health' | 'resistance'>>;
+
 export interface CardProps {
+  readonly combatStats?: CardStatValues;
   readonly card: CardDefinition;
   readonly size?: CardSize;
   readonly selected?: boolean;
@@ -137,12 +141,13 @@ export function formatManaCost(cost: ManaCost): string {
   return parts.length > 0 ? parts.join(' y ') : 'sin coste';
 }
 
-function ManaCostBadge({ cost, affordable }: { readonly cost: ManaCost; readonly affordable?: boolean }) {
+function ManaCostBadge({ cost, affordable, framed }: { readonly cost: ManaCost; readonly affordable?: boolean; readonly framed?: boolean }) {
   const colored = FACTION_ORDER.flatMap((faction) => {
     const amount = cost.colored[faction];
     return amount ? [{ faction, amount }] : [];
   });
 
+  const total = cost.generic + colored.reduce((sum, entry) => sum + entry.amount, 0);
   return (
     <div
       className={styles.cost}
@@ -150,6 +155,8 @@ function ManaCostBadge({ cost, affordable }: { readonly cost: ManaCost; readonly
       aria-label={`Coste: ${formatManaCost(cost)}${affordable === false ? '. No tienes Esencia suficiente.' : ''}`}
       title={`Coste: ${formatManaCost(cost)}`}
     >
+      {framed && <strong className={styles.frameCostTotal}>{total}</strong>}
+      <span className={framed ? styles.frameCostDetail : styles.costParts}>
       {colored.map(({ faction, amount }) => (
         <span className={styles.coloredCost} data-faction={faction} key={faction}>
           <strong>{amount}</strong>
@@ -160,29 +167,31 @@ function ManaCostBadge({ cost, affordable }: { readonly cost: ManaCost; readonly
           {cost.generic}
         </span>
       )}
+      </span>
     </div>
   );
 }
 
-function CardStats({ card }: { readonly card: CardDefinition }) {
-  const hasCombatStats = card.attack !== undefined || card.health !== undefined;
-  if (!hasCombatStats && card.resistance === undefined) return null;
+function CardStats({ card, values }: { readonly card: CardDefinition; readonly values?: CardStatValues }) {
+  const { attack, health, resistance } = { ...card, ...values };
+  const hasCombatStats = attack !== undefined || health !== undefined;
+  if (!hasCombatStats && resistance === undefined) return null;
 
   return (
     <div className={styles.stats} aria-label="Estadísticas">
-      {card.attack !== undefined && (
-        <span className={`${styles.stat} ${styles.attack}`} title={`Ataque ${card.attack}`}>
-          <small>ATQ</small><strong>{card.attack}</strong>
+      {attack !== undefined && (
+        <span className={`${styles.stat} ${styles.attack}`} title={`Ataque ${attack}`}>
+          <small>ATQ</small><strong>{attack}</strong>
         </span>
       )}
-      {card.health !== undefined && (
-        <span className={`${styles.stat} ${styles.health}`} title={`Vida ${card.health}`}>
-          <small>VID</small><strong>{card.health}</strong>
+      {health !== undefined && (
+        <span className={`${styles.stat} ${styles.health}`} title={`Vida ${health}`}>
+          <small>VID</small><strong>{health}</strong>
         </span>
       )}
-      {card.resistance !== undefined && (
-        <span className={`${styles.stat} ${styles.resistance}`} title={`Resistencia ${card.resistance}`}>
-          <small>RES</small><strong>{card.resistance}</strong>
+      {resistance !== undefined && (
+        <span className={`${styles.stat} ${styles.resistance}`} title={`Resistencia ${resistance}`}>
+          <small>RES</small><strong>{resistance}</strong>
         </span>
       )}
     </div>
@@ -198,6 +207,7 @@ export function Card({
   exhausted = false,
   reducedMotion = false,
   statusEffects = [],
+  combatStats,
   className,
   onSelect,
   onInspect,
@@ -205,7 +215,13 @@ export function Card({
   const statuses = statusEffects.map(resolveStatus);
   const isExhausted = exhausted || statuses.some((status) => status.id === 'exhausted');
   const isInteractive = Boolean(onSelect || onInspect);
-  const cardStyle = { '--card-color': card.color } as CSSProperties;
+  const framed = card.faction === 'fimbul';
+  const { x, y, width, height } = FIMBUL_FRAME.art;
+  const cardStyle = { '--card-color': card.color, ...(framed && {
+    '--frame-window': FIMBUL_ART_CLIP, '--frame-rule-size': `${frameRuleSize(card.rules.length)}cqw`,
+    '--frame-art-x': `${x * 100}%`, '--frame-art-y': `${y * 100}%`,
+    '--frame-art-width': `${width * 100}%`, '--frame-art-height': `${height * 100}%`,
+  }) } as CSSProperties;
   const typeLine = card.subtype ? `${CARD_TYPE_LABELS[card.type]} — ${card.subtype}` : CARD_TYPE_LABELS[card.type];
   const stateDescription = [
     playable === true ? 'jugable' : playable === false ? 'no jugable' : '',
@@ -278,6 +294,8 @@ export function Card({
       style={cardStyle}
       data-card-id={card.id}
       data-faction={card.faction}
+      data-frame={framed ? 'fimbul-hielo' : undefined}
+      data-frame-dense={framed && card.rules.length > 110 || undefined}
       data-rarity={card.rarity}
       data-reduced-motion={reducedMotion || undefined}
       data-frozen={statuses.some((status) => status.id === 'frozen') || undefined}
@@ -294,9 +312,10 @@ export function Card({
       onPointerMove={tiltEnabled ? handlePointerMove : undefined}
       onPointerLeave={tiltEnabled ? resetTilt : undefined}
     >
+      {framed && <img className={styles.factionFrame} src={withBase(FIMBUL_FRAME.asset)} alt="" aria-hidden="true" draggable={false} />}
       <span className={styles.frameFiligree} aria-hidden="true" />
       <span className={styles.foil} aria-hidden="true" />
-      <ManaCostBadge cost={card.cost} affordable={playable} />
+      <ManaCostBadge cost={card.cost} affordable={playable} framed={framed} />
       <div className={styles.header}>
         <h3 className={styles.name}>{card.name}</h3>
         {card.unique && <span className={styles.unique} title="Carta única" aria-label="Carta única">✦</span>}
@@ -332,7 +351,7 @@ export function Card({
         <span className={styles.collection} title={`${card.set}, carta ${card.collectorNumber}`}>
           {card.set} · {String(card.collectorNumber).padStart(3, '0')}
         </span>
-        <CardStats card={card} />
+        <CardStats card={card} values={combatStats} />
       </div>
 
       {statuses.length > 0 && (

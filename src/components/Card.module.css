@@ -615,3 +615,93 @@
 @media (prefers-reduced-motion: reduce) {
   .card .artImage, .card .artwork::before, .card .foil { animation: none !important; }
 }
+
+/* El chasis ya contiene sus materiales y ornamentos: añadir encima las cajas
+   antiguas tapaba el pergamino y duplicaba los engastes de coste y estadísticas. */
+.card[data-frame='fimbul-hielo'] {
+  display: block; aspect-ratio: 2 / 3; padding: 0; border: 0; border-radius: 5%;
+  background: #0d1a25; box-shadow: 0 .6rem 1.7rem #0007; container-type: inline-size;
+}
+.factionFrame { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.card[data-frame='fimbul-hielo']::before, .card[data-frame='fimbul-hielo']::after,
+.card[data-frame='fimbul-hielo'] .frameFiligree, .card[data-frame='fimbul-hielo'] .factionSeal { display: none; }
+.card[data-frame='fimbul-hielo'] .header {
+  position: absolute; left: 16%; top: 9.1%; width: 68%; height: 6.2%; padding: 0 5cqw;
+  display: grid; grid-template-columns: minmax(0, 1fr); align-items: center;
+}
+.card[data-frame='fimbul-hielo'] .name {
+  font-size: 4.4cqw; line-height: 1.04; text-align: center; letter-spacing: 0; white-space: normal;
+  text-overflow: clip; overflow: visible; text-wrap: balance;
+}
+.card[data-frame='fimbul-hielo'] .unique { position: absolute; left: 0; font-size: 3.4cqw; }
+.card[data-frame='fimbul-hielo'] .header > :last-child { position: absolute; right: 0; font-size: 3.5cqw; }
+.card[data-frame='fimbul-hielo'] .cost {
+  top: 1.8%; left: 44.4%; width: 11.2%; height: 6.4%; display: flex; flex-direction: column;
+  justify-content: center; gap: 0; filter: drop-shadow(0 1px 3px #000); line-height: 1;
+}
+.frameCostTotal { font: 700 7.3cqw/.92 var(--display, Georgia, serif); color: #fff8e8; text-shadow: 0 1px 3px #160000, 0 0 10px #79ceff; }
+.frameCostDetail { font: 700 2.25cqw/1.4 system-ui, sans-serif; color: #ffe4bc; margin-top: 1cqw; white-space: nowrap; }
+.card[data-frame='fimbul-hielo'] .artwork {
+  position: absolute; left: var(--frame-art-x); top: var(--frame-art-y); width: var(--frame-art-width); height: var(--frame-art-height);
+  clip-path: var(--frame-window); border: 0; border-radius: 0; box-shadow: none; background: #0e1014;
+}
+.card[data-frame='fimbul-hielo'] .artImage { object-position: center 35%; }
+.card[data-frame='fimbul-hielo'] .artVignette { box-shadow: inset 0 0 2.5cqw #0005; }
+.card[data-frame='fimbul-hielo'] .typeLine {
+  position: absolute; top: 53.8%; left: 24%; width: 52%; height: 4.5%; padding: 0;
+  background: none; border: 0; box-shadow: none; font-size: 3.1cqw; color: #fff0cf;
+  min-height: 0; gap: 1cqw; text-shadow: 0 1px 2px #160700;
+}
+.card[data-frame='fimbul-hielo'] .typeLine > span:first-child { text-align: center; }
+.card[data-frame='fimbul-hielo'] .microStat { font-size: 2.1cqw; color: #ffe1ae; }
+.card[data-frame='fimbul-hielo'] .textBox {
+  position: absolute; top: 63.2%; left: 15%; width: 70%; height: 16%; padding: 0;
+  border: 0; border-radius: 0; background: none; box-shadow: none; color: #2c1b0e; --glossary-ink: #21160e; --glossary-ink-weight: 68%;
+}
+.card[data-frame='fimbul-hielo'] .rules {
+  display: block; overflow: visible; font-size: var(--frame-rule-size); line-height: 1.28; font-weight: 600;
+  -webkit-line-clamp: unset; text-wrap: pretty;
+}
+.card[data-frame='fimbul-hielo'] .flavor { display: none; }
+.card[data-frame='fimbul-hielo'].inspect:not([data-frame-dense]) .flavor { display: block; font-size: 2.7cqw; line-height: 1.2; margin-top: 1.35cqw; }
+.card[data-frame='fimbul-hielo'] .footer, .card[data-frame='fimbul-hielo'] .stats { position: absolute; inset: 0; margin: 0; display: block; padding: 0; pointer-events: none; }
+.card[data-frame='fimbul-hielo'] .collection {
+  position: absolute; bottom: 3.8%; left: 28%; max-width: 44%; width: 44%; text-align: center;
+  font-size: 1.9cqw; color: #f2c28f; text-shadow: 0 1px 3px #000;
+}
+.card[data-frame='fimbul-hielo'] .stat {
+  position: absolute; bottom: 8.2%; width: 14%; height: 10%; min-width: 0; padding: 0;
+  display: flex; flex-direction: column-reverse; gap: .7cqw; background: none; clip-path: none;
+  filter: none; color: #fff2d7;
+}
+.card[data-frame='fimbul-hielo'] .stat::before { display: none; }
+.card[data-frame='fimbul-hielo'] .attack { left: 15.5%; }
+.card[data-frame='fimbul-hielo'] .health, .card[data-frame='fimbul-hielo'] .resistance { right: 17%; }
+.card[data-frame='fimbul-hielo'] .stat strong { font-size: 8.5cqw; line-height: .9; }
+.card[data-frame='fimbul-hielo'] .stat small { font-size: 2.1cqw; letter-spacing: .08em; color: #f4d3a8; }
+.card[data-frame='fimbul-hielo'] .statuses { top: 18%; right: 15%; font-size: 3cqw; }
+.card[data-frame='fimbul-hielo'] .selectionMark { bottom: 18%; font-size: 2.3cqw; }
+.card[data-frame='fimbul-hielo'] .playableMark { top: 14%; right: 9%; font-size: 2cqw; }
+.card[data-frame='fimbul-hielo'].thumbnail .textBox { display: block; }
+.card[data-frame='fimbul-hielo'].thumbnail .rules { font-size: 3.5cqw; }
+.card[data-frame='fimbul-hielo'].interactive:focus-visible { outline: 2px solid #fff1b8; outline-offset: 4px; }
+.card[data-frame='fimbul-hielo'] { animation: none; }
+
+.costParts { display: contents; }
+.frameCostDetail { display: flex; gap: .6cqw; justify-content: center; margin-top: .35cqw; }
+.frameCostDetail > span {
+  width: auto; height: auto; min-width: 0; padding: 0 .5cqw; font-size: 2.2cqw; line-height: 1.2;
+}
+
+/* Los términos comparten el pergamino como ancla para que la definición
+   quede dentro del ancho de la carta incluso junto a su borde izquierdo. */
+.card[data-frame='fimbul-hielo'].inspect .textBox { overflow: visible; z-index: 9; }
+.card[data-frame='fimbul-hielo'].inspect [role='term'] { position: static; }
+.card[data-frame='fimbul-hielo'].inspect [role='tooltip'] {
+  bottom: calc(100% + .45rem);
+  width: 100%;
+  max-width: none;
+  font-size: clamp(.72rem, 3.5cqw, .9rem);
+  transition: none;
+}
+.card[data-frame='fimbul-hielo'].inspect [role='tooltip']::after { display: none; }

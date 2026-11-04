@@ -8,7 +8,7 @@
   /* Cada término lleva su color de identidad (--kw). Sobre el pergamino claro
      de la carta se oscurece mezclándolo con el texto: el color puro, pensado
      para fondos oscuros, no llegaba al contraste mínimo sobre beige. */
-  color: color-mix(in srgb, currentColor 45%, var(--kw, #236d91));
+  color: color-mix(in srgb, var(--glossary-ink, currentColor) var(--glossary-ink-weight, 45%), var(--kw, #236d91));
   border-bottom-color: var(--kw, currentColor);
   font-weight: 800;
   cursor: help;
@@ -41,6 +41,7 @@
   font-weight: 500;
   line-height: 1.35;
   opacity: 0;
+  visibility: hidden;
   pointer-events: none;
   text-align: left;
   transform: translate(-50%, 0.25rem);
@@ -59,8 +60,7 @@
 
 .tooltip strong { color: #f2d184; font-family: Georgia, 'Times New Roman', serif; font-size: 1.05em; }
 .term:hover .tooltip,
-.term:focus .tooltip,
-.term:focus-within .tooltip { opacity: 1; transform: translate(-50%, 0); }
+.term:focus-visible .tooltip { opacity: 1; visibility: visible; transform: translate(-50%, 0); }
 
 @media (prefers-reduced-motion: reduce) {
   .tooltip { transition: none; }

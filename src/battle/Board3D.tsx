@@ -1,3 +1,4 @@
+import { useCardFaceTexture } from './useCardFaceTexture'
 import { Html, OrbitControls, Sparkles, useCursor, useTexture } from '@react-three/drei'
 import { Canvas, type ThreeElements, type ThreeEvent, useFrame, useThree } from '@react-three/fiber'
 import { lazy, memo, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
@@ -345,7 +346,6 @@ const NATURAL_TILE_MAPS = {
   // Roca de lava creada por el propietario (Gemini), recortada de una imagen
   // suya sin el río; el río va aparte en la costura central (LavaRiver).
   basalt: '/assets/terrain/lava-caldera-roca-v1.webp',
-  ice: '/assets/terrain/hielo-fiordo-v1.webp',
   moss: '/assets/terrain/granito-santuario-v1.webp',
   sand: '/assets/terrain/arenisca-duna-v1.webp',
   forest: '/assets/terrain/suelo-bosque-v1.webp',
@@ -376,6 +376,29 @@ const tileVariantsOf = (source: Texture): readonly Texture[] => {
     photographicTileVariants.set(source, cached)
   }
   return cached
+}
+
+const fimbulTileMaps = new WeakMap<Texture, readonly Texture[]>()
+
+// Cada losa muestra su fragmento de la talla completa. Las juntas siguen
+// perteneciendo a la geometría del tablero y separan también los resaltados.
+function FimbulTileMaterial({ position, material }: { position: Position; material: ThreeElements['meshStandardMaterial'] }) {
+  const source = useTexture(withBase('/assets/terrain/suelo-fimbul-v1.webp'))
+  let maps = fimbulTileMaps.get(source)
+  if (!maps) {
+    maps = Array.from({ length: BOARD_CELL_COUNT }, (_, index) => {
+      const map = source.clone()
+      const { x, y } = CELL_POSITIONS[index]!
+      map.colorSpace = SRGBColorSpace
+      map.anisotropy = 4
+      map.repeat.set(1 / BOARD_SIZE, 1 / BOARD_SIZE)
+      map.offset.set(x / BOARD_SIZE, 1 - (y + 1) / BOARD_SIZE)
+      map.needsUpdate = true
+      return map
+    })
+    fimbulTileMaps.set(source, maps)
+  }
+  return <meshStandardMaterial {...material} map={maps[position.y * BOARD_SIZE + position.x]} emissiveMap={null} />
 }
 
 /** Mapa de brillo de las grietas de lava de la Caldera (mismos recortes que la roca). */
@@ -483,9 +506,9 @@ const BoardCell = memo(function BoardCell({ position, valid, hazard, occupied, s
       {/* La normal se genera aparte: el color claro de una veta no debe
           convertirse en un relieve falso. El resplandor conserva el dibujo. */}
       <Suspense fallback={<meshStandardMaterial {...material} />}>
-        <DetailedTileMaterial terrainStyle={terrainStyle === 'forest' && !organicForest ? 'bestiary' : terrainStyle} variant={((Math.imul(position.x + 1, 73856093) ^ Math.imul(position.y + 1, 19349663)) >>> 0) % 24} material={material} />
+        {terrainStyle === 'ice' ? <FimbulTileMaterial position={position} material={material} /> : <DetailedTileMaterial terrainStyle={terrainStyle === 'forest' && !organicForest ? 'bestiary' : terrainStyle} variant={((Math.imul(position.x + 1, 73856093) ^ Math.imul(position.y + 1, 19349663)) >>> 0) % 24} material={material} />}
       </Suspense>
-      {(terrainStyle === 'basalt' || terrainStyle === 'forest') && valid && !hazard && <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, height / 2 + 0.003, 0]} raycast={() => null}>
+      {(terrainStyle === 'basalt' || terrainStyle === 'forest' || terrainStyle === 'ice') && valid && !hazard && <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, height / 2 + 0.003, 0]} raycast={() => null}>
         <planeGeometry args={[TILE_SIZE * 0.94, TILE_SIZE * 0.94]} />
         {/* El azul desaparecía al multiplicarse por superficies oscuras.
             La veladura conserva el material y distingue el destino. */}
@@ -743,7 +766,9 @@ const preferredPiece = (event: ThreeEvent<MouseEvent | PointerEvent>): string | 
 const BoardCard = memo(function BoardCard({ deploying = false, piece, runo, formationBonus, selected, targetable, ready, active, mine, crowded, stackSafe, onPiece, onInspect, onHover, previewLines, reducedMotion, impulse, impact, arrival, waiting }: { deploying?: boolean; piece: BoardPiece; runo: number; formationBonus: number; selected: boolean; targetable: boolean; ready: boolean; active: boolean; mine: boolean; crowded: boolean; stackSafe: boolean; onPiece: (pieceId: string) => void; onInspect?: (cardId: string, pieceId?: string) => void; onHover?: (pieceId?: string) => void; previewLines?: readonly PreviewVerdict[]; reducedMotion: boolean; impulse?: Impulse; impact?: AnimationEvent; arrival?: AnimationEvent; waiting: boolean }) {
   const card = CARD_BY_ID[piece.cardId]
   const displayedAttack = Math.max(0, (card?.attack ?? 0) + piece.attackModifier + (card?.type === 'unit' ? runoAttackBonus(runo) : 0) + formationBonus)
-  const texture = useTexture(withBase(card?.art.webp ?? '/assets/cards/art/fuente-furia.webp'))
+  const factionFrame = card?.faction === 'fimbul'
+  const texture = useCardFaceTexture(card, card?.art.webp ?? '/assets/cards/art/fuente-furia.webp',
+    card?.type === 'unit' ? displayedAttack : undefined, piece.currentHealth)
   const group = useRef<Group>(null)
   const presentation = useRef<Group>(null)
   const arrivalGroup = useRef<Group>(null)
@@ -1057,7 +1082,7 @@ const BoardCard = memo(function BoardCard({ deploying = false, piece, runo, form
           { key: 'back', y: -0.038, spin: Math.PI },
         ].map(({ key, y, spin }) => (
           <mesh key={key} position={[0, y, 0]} rotation={[-Math.PI / 2, spin, 0]}>
-            <planeGeometry args={[0.73, 0.9]} />
+            <planeGeometry args={[factionFrame ? 0.60 : 0.73, 0.9]} />
             <meshStandardMaterial
               map={texture}
               emissiveMap={texture}

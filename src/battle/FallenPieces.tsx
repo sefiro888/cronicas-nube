@@ -1,4 +1,4 @@
-import { useTexture } from '@react-three/drei'
+import { useCardFaceTexture } from './useCardFaceTexture'
 import { useFrame } from '@react-three/fiber'
 import { memo, useEffect, useRef, useState } from 'react'
 import { AdditiveBlending, MathUtils } from 'three'
@@ -6,7 +6,6 @@ import type { Group, Mesh, MeshBasicMaterial, MeshStandardMaterial } from 'three
 import { CARD_BY_ID, type AnimationEvent, type BoardPiece } from '../game'
 import { CELL_SIZE, gridToWorldX, gridToWorldZ } from './grid/gridCoordinates'
 import { glowTexture } from './textures'
-import { withBase } from '../utils/assets'
 import { useVisualTimers } from './useVisualTimers'
 
 /** Cuánto tarda una ficha derribada en desaparecer del todo, en milisegundos. */
@@ -93,7 +92,7 @@ const FallenCard = memo(function FallenCard({ fallen, reducedMotion }: { fallen:
   const frame = useRef<Mesh>(null)
   const artwork = useRef<(MeshStandardMaterial | null)[]>([])
   const card = CARD_BY_ID[fallen.cardId]
-  const texture = useTexture(withBase(card?.art.webp ?? '/assets/cards/art/fuente-furia.webp'))
+  const texture = useCardFaceTexture(card, card?.art.webp ?? '/assets/cards/art/fuente-furia.webp', card?.attack, 0)
 
   useFrame(({ camera }) => {
     const node = group.current
@@ -147,7 +146,7 @@ const FallenCard = memo(function FallenCard({ fallen, reducedMotion }: { fallen:
           { key: 'back', y: -0.038, spin: Math.PI },
         ].map(({ key, y, spin }, index) => (
           <mesh key={key} position={[0, y, 0]} rotation={[-Math.PI / 2, spin, 0]}>
-            <planeGeometry args={[0.73, 0.9]} />
+            <planeGeometry args={[card?.faction === 'fimbul' ? 0.60 : 0.73, 0.9]} />
             <meshStandardMaterial ref={(material) => { artwork.current[index] = material }} map={texture} emissiveMap={texture} emissive="#ffffff" emissiveIntensity={0.6} color="#ffffff" transparent opacity={1} roughness={0.62} />
           </mesh>
         ))}

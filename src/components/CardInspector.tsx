@@ -3,7 +3,7 @@ import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, MouseEvent } f
 
 import type { CardDefinition } from '../game/types';
 import { Card, CARD_TYPE_LABELS, formatManaCost } from './Card';
-import type { CardStatus } from './Card';
+import type { CardStatus, CardStatValues } from './Card';
 import { FactionSigil, FACTION_LABELS } from './FactionSigil';
 import { GlossaryText } from './GlossaryText';
 import { RarityGem, RARITY_LABELS } from './RarityGem';
@@ -14,6 +14,7 @@ import { FullArtwork } from './FullArtwork';
 import styles from './CardInspector.module.css';
 
 export interface CardInspectorProps {
+  readonly combatStats?: CardStatValues;
   readonly card: CardDefinition | null;
   readonly open?: boolean;
   readonly isOpen?: boolean;
@@ -48,6 +49,7 @@ export function CardInspector({
   isOpen,
   playable,
   statusEffects = [],
+  combatStats,
   className,
   onClose,
 }: CardInspectorProps) {
@@ -141,7 +143,7 @@ export function CardInspector({
             {view === 'art' ? (
               <FullArtwork key={card.id} card={card} className={styles.fullArtwork} />
             ) : (
-              <Card card={card} size="inspect" playable={playable} statusEffects={statusEffects} />
+              <Card card={card} size="inspect" playable={playable} statusEffects={statusEffects} combatStats={combatStats} />
             )}
           </div>
           <p className={styles.shortcutHint}>Pulsa <kbd>Esc</kbd> para cerrar</p>
@@ -175,9 +177,9 @@ export function CardInspector({
 
           <dl className={styles.metadata}>
             <MetaItem label="Coste" value={formatManaCost(card.cost)} />
-            {card.attack !== undefined && <MetaItem label="Ataque" value={card.attack} />}
-            {card.health !== undefined && <MetaItem label="Vida" value={card.health} />}
-            {card.resistance !== undefined && <MetaItem label="Resistencia" value={card.resistance} />}
+            {card.attack !== undefined && <MetaItem label="Ataque" value={combatStats?.attack ?? card.attack} />}
+            {card.health !== undefined && <MetaItem label="Vida" value={combatStats?.health ?? card.health} />}
+            {card.resistance !== undefined && <MetaItem label="Resistencia" value={combatStats?.resistance ?? card.resistance} />}
             {card.range !== undefined && <MetaItem label="Alcance" value={card.range} />}
             {card.movement !== undefined && <MetaItem label="Movimiento" value={card.movement} />}
             <MetaItem label="Colección" value={`${card.set} · ${String(card.collectorNumber).padStart(3, '0')}`} />

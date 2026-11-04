@@ -66,6 +66,26 @@ animaciones (`e2e/battle-spectacle-shots.spec.ts`).
 
 ---
 
+## Prueba de carta y suelo de Fimbul — 4 de noviembre de 2026 (Codex)
+
+- Primera facción elegida por el propietario. Originales en
+  `tools/art-inbox/cartas-faccion/` y `tools/art-inbox/suelos-faccion/`.
+  El juego carga los WebP derivados `fimbul-hielo-v1.webp` y
+  `suelo-fimbul-v1.webp` en las carpetas públicas de marcos y terreno.
+- Referencia del chasis: Furia, commit `bbdf2c0` de la copia de consulta.
+  El recorte de la ventana de Fimbul se comparte entre la carta HTML y las
+  dos caras de la ficha 3D. Se reutiliza la ilustración de cada carta.
+- El grabado del fiordo se reparte entre las 64 losas. Las juntas físicas
+  separan las casillas y la veladura de la Caldera da contraste a los destinos.
+- Tras probar el Escudero del Thing, se centró el título, se ajustaron el
+  pergamino y el medallón de Vida y se corrigió el glosario en carta completa.
+  El inspector muestra las cifras actuales al abrir una ficha de Fimbul.
+- Revisión local a 1920 × 1080 y 1366 × 768 en
+  `tools/captures/fimbul/`. Pendiente de valoración antes de aplicar el
+  criterio a otra facción.
+
+---
+
 ## Mazos, menú y carga del tablero — 2 de noviembre de 2026 (Claude Code, nube) · PUNTO DE RETOMA
 
 **Sesión cerrada por saldo de la nube (quedaban ~5 $).** Todo está subido a
