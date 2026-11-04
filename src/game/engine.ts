@@ -2294,6 +2294,9 @@ export const playCard = (
     }
     next = enqueue(next, {
       type: 'summon', actorId: playerId, targetId: piece.instanceId, to: position,
+      // La carta viaja en el evento para que la presentación pueda dar a cada
+      // rareza su propia entrada; no cambia ninguna regla.
+      cardId: card.id,
       effectId: card.vfx.summonEffect, faction: card.faction, durationMs: 440,
       // Las unidades ya se presentan solas al aparecer en su casilla; una
       // estructura cambia reglas del tablero y conviene leerla antes.

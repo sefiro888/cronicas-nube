@@ -8,14 +8,30 @@ import { AchievementToast } from '../components/AchievementToast'
 import { withBase } from '../utils/assets'
 import styles from './AppShell.module.css'
 
-const links = [
-  { to: '/', label: 'Inicio' },
-  { to: '/play', label: 'Jugar' },
-  { to: '/tower', label: 'Torre' },
-  { to: '/multiplayer', label: 'Multijugador' },
-  { to: '/gallery', label: 'Galería' },
-  { to: '/illustrations', label: 'Ilustraciones' },
-  { to: '/decks', label: 'Mazos' },
+/**
+ * Icono de cada sección (trazos propios, 24×24). Sustituyen a los números
+ * 01–08, que no decían nada: ahora cada sección se reconoce de un vistazo.
+ */
+const ICONS = {
+  home: 'M4 11 12 4l8 7M6 9.5V20h12V9.5M10 20v-5h4v5',
+  play: 'M5 19 15 9M9 5l10 10M14 4l6 6M4 14l6 6M7 17l-3 3M17 7l3-3',
+  tower: 'M7 21V8l-2-2V3h2v2h2V3h2v2h2V3h2v2h2V3h2v3l-2 2v13ZM10 21v-4h4v4M10 11h4',
+  versus: 'M8 8a3 3 0 1 0 .01 0ZM16 8a3 3 0 1 0 .01 0ZM3 20c0-3 2.2-5 5-5s5 2 5 5M11 20c0-3 2.2-5 5-5s5 2 5 5',
+  gallery: 'M7 4h10a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1ZM3 7v12M21 7v12M9 9h6',
+  art: 'M4 5h16v14H4ZM4 15l5-5 4 4 3-3 4 4M15.5 8.5h.01',
+  decks: 'M6 7h11v13H6ZM9 4h11v13M3 10v10',
+  album: 'M5 4h12a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2ZM5 18a2 2 0 0 1 2-2h12M12 7l1.2 2.4 2.6.4-1.9 1.8.5 2.6L12 13l-2.4 1.2.5-2.6-1.9-1.8 2.6-.4Z',
+} as const
+
+const links: readonly { readonly to: string; readonly label: string; readonly icon: keyof typeof ICONS; readonly primary?: boolean }[] = [
+  { to: '/', label: 'Inicio', icon: 'home' },
+  { to: '/play', label: 'Jugar', icon: 'play', primary: true },
+  { to: '/tower', label: 'Torre', icon: 'tower' },
+  { to: '/multiplayer', label: 'Multijugador', icon: 'versus' },
+  { to: '/gallery', label: 'Galería', icon: 'gallery' },
+  { to: '/illustrations', label: 'Ilustraciones', icon: 'art' },
+  { to: '/decks', label: 'Mazos', icon: 'decks' },
+  { to: '/album', label: 'Álbum', icon: 'album' },
 ]
 
 export function AppShell() {
@@ -66,15 +82,19 @@ export function AppShell() {
               </span>
             </NavLink>
             <nav ref={navRef} className={styles.nav} aria-label="Navegación principal">
-              {links.map((link, index) => (
+              {links.map((link) => (
                 <NavLink
                   key={link.to}
                   to={link.to}
                   end={link.to === '/'}
                   className={styles.navLink}
                   data-active={location.pathname === link.to}
+                  data-primary={link.primary || undefined}
                 >
-                  <span className={styles.navNumber} data-number={`0${index + 1}`} aria-hidden="true" /><span>{link.label}</span>
+                  <svg className={styles.navIcon} viewBox="0 0 24 24" aria-hidden="true">
+                    <path d={ICONS[link.icon]} />
+                  </svg>
+                  <span>{link.label}</span>
                 </NavLink>
               ))}
             </nav>

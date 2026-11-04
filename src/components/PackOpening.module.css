@@ -1,0 +1,215 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 45%, rgba(255, 200, 110, 0.22), transparent 55%),
+    repeating-conic-gradient(from 0deg at 50% 45%, rgba(255, 215, 130, 0.06) 0deg 5deg, transparent 5deg 15deg),
+    rgba(4, 5, 10, 0.94);
+  animation: overlayIn 400ms ease both;
+}
+.close {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 38px;
+  height: 38px;
+  border: 1px solid rgba(255, 220, 150, 0.5);
+  border-radius: 50%;
+  color: #f2e2b8;
+  background: rgba(10, 10, 16, 0.8);
+  cursor: pointer;
+}
+.hint { position: absolute; bottom: 12%; color: rgba(240, 225, 190, 0.7); font: 600 14px var(--display); letter-spacing: 0.1em; animation: hintPulse 1.6s ease-in-out infinite alternate; }
+
+/* ── Sobre ── */
+.pack {
+  position: relative;
+  width: clamp(200px, 22vw, 280px);
+  aspect-ratio: 5 / 7;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  animation: packFloat 2.6s ease-in-out infinite alternate;
+}
+.packBody, .packTop {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-radius: 14px;
+  background:
+    linear-gradient(115deg, transparent 40%, rgba(255, 255, 255, 0.35) 50%, transparent 60%) 0 0 / 250% 100%,
+    linear-gradient(160deg, #7a4f14, #2a1606 55%, #4a2a0a);
+  box-shadow: 0 0 0 2px #e9c46a, 0 0 40px rgba(255, 190, 90, 0.55), 0 30px 60px rgba(0, 0, 0, 0.6);
+}
+.packBody {
+  top: 14%;
+  bottom: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 8px;
+  color: #ffe6a6;
+  animation: packShine 2.4s linear infinite;
+}
+.packTop { top: 0; height: 16%; border-radius: 14px 14px 4px 4px; transform-origin: 90% 100%; }
+.packSigil { font-size: 64px; text-shadow: 0 0 30px #ffd76a, 0 0 60px #ff9a3a; animation: sigilTurn 6s linear infinite; }
+.packBody strong { font: 900 22px var(--display); letter-spacing: 0.16em; text-transform: uppercase; text-shadow: 0 2px 6px #000; }
+.packBody small { color: #d9c08a; font: 600 12px var(--display); letter-spacing: 0.2em; text-transform: uppercase; }
+.pack:hover .packBody { box-shadow: 0 0 0 2px #fff0c0, 0 0 70px rgba(255, 200, 100, 0.85), 0 30px 60px rgba(0, 0, 0, 0.6); }
+/* Rasgado: la tira de arriba sale volando, el cuerpo tiembla y estalla en luz. */
+.pack[data-tearing] { animation: packShake 380ms ease-in-out 2; }
+.pack[data-tearing] .packTop { animation: tearOff 700ms cubic-bezier(.3, .7, .3, 1) forwards; }
+.pack[data-tearing] .packBody { animation: packVanish 1100ms ease forwards; }
+.burst {
+  position: absolute;
+  top: 14%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff, rgba(255, 210, 120, 0.8) 30%, transparent 70%);
+  opacity: 0;
+  transform: translate(-50%, -50%);
+}
+.pack[data-tearing] .burst { animation: burstOut 1000ms ease-out 250ms forwards; }
+
+/* ── Cartas en abanico ── */
+.fan {
+  display: flex;
+  justify-content: center;
+  gap: clamp(8px, 1.4vw, 22px);
+  perspective: 1400px;
+}
+.slot {
+  position: relative;
+  width: clamp(120px, 13vw, 190px);
+  aspect-ratio: 5 / 7;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  animation: dealIn 600ms cubic-bezier(.2, 1.2, .35, 1) calc(var(--i) * 110ms) both;
+}
+.slot > .inner {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transition: transform 700ms cubic-bezier(.3, 1.4, .4, 1);
+}
+.slot[data-flipped] > .inner { transform: rotateY(180deg); }
+.back, .front {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  backface-visibility: hidden;
+  border-radius: 12px;
+}
+.back {
+  background: repeating-linear-gradient(45deg, #2a1a08 0 8px, #3a2410 8px 16px), #2a1a08;
+  box-shadow: 0 0 0 2px #c9a050, 0 14px 30px rgba(0, 0, 0, 0.6);
+  color: #e9c46a;
+  font-size: 46px;
+  text-shadow: 0 0 18px #ffb347;
+}
+.slot:not([data-flipped]):hover .back { box-shadow: 0 0 0 2px #fff0c0, 0 0 30px rgba(255, 200, 100, 0.8); transform: translateY(-6px); }
+.front { transform: rotateY(180deg); }
+.front > article { --card-width: 100% !important; width: 100%; }
+/* Revelado según rareza. */
+.reveal {
+  position: absolute;
+  inset: -30%;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.7), transparent 60%);
+  animation: revealPop 900ms ease-out forwards;
+}
+.slot[data-rarity='uncommon'] .reveal { background: radial-gradient(circle, rgba(127, 227, 154, 0.8), transparent 60%); }
+.slot[data-rarity='rare'] .reveal { background: radial-gradient(circle, rgba(111, 184, 255, 0.9), transparent 60%); inset: -45%; }
+.slot[data-rarity='mythic'] .reveal {
+  inset: -80%;
+  background:
+    radial-gradient(circle, rgba(255, 230, 150, 1), rgba(255, 140, 60, 0.6) 30%, transparent 62%),
+    repeating-conic-gradient(rgba(255, 215, 120, 0.35) 0deg 6deg, transparent 6deg 18deg);
+  animation: revealPop 1600ms ease-out forwards, raysTurn 4s linear infinite;
+}
+.slot[data-flipped][data-rarity='mythic'] { animation: mythicSlam 700ms cubic-bezier(.2, 1.6, .4, 1) both; z-index: 2; }
+.slot[data-flipped][data-rarity='rare'] .front { box-shadow: 0 0 30px rgba(111, 184, 255, 0.8); }
+.slot[data-flipped][data-rarity='mythic'] .front { box-shadow: 0 0 50px rgba(255, 200, 90, 0.95), 0 0 100px rgba(255, 120, 60, 0.5); }
+.foilSheen {
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  pointer-events: none;
+  mix-blend-mode: color-dodge;
+  background: linear-gradient(115deg, transparent 30%, rgba(255, 240, 180, 0.6) 45%, rgba(180, 255, 230, 0.5) 52%, rgba(200, 160, 255, 0.5) 58%, transparent 70%);
+  background-size: 300% 100%;
+  animation: foilSweep 2.2s linear infinite;
+}
+.newTag, .foilTag {
+  position: absolute;
+  left: 50%;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font: 800 11px var(--display);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transform: translateX(-50%);
+  animation: tagPop 500ms cubic-bezier(.2, 1.6, .4, 1) 400ms both;
+}
+.newTag { top: -14px; color: #120c06; background: #7fe39a; box-shadow: 0 0 14px rgba(127, 227, 154, 0.8); }
+.foilTag { bottom: -14px; color: #120c06; background: linear-gradient(90deg, #ffd76a, #fff2c0, #ffd76a); box-shadow: 0 0 14px rgba(255, 215, 106, 0.8); }
+/* Rayo de la mítica: destello que cruza toda la pantalla. */
+.lightning {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background:
+    linear-gradient(100deg, transparent 47%, #fff 49%, #ffe6a0 50%, transparent 52%),
+    radial-gradient(circle at 50% 40%, rgba(255, 240, 200, 0.7), transparent 60%);
+  animation: lightningFlash 700ms ease-out forwards;
+}
+.actions { position: absolute; bottom: 8%; display: flex; gap: 12px; }
+.actions button {
+  padding: 9px 22px;
+  border: 1px solid #e9c46a;
+  border-radius: 22px;
+  color: #ffe6a6;
+  background: rgba(40, 28, 10, 0.9);
+  font: 700 14px var(--display);
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+.actions button:hover { background: rgba(80, 56, 16, 0.95); }
+
+@keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes hintPulse { from { opacity: 0.4; } to { opacity: 1; } }
+@keyframes packFloat { from { transform: translateY(0) rotate(-2deg); } to { transform: translateY(-12px) rotate(2deg); } }
+@keyframes packShine { from { background-position: 130% 0, 0 0; } to { background-position: -30% 0, 0 0; } }
+@keyframes sigilTurn { to { transform: rotate(360deg); } }
+@keyframes packShake { 0%, 100% { transform: none; } 25% { transform: translateX(-6px) rotate(-2deg); } 75% { transform: translateX(6px) rotate(2deg); } }
+@keyframes tearOff { to { transform: translate(140px, -160px) rotate(40deg); opacity: 0; } }
+@keyframes packVanish { 0%, 50% { opacity: 1; filter: brightness(1); } 70% { filter: brightness(3); } 100% { opacity: 0; transform: scale(1.3); filter: brightness(4); } }
+@keyframes burstOut { 0% { opacity: 1; width: 20px; height: 20px; } 100% { opacity: 0; width: 900px; height: 900px; } }
+@keyframes dealIn { from { opacity: 0; transform: translateY(-40vh) rotate(calc((var(--i) - 2) * 14deg)) scale(0.6); } to { opacity: 1; transform: none; } }
+@keyframes revealPop { 0% { opacity: 0; transform: scale(0.3); } 30% { opacity: 1; } 100% { opacity: 0; transform: scale(1.4); } }
+@keyframes raysTurn { to { rotate: 360deg; } }
+@keyframes mythicSlam { 0% { transform: scale(1); } 40% { transform: scale(1.18) translateY(-12px); } 100% { transform: scale(1.06) translateY(-6px); } }
+@keyframes foilSweep { from { background-position: 130% 0; } to { background-position: -30% 0; } }
+@keyframes tagPop { from { opacity: 0; transform: translateX(-50%) scale(0.4); } to { opacity: 1; transform: translateX(-50%) scale(1); } }
+@keyframes lightningFlash { 0% { opacity: 0; } 10% { opacity: 1; } 25% { opacity: 0.2; } 35% { opacity: 0.9; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .overlay, .pack, .packBody, .packSigil, .slot, .reveal, .foilSheen, .lightning, .newTag, .foilTag, .hint { animation: none !important; }
+  .slot > .inner { transition: none; }
+}
+@media (max-width: 760px) {
+  .fan { flex-wrap: wrap; max-width: 92vw; }
+  .slot { width: 28vw; }
+}

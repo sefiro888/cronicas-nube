@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type CSSProperties } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { CARD_BY_ID, COMMANDER_BY_ID, STARTER_DECKS, cardsForFaction, validateDeck } from '../game'
+import { CARD_BY_ID, COMMANDER_BY_ID, FACTION_BY_ID, STARTER_DECKS, cardsForFaction, validateDeck } from '../game'
 import type { DeckDefinition, DeckEntry } from '../game'
 import { CardInspector } from '../components'
 import { FactionSigil } from '../components/FactionSigil'
@@ -42,6 +42,17 @@ function DeckEditor({ selected, selectDeck }: { selected: DeckDefinition; select
   const draft = useMemo<DeckDefinition>(() => ({ ...selected, cards: entries }), [selected, entries])
   const validation = useMemo(() => validateDeck(draft), [draft])
   const commander = COMMANDER_BY_ID[selected.commanderId]
+  // Cartas de acción (no fuentes) por coste total, de 0 a 6+.
+  const curve = useMemo(() => {
+    const buckets = [0, 0, 0, 0, 0, 0, 0]
+    for (const entry of entries) {
+      const card = CARD_BY_ID[entry.cardId]
+      if (!card || card.type === 'mana') continue
+      const total = card.cost.generic + Object.values(card.cost.colored ?? {}).reduce((sum, value) => sum + (value ?? 0), 0)
+      buckets[Math.min(6, total)]! += entry.count
+    }
+    return buckets
+  }, [entries])
 
   // Catálogo de la facción que aún no está en el mazo: permite construir desde cero.
   const availablePool = useMemo(() => {
@@ -119,14 +130,64 @@ function DeckEditor({ selected, selectDeck }: { selected: DeckDefinition; select
     <div className={styles.page}>
       <header className={styles.header}>
         <div><small>Arsenal del Nexo</small><h1>Mazos iniciales</h1></div>
-        <div className={styles.tabs}>{STARTER_DECKS.map((deck) => <button key={deck.id} className={styles.tab} data-active={deck.id === selected.id} onClick={() => selectDeck(deck.id)}>{deck.name}</button>)}</div>
+        <p className={styles.headerLead}>{STARTER_DECKS.length} mazos, uno por facción. Elige uno para ver y ajustar sus cartas.</p>
       </header>
-      <div className={styles.layout}>
+      {/* Galería de mazos: retrato del comandante, color y sello de la
+          facción. Sustituye a una fila de pestañas de texto donde los nombres
+          se partían en cinco líneas y no se veía de qué facción era cada uno. */}
+      <div className={styles.deckGallery} role="group" aria-label="Mazos">
+        {STARTER_DECKS.map((deck) => {
+          const deckCommander = COMMANDER_BY_ID[deck.commanderId]
+          const accent = FACTION_BY_ID[deck.faction].accentColor
+          return (
+            <button
+              key={deck.id}
+              type="button"
+              className={styles.deckBanner}
+              data-active={deck.id === selected.id}
+              aria-pressed={deck.id === selected.id}
+              onClick={() => {
+                selectDeck(deck.id)
+                // Con 19 mazos la galería ocupa la pantalla: al elegir uno se
+                // baja sola a su lista de cartas (tras volver a montarse).
+                window.setTimeout(() => document.getElementById('editor-mazo')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60)
+              }}
+              style={{ '--accent': accent } as CSSProperties}
+            >
+              {deckCommander && <img src={withBase(deckCommander.art.webp)} alt="" loading="lazy" />}
+              <span className={styles.bannerSigil}><FactionSigil faction={deck.faction} size="medium" decorative /></span>
+              <span className={styles.bannerText}>
+                <strong>{deck.name}</strong>
+                <small>{deckCommander?.name}</small>
+              </span>
+            </button>
+          )
+        })}
+      </div>
+      <div className={styles.layout} id="editor-mazo">
         <aside className={styles.summary}>
-          <div className={styles.factionMark}><FactionSigil faction={selected.faction} size="large" decorative /></div>
+          {/* Estandarte del mazo: el comandante en grande sobre el color de su facción. */}
+          <div className={styles.summaryBanner} style={{ '--accent': FACTION_BY_ID[selected.faction].accentColor } as CSSProperties}>
+            {commander && <img src={withBase(commander.art.webp)} alt="" />}
+            <div className={styles.factionMark}><FactionSigil faction={selected.faction} size="large" decorative /></div>
+          </div>
           <h2>{selected.name}</h2><div className={styles.commander}>{commander?.name} · {commander?.title}</div>
           <p className={styles.commanderRule}>{commander?.rules}</p>
           <div className={styles.stats}><div className={styles.stat}><strong>{validation.totalCards}</strong><span>Total</span></div><div className={styles.stat}><strong>{validation.manaCards}</strong><span>Esencia</span></div><div className={styles.stat}><strong>{validation.nonManaCards}</strong><span>Acción</span></div></div>
+          {/* Curva de coste: cuántas cartas de acción hay por coste, para ver
+              de un vistazo si el mazo arranca rápido o va a por el final. */}
+          <div className={styles.curve} aria-label="Curva de coste">
+            <small>Curva de coste</small>
+            <div className={styles.curveBars}>
+              {curve.map((count, cost) => (
+                <span key={cost} className={styles.curveBar} title={`${count} cartas de coste ${cost === curve.length - 1 ? `${cost}+` : cost}`}>
+                  <i style={{ height: `${(count / Math.max(1, ...curve)) * 100}%` }} />
+                  <b>{count}</b>
+                  <em>{cost === curve.length - 1 ? `${cost}+` : cost}</em>
+                </span>
+              ))}
+            </div>
+          </div>
           {validation.valid ? <div className={styles.valid}>✓ Mazo válido para jugar</div> : <div className={styles.invalid}>Mazo no válido<ul className={styles.issues}>{validation.issues.slice(0, 4).map((issue, index) => <li key={`${issue.code}-${index}`}>{issue.message}</li>)}</ul></div>}
           <div className={styles.saveRow}><button className={styles.save} onClick={save}>Guardar local</button><button className={styles.reset} onClick={reset}>Restaurar</button></div>
           {saved && <span className={styles.saved}>Borrador guardado en este dispositivo.</span>}

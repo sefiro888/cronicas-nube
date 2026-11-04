@@ -129,3 +129,10 @@
   .youStats { grid-template-columns: repeat(3, 1fr); gap: 12px 0; }
 }
 @media (prefers-reduced-motion: reduce) { .faction:hover, .primary:hover, .secondary:hover { transform: none; translate: none; } .faction:hover > img { transform: none; } }
+
+/* Racha y sobres en la portada. */
+.rewards { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 10px; }
+.packLink { padding: 5px 14px; border: 1px solid rgba(233, 196, 106, 0.55); border-radius: 18px; color: #ffe6a6; background: rgba(40, 28, 10, 0.75); font: 700 13px var(--display); text-decoration: none; }
+.packLink[data-ready] { box-shadow: 0 0 18px rgba(255, 200, 90, 0.6); animation: packCall 1.4s ease-in-out infinite alternate; }
+@keyframes packCall { from { box-shadow: 0 0 8px rgba(255, 200, 90, 0.3); } to { box-shadow: 0 0 24px rgba(255, 200, 90, 0.85); } }
+@media (prefers-reduced-motion: reduce) { .packLink[data-ready] { animation: none; } }

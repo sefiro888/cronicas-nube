@@ -94,6 +94,9 @@
   animation: raysTurn 14s linear infinite;
 }
 .overlay[data-kind='power'] .rays { opacity: 0.8; }
+/* La común entra sin rayos: si todas los llevan, la rareza no se nota. */
+.overlay[data-rarity='common']:not([data-kind='power']) .rays { opacity: 0.12; }
+.overlay[data-rarity='uncommon']:not([data-kind='power']) .rays { opacity: 0.32; }
 
 .commander {
   margin: -4px 0 0;
@@ -309,6 +312,395 @@
   to { transform: rotate(360deg); }
 }
 
+/* ── Panel «Qué hace» ─────────────────────────────────────────────────────
+   Entra detrás de la carta, con cada término escalonado (--i) para que el
+   ojo los lea en orden y no como un bloque. */
+.details {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  width: clamp(15rem, 22vw, 21rem);
+  max-height: min(64vh, 34rem);
+  overflow: hidden;
+  padding: 14px 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(14, 16, 24, 0.94), rgba(6, 8, 13, 0.94));
+  box-shadow: 0 0 34px color-mix(in srgb, var(--accent) 25%, transparent), 0 18px 40px rgba(0, 0, 0, 0.55);
+  color: #f2e8cf;
+  text-align: left;
+  animation: detailsIn var(--spotlight-ms) cubic-bezier(.2, .9, .3, 1) forwards;
+}
+.detailsHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+}
+.detailsHead span {
+  color: #ffe6a6;
+  font: 800 clamp(14px, 1.15vw, 17px) var(--display);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.detailsHead small {
+  color: #a9a08a;
+  font: 600 11px var(--display);
+  letter-spacing: 0.06em;
+}
+
+.impact { display: grid; gap: 7px; }
+.impactHeadline {
+  color: #fff3d0;
+  font: 800 clamp(14px, 1.1vw, 16px)/1.25 var(--display);
+  text-shadow: 0 0 14px color-mix(in srgb, var(--accent) 70%, transparent);
+}
+.affected {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.affected li {
+  display: grid;
+  grid-template-columns: 30px 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 8px;
+  align-items: center;
+  padding: 4px 6px;
+  border-left: 3px solid #7fc8ff;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  opacity: 0;
+  animation: rowIn 420ms cubic-bezier(.2, 1.3, .4, 1) calc(var(--spotlight-ms) * 0.2 + var(--i) * 110ms) forwards;
+}
+.affected li[data-owner='rival'] { border-left-color: #ff7a66; }
+.affected img {
+  grid-row: span 2;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 0 0 1.5px var(--accent);
+}
+.affectedName {
+  overflow: hidden;
+  color: #f2e8cf;
+  font: 700 12px var(--display);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.more {
+  display: block !important;
+  color: #a9a08a;
+  font: 600 11px var(--display);
+  border-left-color: transparent !important;
+}
+
+/* Cada cambio con su tono; si lo explica un término, toma su color. */
+.chip {
+  --kw: #e9cf8a;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 7px 1px 5px;
+  border-radius: 20px;
+  color: #120d06;
+  background: var(--kw);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--kw) 60%, transparent);
+  font: 800 10.5px/1.5 var(--display);
+  white-space: nowrap;
+}
+.chip[data-tone='harm']:not([style]) { --kw: #ff6b55; color: #fff; }
+.chip[data-tone='boon']:not([style]) { --kw: #8be38f; }
+.chip[data-tone='control']:not([style]) { --kw: #9fd8ff; }
+.chip[data-tone='neutral']:not([style]) { --kw: #d8ccb0; }
+.chipGlyph { font-size: 1.1em; }
+
+.duration {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 5px 9px;
+  border-radius: 6px;
+  color: #ffe6a6;
+  background: rgba(255, 214, 120, 0.08);
+  font: 700 12px var(--display);
+  letter-spacing: 0.04em;
+}
+.durationGlyph { font-size: 15px; animation: hourglassTurn 2.4s ease-in-out infinite; }
+
+.terms { display: grid; gap: 7px; margin: 0; padding: 0; list-style: none; }
+.term {
+  position: relative;
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  gap: 9px;
+  align-items: start;
+  overflow: hidden;
+  padding: 7px 9px 8px 7px;
+  border: 1px solid color-mix(in srgb, var(--kw) 40%, transparent);
+  border-radius: 8px;
+  background: linear-gradient(100deg, color-mix(in srgb, var(--kw) 16%, transparent), rgba(8, 10, 16, 0.6) 70%);
+  opacity: 0;
+  animation: termIn 520ms cubic-bezier(.2, 1.3, .4, 1) calc(var(--spotlight-ms) * 0.24 + var(--i) * 140ms) forwards;
+}
+.termGlyph {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  color: var(--kw);
+  font-size: 19px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--kw) 28%, transparent), rgba(0, 0, 0, 0.35) 70%);
+  box-shadow: 0 0 0 1.5px var(--kw), 0 0 16px color-mix(in srgb, var(--kw) 55%, transparent);
+}
+.termText { display: grid; gap: 2px; min-width: 0; }
+.termText strong {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  color: var(--kw);
+  font: 800 14px var(--display);
+  letter-spacing: 0.03em;
+}
+.termText em {
+  margin-left: auto;
+  color: #8f8775;
+  font: 700 9px var(--display);
+  font-style: normal;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.termText small { color: #cfc5ab; font: 500 11.5px/1.32 var(--display); }
+
+/* Cada familia se mueve a su manera: así un término no se parece a otro
+   aunque el lector no llegue a leer la etiqueta. */
+.term[data-family='ataque'] .termGlyph { animation: glyphStrike 1.6s ease-in-out infinite; }
+.term[data-family='ataque']::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 40%, color-mix(in srgb, var(--kw) 45%, transparent) 50%, transparent 60%);
+  background-size: 260% 100%;
+  animation: slash 2.2s ease-in-out infinite;
+  pointer-events: none;
+}
+.term[data-family='defensa'] .termGlyph { animation: glyphGuard 2s ease-in-out infinite; }
+.term[data-family='control'] .termGlyph { animation: glyphFreeze 2.6s ease-in-out infinite; }
+.term[data-family='magia'] .termGlyph,
+.term[data-family='faccion'] .termGlyph { animation: glyphArcane 3s ease-in-out infinite; }
+.term[data-family='recurso'] .termGlyph { animation: glyphFloat 2.4s ease-in-out infinite; }
+
+.plain { margin: 0; color: #e4dac0; font: 500 13px/1.4 var(--display); }
+
+/* ── Entrada del comandante ───────────────────────────────────────────────
+   Ocupa el primer cuarto de la presentación; después cede el sitio a la
+   carta, que entra más tarde que en un hechizo normal (cardPower). */
+.powerIntro {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 18px;
+  pointer-events: none;
+  animation: powerIntroLife var(--spotlight-ms) ease forwards;
+}
+.powerFlare {
+  position: absolute;
+  inset: -20%;
+  background:
+    radial-gradient(circle at 50% 46%, color-mix(in srgb, var(--accent) 70%, #fff) 0, color-mix(in srgb, var(--accent) 45%, transparent) 14%, transparent 42%),
+    repeating-conic-gradient(from 0deg at 50% 46%, color-mix(in srgb, var(--accent) 35%, transparent) 0deg 3deg, transparent 3deg 14deg);
+  mask-image: radial-gradient(circle at 50% 46%, #000 10%, transparent 60%);
+  animation: flareSpin calc(var(--spotlight-ms) * 0.3) cubic-bezier(.2, .8, .3, 1) forwards;
+}
+.shockwave {
+  position: absolute;
+  top: 46%;
+  left: 50%;
+  width: 40vmin;
+  height: 40vmin;
+  border: 3px solid color-mix(in srgb, var(--accent) 80%, #fff);
+  border-radius: 50%;
+  box-shadow: 0 0 40px var(--accent), inset 0 0 30px var(--accent);
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.2);
+  animation: shockwave calc(var(--spotlight-ms) * 0.22) ease-out calc(var(--spotlight-ms) * 0.04) forwards;
+}
+.shockwave[data-late] { animation-delay: calc(var(--spotlight-ms) * 0.1); border-width: 2px; }
+.medallion {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: clamp(180px, 30vmin, 300px);
+  aspect-ratio: 1;
+  animation: medallionIn calc(var(--spotlight-ms) * 0.28) cubic-bezier(.2, 1.4, .35, 1) forwards;
+}
+.medallion img {
+  width: 76%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 0 0 4px var(--accent), 0 0 60px var(--accent), 0 0 120px color-mix(in srgb, var(--accent) 60%, transparent);
+}
+.runeRing {
+  position: absolute;
+  inset: 0;
+  fill: none;
+  stroke: color-mix(in srgb, var(--accent) 75%, #fff);
+  stroke-width: 2;
+  filter: drop-shadow(0 0 6px var(--accent));
+  animation: runeSpin 6s linear infinite;
+}
+.runeRing path { fill: color-mix(in srgb, var(--accent) 60%, #fff); stroke: none; }
+.powerName {
+  margin: 0;
+  color: #fff3d0;
+  font: 900 clamp(28px, 4.4vw, 60px) var(--display);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-shadow: 0 0 24px var(--accent), 0 0 60px var(--accent), 0 4px 10px rgba(0, 0, 0, 0.9);
+  animation: powerNameIn calc(var(--spotlight-ms) * 0.28) cubic-bezier(.2, 1.2, .3, 1) forwards;
+}
+.flash {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  background: radial-gradient(circle at 50% 46%, #fff, color-mix(in srgb, var(--accent) 60%, transparent) 40%, transparent 75%);
+  opacity: 0;
+  pointer-events: none;
+  animation: flashPop var(--spotlight-ms) ease-out forwards;
+}
+.overlay[data-kind='power'] .cardSlot { animation-name: cardPower; }
+.overlay[data-kind='power'] .kicker,
+.overlay[data-kind='power'] .commander { animation-name: kickerPower; }
+.overlay[data-kind='power'] .details,
+.overlay[data-kind='power'] .targetColumn { animation-name: detailsPower; }
+.overlay[data-kind='power'] .affected li { animation-delay: calc(var(--spotlight-ms) * 0.34 + var(--i) * 110ms); }
+.overlay[data-kind='power'] .term { animation-delay: calc(var(--spotlight-ms) * 0.38 + var(--i) * 140ms); }
+
+/* Rara y mítica: anillo de luz en el suelo cuando la carta «aterriza». */
+.landing {
+  position: absolute;
+  top: 54%;
+  left: 50%;
+  width: 46vmin;
+  height: 46vmin;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--accent) 70%, #fff);
+  box-shadow: 0 0 30px var(--accent);
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.3);
+  pointer-events: none;
+  animation: shockwave calc(var(--spotlight-ms) * 0.2) ease-out calc(var(--spotlight-ms) * 0.11) forwards;
+}
+.overlay[data-rarity='mythic'] .landing { border-width: 3px; width: 60vmin; height: 60vmin; }
+/* Mítica: borde prismático que recorre la carta. */
+.overlay[data-rarity='mythic'] .cardSlot > article {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 70%, #fff), 0 0 60px var(--accent), 0 0 120px color-mix(in srgb, var(--accent) 40%, transparent), 0 30px 60px rgba(0, 0, 0, 0.6);
+  animation: prism 2.4s linear infinite;
+}
+
+@keyframes rowIn {
+  from { opacity: 0; transform: translateX(18px) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes termIn {
+  0% { opacity: 0; transform: translateX(22px); filter: brightness(2); }
+  60% { opacity: 1; filter: brightness(1.3); }
+  100% { opacity: 1; transform: none; filter: none; }
+}
+@keyframes hourglassTurn {
+  0%, 70% { transform: rotate(0); }
+  100% { transform: rotate(180deg); }
+}
+@keyframes slash {
+  0%, 55% { background-position: 130% 0; }
+  100% { background-position: -30% 0; }
+}
+@keyframes glyphStrike {
+  0%, 70%, 100% { transform: none; }
+  78% { transform: translateX(-3px) rotate(-12deg); }
+  86% { transform: translateX(3px) rotate(10deg) scale(1.15); }
+}
+@keyframes glyphGuard {
+  0%, 100% { box-shadow: 0 0 0 1.5px var(--kw), 0 0 10px color-mix(in srgb, var(--kw) 40%, transparent); }
+  50% { box-shadow: 0 0 0 3px var(--kw), 0 0 24px var(--kw); }
+}
+@keyframes glyphFreeze {
+  0%, 100% { filter: none; transform: rotate(0); }
+  50% { filter: brightness(1.5) drop-shadow(0 0 6px var(--kw)); transform: rotate(30deg); }
+}
+@keyframes glyphArcane {
+  0%, 100% { transform: scale(1); filter: none; }
+  50% { transform: scale(1.1); filter: drop-shadow(0 0 8px var(--kw)) brightness(1.3); }
+}
+@keyframes glyphFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+@keyframes powerIntroLife {
+  0% { opacity: 0; }
+  3%, 22% { opacity: 1; transform: none; }
+  30%, 100% { opacity: 0; transform: scale(0.6) translateY(-12vh); }
+}
+@keyframes flareSpin {
+  from { opacity: 0; transform: rotate(-30deg) scale(0.4); }
+  40% { opacity: 1; }
+  to { opacity: 0.85; transform: rotate(25deg) scale(1.1); }
+}
+@keyframes shockwave {
+  0% { opacity: 0.95; transform: translate(-50%, -50%) scale(0.2); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(2.6); }
+}
+@keyframes medallionIn {
+  0% { opacity: 0; transform: scale(2.4) rotate(-25deg); filter: brightness(3) blur(6px); }
+  45% { opacity: 1; transform: scale(0.92) rotate(4deg); filter: brightness(1.4); }
+  100% { opacity: 1; transform: none; filter: none; }
+}
+@keyframes runeSpin { to { transform: rotate(360deg); } }
+@keyframes powerNameIn {
+  0%, 20% { opacity: 0; transform: translateY(20px) scale(1.4); letter-spacing: 0.5em; filter: blur(6px); }
+  60% { opacity: 1; filter: none; }
+  100% { opacity: 1; transform: none; letter-spacing: 0.12em; }
+}
+@keyframes flashPop {
+  0%, 24% { opacity: 0; }
+  27% { opacity: 0.9; }
+  36%, 100% { opacity: 0; }
+}
+@keyframes cardPower {
+  0%, 25% { opacity: 0; transform: scale(0.2) rotateY(-120deg); }
+  33% { opacity: 1; transform: scale(1.08) rotateY(8deg); }
+  38% { transform: scale(1) rotateY(0); }
+  86% { opacity: 1; transform: scale(1.01); }
+  100% { opacity: 0; transform: translateY(18vh) scale(0.32); }
+}
+@keyframes kickerPower {
+  0%, 26% { opacity: 0; transform: translateY(-10px); letter-spacing: 0.4em; }
+  34%, 86% { opacity: 1; transform: none; }
+  100% { opacity: 0; }
+}
+@keyframes detailsPower {
+  0%, 30% { opacity: 0; transform: translateX(24px); }
+  40%, 86% { opacity: 1; transform: none; }
+  100% { opacity: 0; }
+}
+@keyframes prism {
+  0% { filter: hue-rotate(0deg) saturate(1.1); }
+  50% { filter: hue-rotate(25deg) saturate(1.35) brightness(1.06); }
+  100% { filter: hue-rotate(0deg) saturate(1.1); }
+}
+
 /* Movimiento reducido: la información se mantiene entera (es lo que se pidió
    ver), solo desaparecen vuelo, giro y pulso. */
 .overlay[data-reduced-motion],
@@ -321,13 +713,22 @@
 .overlay[data-reduced-motion] .beam,
 .overlay[data-reduced-motion] .targetCard,
 .overlay[data-reduced-motion] .targetNexus,
-.overlay[data-reduced-motion] .footer { animation: none; }
+.overlay[data-reduced-motion] .footer,
+.overlay[data-reduced-motion] .details,
+.overlay[data-reduced-motion] .affected li,
+.overlay[data-reduced-motion] .term,
+.overlay[data-reduced-motion] .term::after,
+.overlay[data-reduced-motion] .termGlyph,
+.overlay[data-reduced-motion] .durationGlyph,
+.overlay[data-reduced-motion] .cardSlot > article { animation: none; opacity: 1; }
+.overlay[data-reduced-motion] .flash { display: none; }
 .overlay[data-reduced-motion] .sheen { display: none; }
 .overlay[data-reduced-motion] .halo,
 .overlay[data-reduced-motion] .rays { animation: none; }
 @media (prefers-reduced-motion: reduce) {
-  .cardSlot, .kicker, .targetColumn, .commander, .footer, .halo, .rays, .beam, .targetCard, .targetNexus, .barTop, .barBottom { animation: none; }
-  .sheen, .sparks { display: none; }
+  .cardSlot, .kicker, .targetColumn, .commander, .footer, .halo, .rays, .beam, .targetCard, .targetNexus, .barTop, .barBottom,
+  .details, .affected li, .term, .term::after, .termGlyph, .durationGlyph, .cardSlot > article { animation: none; opacity: 1; }
+  .sheen, .sparks, .powerIntro, .flash, .landing { display: none; }
 }
 
 @media (max-width: 760px) {
@@ -335,4 +736,8 @@
   .beam { width: 4px; height: 28px; }
   .targetColumn { flex-direction: column; }
   .cardSlot > article { --card-width: clamp(11rem, 52vw, 15rem); }
+  /* En móvil no caben las definiciones: quedan iconos, nombres y afectados. */
+  .details { width: min(92vw, 22rem); max-height: 34vh; padding: 10px; }
+  .termText small { display: none; }
+  .powerName { font-size: 26px; }
 }

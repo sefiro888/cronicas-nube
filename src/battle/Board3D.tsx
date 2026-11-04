@@ -2,7 +2,7 @@ import { Html, OrbitControls, Sparkles, useCursor, useTexture } from '@react-thr
 import { Canvas, type ThreeElements, type ThreeEvent, useFrame, useThree } from '@react-three/fiber'
 import { lazy, memo, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { AdditiveBlending, DoubleSide, MathUtils, PerspectiveCamera as ThreePerspectiveCamera, Plane, Raycaster, SRGBColorSpace, Vector2, Vector3 } from 'three'
-import type { Group, Mesh, MeshBasicMaterial, MeshStandardMaterial, PointLight, Texture } from 'three'
+import type { Group, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, PointLight, Texture } from 'three'
 import { BOARD_CELL_COUNT, BOARD_SIZE, CARD_BY_ID, COMMANDER_BY_ID } from '../game'
 import type { AnimationEvent, BoardPiece, MatchState, PlayerId, Position } from '../game'
 import { runoAttackBonus } from '../game/kalevala'
@@ -17,6 +17,9 @@ import { BoardRim } from './grid/BoardRim'
 import { stoneMaps } from './materials/stoneMaterial'
 import { forgedMetalMaps } from './materials/forgedMetal'
 import { DamageNumbers } from './DamageNumbers'
+import { ImpactMarks } from './ImpactMarks'
+import { Epitaphs } from './Epitaphs'
+import type { CastImpact } from './castImpact'
 import { FallenPieces } from './FallenPieces'
 import { RecentHits } from './RecentHits'
 import { EventEffects } from './EventEffects'
@@ -43,6 +46,13 @@ import { TerrainMarks } from './terrain/TerrainMarks'
 import { CardFrameTrim, CardPlinth, CardSurfaceWear, CardWard } from './CardFinish'
 import { RitualSeal } from './RitualSeal'
 import { NexusFractures } from './NexusFractures'
+import { NexusCrown } from './NexusCrown'
+import { BattleSkies } from './BattleSkies'
+import type { PreviewVerdict } from './ui/battleHints'
+import { ThreatArrows, type ThreatFocus } from './ThreatOverlay'
+import { TraitFlourishes, type TraitFx } from './TraitFlourish'
+import { FactionFrame } from './FactionFrame'
+import { LavaRiver } from './LavaRiver'
 import { MaterialEnvironment } from './MaterialEnvironment'
 import { arrivalMotion } from './arrivalMotion'
 import { FACTION_BY_ID } from '../game/factions'
@@ -121,7 +131,7 @@ interface Board3DProps {
   onHoverPiece?: (pieceId?: string) => void
   onHoverNexus?: (playerId?: PlayerId) => void
   /** Objetivo (ficha o Nexo) sobre el que mostrar la vista previa, con sus líneas de texto ya redactadas. */
-  attackPreview?: { readonly targetId: string; readonly lines: readonly string[] }
+  attackPreview?: { readonly targetId: string; readonly attackerId?: string; readonly lines: readonly string[]; readonly target?: readonly PreviewVerdict[]; readonly attacker?: readonly PreviewVerdict[] }
   /** Hay una carta en la mano siendo arrastrada: la cámara no debe orbitar. */
   dragging?: boolean
   /** Modo foto: cámara libre para admirar el tablero, sin límites de ángulo/distancia ni clics de juego. */
@@ -133,6 +143,12 @@ interface Board3DProps {
   scenario: ScenarioId
   /** Evento visual en reproducción, entregado por el director de animaciones. */
   activeEvent?: AnimationEvent
+  /** A quién afectó la carta o poder de `activeEvent`, si es un lanzamiento. */
+  castImpact?: CastImpact
+  /** Unidad señalada y sus amenazas (flechas). */
+  threatFocus?: ThreatFocus
+  /** Animaciones de palabras clave que acaban de actuar. */
+  traitFx?: readonly TraitFx[]
   /** Casilla enfocada con el teclado (flechas). Undefined = se está jugando con ratón. */
   cursorCell?: Position
   /** Cola de animaciones aún por reproducir: sirve para saber qué piezas van a morir. */
@@ -326,7 +342,9 @@ const tileVariantFor = (position: Position): number =>
 const photographicTileVariants = new WeakMap<Texture, readonly Texture[]>()
 const NATURAL_TILE_MAPS = {
   stone: '/assets/terrain/marmol-ciudadela-v1.webp',
-  basalt: '/assets/terrain/basalto-caldera-v1.webp',
+  // Roca de lava creada por el propietario (Gemini), recortada de una imagen
+  // suya sin el río; el río va aparte en la costura central (LavaRiver).
+  basalt: '/assets/terrain/lava-caldera-roca-v1.webp',
   ice: '/assets/terrain/hielo-fiordo-v1.webp',
   moss: '/assets/terrain/granito-santuario-v1.webp',
   sand: '/assets/terrain/arenisca-duna-v1.webp',
@@ -337,30 +355,74 @@ const NATURAL_TILE_MAPS = {
   glaze: '/assets/terrain/celadon-jade-v1.webp',
   sandstone: '/assets/terrain/arenisca-escalinata-v2.webp',
 } as const
+/** Los 24 recortes girados y desplazados de una foto de terreno (uno por variante de losa). */
+const tileVariantsOf = (source: Texture): readonly Texture[] => {
+  let cached = photographicTileVariants.get(source)
+  if (!cached) {
+    cached = Array.from({ length: 24 }, (_, index) => {
+      const map = source.clone()
+      map.colorSpace = SRGBColorSpace
+      map.anisotropy = 4
+      map.repeat.set(0.48, 0.48)
+      // Girar el recorte dentro de la textura evita que las vetas de las
+      // 64 casillas formen diagonales repetidas. No se cruza el borde del
+      // mapa, de modo que no aparecen costuras en mitad de una losa.
+      map.center.set(0.5, 0.5)
+      map.rotation = Math.floor(index / 6) * Math.PI / 2
+      map.offset.set((index % 3) * 0.26 - 0.26, (Math.floor(index / 3) % 2) * 0.52 - 0.26)
+      map.needsUpdate = true
+      return map
+    })
+    photographicTileVariants.set(source, cached)
+  }
+  return cached
+}
+
+/** Mapa de brillo de las grietas de lava de la Caldera (mismos recortes que la roca). */
+const LAVA_GLOW_MAP = '/assets/terrain/lava-caldera-brillo-v1.webp'
+
 function DetailedTileMaterial({ variant, material, terrainStyle }: { variant: number; material: ThreeElements['meshStandardMaterial']; terrainStyle: keyof typeof NATURAL_TILE_MAPS }) {
   const source = useTexture(withBase(NATURAL_TILE_MAPS[terrainStyle]))
-  const maps = useMemo(() => {
-    let cached = photographicTileVariants.get(source)
-    if (!cached) {
-      cached = Array.from({ length: 24 }, (_, index) => {
-        const map = source.clone()
-        map.colorSpace = SRGBColorSpace
-        map.anisotropy = 4
-        map.repeat.set(0.48, 0.48)
-        // Girar el recorte dentro de la textura evita que las vetas de las
-        // 64 casillas formen diagonales repetidas. No se cruza el borde del
-        // mapa, de modo que no aparecen costuras en mitad de una losa.
-        map.center.set(0.5, 0.5)
-        map.rotation = Math.floor(index / 6) * Math.PI / 2
-        map.offset.set((index % 3) * 0.26 - 0.26, (Math.floor(index / 3) % 2) * 0.52 - 0.26)
-        map.needsUpdate = true
-        return map
-      })
-      photographicTileVariants.set(source, cached)
-    }
-    return cached
-  }, [source])
+  const maps = useMemo(() => tileVariantsOf(source), [source])
+  // En la Caldera, en reposo, solo brillan las grietas de lava. Cuando la
+  // losa se resalta (despliegue, movimiento, peligro...) vuelve al brillo de
+  // siempre en toda la losa, para que el resaltado se lea igual que en el
+  // resto de escenarios. Va en un componente aparte para cargar el mapa de
+  // brillo solo en la Caldera: cargarlo en todos los tableros retrasaba la
+  // aparición de las fichas varios segundos en equipos lentos.
+  const highlighted = typeof material.emissiveIntensity === 'number' && material.emissiveIntensity > 0
+  if (terrainStyle === 'basalt' && !highlighted) {
+    // Mientras llega el mapa de brillo, la losa se pinta con su roca sin
+    // brillo: así la carga de la lava no detiene todo el tablero.
+    return (
+      <Suspense fallback={<meshStandardMaterial {...material} map={maps[variant]} />}>
+        <LavaTileMaterial map={maps[variant]!} variant={variant} material={material} />
+      </Suspense>
+    )
+  }
   return <meshStandardMaterial {...material} map={maps[variant]} emissiveMap={maps[variant]} />
+}
+
+function LavaTileMaterial({ map, variant, material }: { map: Texture; variant: number; material: ThreeElements['meshStandardMaterial'] }) {
+  const glowSource = useTexture(withBase(LAVA_GLOW_MAP))
+  const glows = useMemo(() => tileVariantsOf(glowSource), [glowSource])
+  return <meshStandardMaterial {...material} map={map} emissiveMap={glows[variant]} emissive="#ff7a2a" emissiveIntensity={1.4} />
+}
+
+/**
+ * Monta lo decorativo un momento después que el tablero. Con todo lo nuevo
+ * (clima, coronas, marco, estandartes...) el primer fotograma tardaba tanto
+ * en dibujarse que las fichas aparecían segundos tarde en equipos lentos.
+ * Así se juega igual de pronto que antes y la decoración entra después.
+ */
+const DECOR_DELAY_MS = 1200
+function useDeferredDecor(): boolean {
+  const [ready, setReady] = useState(false)
+  useEffect(() => {
+    const timer = window.setTimeout(() => setReady(true), DECOR_DELAY_MS)
+    return () => window.clearTimeout(timer)
+  }, [])
+  return ready
 }
 
 const BoardCell = memo(function BoardCell({ position, valid, hazard, occupied, scorched, rubble, cover, terrainStyle, organicForest, own, deployRow, threatened, intent, colorblindMode, reducedMotion, onCell, onHover }: { position: Position; valid: boolean; hazard?: MovementHazard; occupied: boolean; scorched: boolean; rubble: boolean; cover: boolean; terrainStyle: BoardTileStyle; organicForest: boolean; own: boolean; deployRow: boolean; threatened: boolean; intent: 'move' | 'deploy'; colorblindMode?: boolean; reducedMotion: boolean; onCell: (position: Position) => void; onHover?: (position?: Position) => void }) {
@@ -410,6 +472,7 @@ const BoardCell = memo(function BoardCell({ position, valid, hazard, occupied, s
       position={[boardX(position.x), 0, boardZ(position.y)]}
       receiveShadow
       castShadow
+      userData={{ validCell: valid }}
       onClick={(event) => { event.stopPropagation(); onClick() }}
       onPointerEnter={() => { setHovered(true); onHover?.(position) }}
       onPointerLeave={() => { setHovered(false); onHover?.(undefined) }}
@@ -635,7 +698,49 @@ interface HopPath {
   segmentStart: number
 }
 
-const BoardCard = memo(function BoardCard({ piece, runo, formationBonus, selected, targetable, ready, active, mine, crowded, stackSafe, onPiece, onInspect, onHover, previewLines, reducedMotion, impulse, impact, arrival, waiting }: { piece: BoardPiece; runo: number; formationBonus: number; selected: boolean; targetable: boolean; ready: boolean; active: boolean; mine: boolean; crowded: boolean; stackSafe: boolean; onPiece: (pieceId: string) => void; onInspect?: (cardId: string, pieceId?: string) => void; onHover?: (pieceId?: string) => void; previewLines?: readonly string[]; reducedMotion: boolean; impulse?: Impulse; impact?: AnimationEvent; arrival?: AnimationEvent; waiting: boolean }) {
+/** Icono de cada veredicto de la previsión. */
+const VERDICT_ICON: Readonly<Record<PreviewVerdict['tone'], string>> = {
+  kill: '☠', hurt: '♥', counterKill: '☠', counter: '↩', safe: '✓', sink: '≈', pierce: '➶', nexus: '◆', lethal: '☠',
+}
+
+/**
+ * Sellos de la previsión al apuntar: «Muere», «Sobrevive con 2», «Devuelve
+ * 3»… cada uno con su color. Van sobre las dos fichas para que el jugador
+ * vea de un vistazo qué gana y qué arriesga antes de confirmar el ataque.
+ */
+function VerdictBadges({ verdicts }: { verdicts: readonly PreviewVerdict[] }) {
+  return (
+    <div className={styles.verdicts}>
+      {verdicts.map((verdict) => (
+        <div key={verdict.title} className={styles.verdict} data-tone={verdict.tone}>
+          <span className={styles.verdictIcon}>{VERDICT_ICON[verdict.tone]}</span>
+          <strong>{verdict.title}</strong>
+          {verdict.detail && <small>{verdict.detail}</small>}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/**
+ * Ficha a la que va de verdad el puntero cuando hay varias cartas de pie una
+ * detrás de otra: la primera que sea objetivo válido o, si ninguna lo es, la
+ * más cercana. Cada grupo de ficha lleva en userData su id y si es objetivo.
+ */
+const preferredPiece = (event: ThreeEvent<MouseEvent | PointerEvent>): string | undefined => {
+  let first: string | undefined
+  for (const hit of event.intersections) {
+    let node: Object3D | null = hit.object
+    while (node && node.userData?.pieceId === undefined) node = node.parent
+    if (!node) continue
+    const id = node.userData.pieceId as string
+    if (node.userData.targetable) return id
+    first ??= id
+  }
+  return first
+}
+
+const BoardCard = memo(function BoardCard({ deploying = false, piece, runo, formationBonus, selected, targetable, ready, active, mine, crowded, stackSafe, onPiece, onInspect, onHover, previewLines, reducedMotion, impulse, impact, arrival, waiting }: { deploying?: boolean; piece: BoardPiece; runo: number; formationBonus: number; selected: boolean; targetable: boolean; ready: boolean; active: boolean; mine: boolean; crowded: boolean; stackSafe: boolean; onPiece: (pieceId: string) => void; onInspect?: (cardId: string, pieceId?: string) => void; onHover?: (pieceId?: string) => void; previewLines?: readonly PreviewVerdict[]; reducedMotion: boolean; impulse?: Impulse; impact?: AnimationEvent; arrival?: AnimationEvent; waiting: boolean }) {
   const card = CARD_BY_ID[piece.cardId]
   const displayedAttack = Math.max(0, (card?.attack ?? 0) + piece.attackModifier + (card?.type === 'unit' ? runoAttackBonus(runo) : 0) + formationBonus)
   const texture = useTexture(withBase(card?.art.webp ?? '/assets/cards/art/fuente-furia.webp'))
@@ -706,6 +811,8 @@ const BoardCard = memo(function BoardCard({ piece, runo, formationBonus, selecte
   const infected = piece.statuses.some((status) => status.kind === 'infected')
   const shielded = piece.statuses.reduce((total, status) => total + (status.kind === 'shielded' ? status.amount : 0), 0)
   const spent = active && piece.attackedThisTurn
+  const flyer = Boolean(card?.keywords.includes('flying') || piece.grantedKeywords?.includes('flying'))
+  const idlePhase = useMemo(() => [...piece.instanceId].reduce((sum, char) => sum + char.charCodeAt(0), 0) % 628 / 100, [piece.instanceId])
   useFrame(({ clock, camera }, delta) => {
     const node = group.current
     if (!node) return
@@ -753,7 +860,13 @@ const BoardCard = memo(function BoardCard({ piece, runo, formationBonus, selecte
     } else {
       node.position.x = MathUtils.damp(node.position.x, target.x, speed, delta)
       node.position.z = MathUtils.damp(node.position.z, target.z, speed, delta)
-      node.position.y = MathUtils.damp(node.position.y, lift, speed, delta)
+      // Reposo vivo: las voladoras flotan más altas y se mecen; el resto
+      // respira apenas. El desfase por ficha evita que todo el tablero suba
+      // y baje a la vez como un único bloque.
+      const idle = flyer
+        ? 0.09 + Math.sin(clock.elapsedTime * 1.7 + idlePhase) * 0.05
+        : Math.sin(clock.elapsedTime * 1.1 + idlePhase) * 0.012
+      node.position.y = MathUtils.damp(node.position.y, lift + idle, speed, delta)
     }
     const turnAngle = selected ? (piece.owner === 'player' ? -0.08 : 0.08) : 0
     node.rotation.y = reducedMotion ? turnAngle : MathUtils.damp(node.rotation.y, turnAngle, speed, delta)
@@ -855,13 +968,41 @@ const BoardCard = memo(function BoardCard({ piece, runo, formationBonus, selecte
     <group
       ref={group}
       position={[target.x, 0.15, target.z]}
-      onClick={(event: ThreeEvent<MouseEvent>) => { event.stopPropagation(); onClick() }}
+      onClick={(event: ThreeEvent<MouseEvent>) => {
+        // Al colocar una carta desde la mano ninguna ficha es objetivo: el
+        // clic sobre una carta de pie que tapa una casilla válida sigue hasta
+        // la casilla (si no, no se podía desplegar entre dos fichas).
+        if (deploying && !targetable && event.intersections.some((hit) => hit.object.userData?.validCell)) return
+        // Un objetivo tapado por otra carta (la propia atacante, casi siempre:
+        // el rival está justo detrás desde la cámara) tiene prioridad. Esta
+        // ficha deja pasar el clic y lo recibe el objetivo de detrás.
+        const preferred = preferredPiece(event)
+        if (preferred && preferred !== piece.instanceId) return
+        event.stopPropagation()
+        onClick()
+      }}
       onDoubleClick={onDoubleClick}
-      onPointerEnter={() => { setHovered(true); onHover?.(piece.instanceId) }}
+      onPointerEnter={(event: ThreeEvent<PointerEvent>) => { setHovered(true); onHover?.(preferredPiece(event) ?? piece.instanceId) }}
+      onPointerMove={(event: ThreeEvent<PointerEvent>) => {
+        // Se recalcula al moverse: al pasar por encima de dos cartas solapadas
+        // el aviso de ataque sale para el objetivo aunque asome poco.
+        const preferred = preferredPiece(event)
+        if (preferred) onHover?.(preferred)
+      }}
       onPointerLeave={() => { setHovered(false); onHover?.(undefined) }}
+      userData={{ pieceId: piece.instanceId, targetable }}
     >
       <group ref={strike}>
       <group ref={arrivalGroup}>
+      {/* Aura de rareza en reposo: la rara suelta alguna mota; la mítica, un
+          enjambre dorado. Así una mítica se reconoce en el tablero de lejos. */}
+      {card && !reducedMotion && (card.rarity === 'mythic' || card.rarity === 'rare') && (
+        // Sin raycast: los puntos cuentan como parte de la ficha para el clic y
+        // three los toca con un margen de 1 unidad de mundo, así que el aura se
+        // tragaba los clics y el hover de las casillas y fichas vecinas.
+        <Sparkles count={card.rarity === 'mythic' ? 14 : 5} scale={[0.9, 1.1, 0.5]} position={[0, 0.55, 0]} size={card.rarity === 'mythic' ? 3.2 : 2.2}
+          speed={0.35} opacity={0.8} color={card.rarity === 'mythic' ? '#ffd76a' : '#9fd0ff'} raycast={() => null} />
+      )}
       <group ref={facing}>
       {/* Standee: frame + arte, inclinados (prueba) en vez de tumbados del todo.
           Se eleva CARD_STAND_RISE para que, al girar desde su centro, el borde
@@ -1010,7 +1151,7 @@ const BoardCard = memo(function BoardCard({ piece, runo, formationBonus, selecte
           Ataque impreso — para eso reutiliza `previewAttackPiece`. */}
       {previewLines && previewLines.length > 0 && (
         <Html center position={[0, CARD_STAND_RISE * 2 + 0.42, 0]} distanceFactor={8.6} zIndexRange={[15, 0]} className={styles.attackPreview}>
-          {previewLines.map((line, index) => <div key={index}>{line}</div>)}
+          <VerdictBadges verdicts={previewLines} />
         </Html>
       )}
     </group>
@@ -1051,7 +1192,7 @@ function Nexus({
   targetable: boolean
   onClick: () => void
   onHover?: (playerId?: PlayerId) => void
-  previewLines?: readonly string[]
+  previewLines?: readonly PreviewVerdict[]
   commanderArt: string
   activeEvent?: AnimationEvent
   /** Piedra del sitio: el pedestal se talla en el material de la escena. */
@@ -1059,6 +1200,7 @@ function Nexus({
   reducedMotion: boolean
   terminal: boolean
 }) {
+  const decorReady = useDeferredDecor()
   const [hovered, setHovered] = useState(false)
   useCursor(hovered && targetable)
   const [justHit, setJustHit] = useState(false)
@@ -1198,6 +1340,7 @@ function Nexus({
       })}
       </group>
       </group>
+      {decorReady && !collapse?.settled && <NexusCrown color={color} damage={damage} hitAt={hitAt} collapsing={Boolean(collapse)} reducedMotion={reducedMotion} />}
       {collapse && <NexusRupture key={collapse.id} durationMs={collapse.durationMs} tone={color}
         stoneColors={[stone.base, stone.shaft, stone.crown]} reducedMotion={reducedMotion || Boolean(collapse.settled)} />}
       {/* Volumen invisible: conserva el clic/hover en 3D sin gastar una textura. */}
@@ -1222,7 +1365,7 @@ function Nexus({
       </Html>
       {previewLines && previewLines.length > 0 && (
         <Html center position={[0, 1.7, 0]} distanceFactor={7} zIndexRange={[15, 0]} className={styles.attackPreview}>
-          {previewLines.map((line, index) => <div key={index}>{line}</div>)}
+          <VerdictBadges verdicts={previewLines} />
         </Html>
       )}
       <pointLight ref={nexusLight} position={[0, 1.1, 0]} color={color} intensity={5} distance={4} decay={2} />
@@ -1431,7 +1574,9 @@ const COMBAT_PUNCH = 0.07
 function CombatPunch({ event, reducedMotion }: { event?: AnimationEvent; reducedMotion: boolean }) {
   const start = useRef<{ at: number; durationMs: number } | null>(null)
   useEffect(() => {
-    if (event?.type === 'attack') start.current = { at: performance.now(), durationMs: Math.max(200, event.durationMs) }
+    // También la entrada de una mítica: llega con un rayo y la cámara se acerca.
+    const mythicArrival = event?.type === 'summon' && event.cardId && CARD_BY_ID[event.cardId]?.rarity === 'mythic'
+    if (event?.type === 'attack' || mythicArrival) start.current = { at: performance.now(), durationMs: Math.max(200, event!.durationMs) }
   }, [event])
   useFrame(({ camera }) => {
     if (!(camera instanceof ThreePerspectiveCamera)) return
@@ -1455,6 +1600,51 @@ function CombatPunch({ event, reducedMotion }: { event?: AnimationEvent; reduced
     camera.zoom = 1 + COMBAT_PUNCH * shape
     camera.updateProjectionMatrix()
   }, -0.55)
+  return null
+}
+
+/**
+ * Cámara que acompaña la acción: en cada jugada importante el encuadre se
+ * desliza un poco hacia donde ocurre y vuelve. Usa `setViewOffset` (desplaza
+ * el recorte de la imagen) en vez de mover la cámara, para no pelear con los
+ * controles de órbita ni con el encuadre que elige el jugador.
+ */
+const ACTION_PAN = 0.11
+function ActionCamera({ event, reducedMotion }: { event?: AnimationEvent; reducedMotion: boolean }) {
+  const run = useRef<{ at: number; durationMs: number; point: Vector3 } | null>(null)
+  const offset = useRef(new Vector2())
+  const projected = useMemo(() => new Vector3(), [])
+  useEffect(() => {
+    if (!event?.to) return
+    const important = event.type === 'attack' || event.type === 'destroy' || event.type === 'summon' || Boolean(event.cast)
+    if (!important) return
+    run.current = { at: performance.now(), durationMs: Math.max(600, event.durationMs * 1.6), point: new Vector3(boardX(event.to.x), 0.4, boardZ(event.to.y)) }
+  }, [event])
+  useFrame(({ camera, size }, delta) => {
+    if (!(camera instanceof ThreePerspectiveCamera)) return
+    const active = run.current
+    let wantX = 0
+    let wantY = 0
+    if (active && !reducedMotion) {
+      const progress = (performance.now() - active.at) / active.durationMs
+      if (progress >= 1) run.current = null
+      else {
+        // Va hacia la acción y vuelve: pico en el primer tercio.
+        const shape = progress < 0.3 ? progress / 0.3 : 1 - (progress - 0.3) / 0.7
+        projected.copy(active.point).project(camera)
+        wantX = projected.x * size.width * 0.5 * ACTION_PAN * shape
+        wantY = -projected.y * size.height * 0.5 * ACTION_PAN * shape
+      }
+    }
+    const current = offset.current
+    current.x = MathUtils.damp(current.x, wantX, 5, delta)
+    current.y = MathUtils.damp(current.y, wantY, 5, delta)
+    if (Math.abs(current.x) < 0.2 && Math.abs(current.y) < 0.2 && !run.current) {
+      if (camera.view?.enabled) camera.clearViewOffset()
+      return
+    }
+    camera.setViewOffset(size.width, size.height, current.x, current.y, size.width, size.height)
+  }, -0.5)
   return null
 }
 
@@ -1516,6 +1706,7 @@ function LoadingStage() {
 }
 
 function Scene(props: Board3DProps) {
+  const decorReady = useDeferredDecor()
   // Conjuntos O(1) precalculados una vez por cambio de estado: evitan el
   // barrido .some() por cada una de las 64 casillas en cada render.
   const validSet = useMemo(() => new Set(props.validCells.map(cellKey)), [props.validCells])
@@ -1625,6 +1816,9 @@ function Scene(props: Board3DProps) {
         )}
       </Suspense>
       </group>
+      {/* Clima, luz de tensión, criaturas lejanas y cicatrices: dentro del
+          proveedor de clima porque leen su tensión. */}
+      {decorReady && <BattleSkies style={terrainStyle} quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} turn={props.state.turn} />}
       </BattleClimateProvider>
       <group name="battle-view" rotation={[0, props.localPlayerId === 'ai' ? Math.PI : 0, 0]}>
       <BoardRim style={terrainStyle} />
@@ -1655,7 +1849,15 @@ function Scene(props: Board3DProps) {
         )
       })}
       {props.cursorCell && <CursorMarker position={props.cursorCell} reducedMotion={props.reducedMotion} hazard={props.movementHazards?.get(cellKey(props.cursorCell))} />}
-      <Midline terrainStyle={terrainStyle} />
+      {/* En la Caldera, la costura es un río de lava que parte el tablero. */}
+      {props.scenario === 'caldera' ? <Suspense fallback={<Midline terrainStyle={terrainStyle} />}><LavaRiver reducedMotion={props.reducedMotion} /></Suspense> : <Midline terrainStyle={terrainStyle} />}
+      {decorReady && <FactionFrame
+        factions={{
+          player: COMMANDER_BY_ID[props.state.players.player.commanderId]?.faction,
+          ai: COMMANDER_BY_ID[props.state.players.ai.commanderId]?.faction,
+        }}
+        reducedMotion={props.reducedMotion}
+      />}
       <BoardAtmosphere terrainStyle={terrainStyle} quality={props.quality} reducedMotion={props.reducedMotion} />
       {/* Y encima, lo que se mueve con dirección: la brasa sube, la nieve cae
           de lado, la hoja baja dando tumbos. `BoardAtmosphere` solo titila en
@@ -1665,6 +1867,7 @@ function Scene(props: Board3DProps) {
         {props.state.board.map((piece) => (
           <BoardCard
             key={piece.instanceId}
+            deploying={props.cellIntent === 'deploy' && props.validCells.length > 0}
             piece={piece}
             runo={props.state.players[piece.owner].runo ?? 0}
             formationBonus={formationAttackBonus(props.state, piece)}
@@ -1678,7 +1881,8 @@ function Scene(props: Board3DProps) {
             onPiece={props.onPiece}
             onInspect={props.onInspectPiece}
             onHover={props.onHoverPiece}
-            previewLines={props.attackPreview?.targetId === piece.instanceId ? props.attackPreview.lines : undefined}
+            previewLines={props.attackPreview?.targetId === piece.instanceId ? props.attackPreview.target
+              : props.attackPreview?.attackerId === piece.instanceId ? props.attackPreview.attacker : undefined}
             reducedMotion={props.reducedMotion}
             impulse={impulses.get(piece.instanceId)}
             impact={props.activeEvent?.targetId === piece.instanceId ? props.activeEvent : undefined}
@@ -1696,7 +1900,7 @@ function Scene(props: Board3DProps) {
         targetable={props.validTargets.includes('player-nexus')}
         onClick={() => props.onNexus('player')}
         onHover={props.onHoverNexus}
-        previewLines={props.attackPreview?.targetId === 'player-nexus' ? props.attackPreview.lines : undefined}
+        previewLines={props.attackPreview?.targetId === 'player-nexus' ? props.attackPreview.target : undefined}
         commanderArt={COMMANDER_BY_ID[props.state.players.player.commanderId]?.art.webp ?? '/assets/cards/art/fuente-furia.webp'}
         activeEvent={props.activeEvent}
         terrainStyle={terrainStyle}
@@ -1712,14 +1916,14 @@ function Scene(props: Board3DProps) {
         targetable={props.validTargets.includes('ai-nexus')}
         onClick={() => props.onNexus('ai')}
         onHover={props.onHoverNexus}
-        previewLines={props.attackPreview?.targetId === 'ai-nexus' ? props.attackPreview.lines : undefined}
+        previewLines={props.attackPreview?.targetId === 'ai-nexus' ? props.attackPreview.target : undefined}
         commanderArt={COMMANDER_BY_ID[props.state.players.ai.commanderId]?.art.webp ?? '/assets/cards/art/fuente-arcana.webp'}
         activeEvent={props.activeEvent}
         terrainStyle={terrainStyle}
         reducedMotion={props.reducedMotion}
         terminal={terminal}
       />
-      {props.activeEvent && <EventEffects key={props.activeEvent.id} event={props.activeEvent} reducedMotion={props.reducedMotion} />}
+      {props.activeEvent && <EventEffects key={props.activeEvent.id} event={props.activeEvent} reducedMotion={props.reducedMotion} impact={props.castImpact} />}
       <FallenPieces
         event={props.activeEvent}
         pendingEvents={props.pendingEvents ?? EMPTY_EVENTS}
@@ -1728,10 +1932,15 @@ function Scene(props: Board3DProps) {
         reducedMotion={props.reducedMotion}
       />
       <DamageNumbers event={props.activeEvent} reducedMotion={props.reducedMotion} />
+      <ImpactMarks event={props.activeEvent} impact={props.castImpact} reducedMotion={props.reducedMotion} />
+      <Epitaphs event={props.activeEvent} reducedMotion={props.reducedMotion} />
+      {!props.photoMode && <ThreatArrows focus={props.threatFocus} board={props.state.board} nexusZ={nexusWorldZ} reducedMotion={props.reducedMotion} />}
+      <TraitFlourishes effects={props.traitFx ?? []} reducedMotion={props.reducedMotion} />
       <RecentHits event={props.activeEvent} reducedMotion={props.reducedMotion} />
       </group>
       <CameraRig event={props.activeEvent} reducedMotion={props.reducedMotion} />
       <CombatPunch event={props.activeEvent} reducedMotion={props.reducedMotion} />
+      <ActionCamera event={props.activeEvent} reducedMotion={props.reducedMotion} />
       <ResponsiveCamera />
       <NexusFocus event={props.activeEvent} localPlayerId={props.localPlayerId} reducedMotion={props.reducedMotion} photoMode={props.photoMode} />
       {props.onCellHover && (

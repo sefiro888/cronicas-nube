@@ -5,7 +5,11 @@
   display: inline;
   border-bottom: 1px dotted currentColor;
   border-radius: 2px;
-  color: color-mix(in srgb, currentColor 72%, #236d91);
+  /* Cada término lleva su color de identidad (--kw). Sobre el pergamino claro
+     de la carta se oscurece mezclándolo con el texto: el color puro, pensado
+     para fondos oscuros, no llegaba al contraste mínimo sobre beige. */
+  color: color-mix(in srgb, currentColor 45%, var(--kw, #236d91));
+  border-bottom-color: var(--kw, currentColor);
   font-weight: 800;
   cursor: help;
   outline: none;
@@ -60,4 +64,24 @@
 
 @media (prefers-reduced-motion: reduce) {
   .tooltip { transition: none; }
+}
+
+.tooltipHead {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.tooltipGlyph {
+  flex: none;
+  color: var(--kw, #f2d184);
+  font-size: 1.15em;
+  filter: drop-shadow(0 0 4px var(--kw, transparent));
+}
+.tooltipHead em {
+  margin-left: auto;
+  padding-left: 0.6rem;
+  color: var(--kw, #b8ad92);
+  font: 700 0.62rem ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }

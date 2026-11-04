@@ -1,5 +1,372 @@
 # Estado del proyecto y por dónde seguir
 
+## TRASPASO A CODEX — 4 de noviembre de 2026 (léelo primero)
+
+El propietario pasa el proyecto a Codex (también para generar imágenes).
+Resumen de dónde está todo; el detalle de cada bloque va en las notas de
+debajo, de la más reciente a la más antigua.
+
+**Dónde está el trabajo**
+- **Integrado en `main` de `sefiro888/cronicas-nube`** (PR #1 fusionado el
+  4 de noviembre de 2026 a petición del propietario). Trabajar desde `main`
+  en ramas nuevas con PR. Nada de esto está en `sefiro888/magicfable` (el
+  juego oficial): **el propietario pidió no tocar `magicfable` de momento**.
+- Vista previa pública: https://sefiro888.github.io/cronicas-nube/ — se
+  publica sola con cada push a `main` o a una rama `claude/**`
+  (`.github/workflows/vista-previa.yml`, rama `gh-pages`): enseña lo último
+  que se haya subido de cualquiera de ellas.
+- Si algún día se lleva a `magicfable`: rama con PR, comprobando antes si
+  `magicfable` cambió desde la copia (`a8f9c72`). Solo cuando él lo pida.
+
+**Qué se hizo (todo presentación; reglas y equilibrio intactos)**
+Glosario con identidad e iconos, panel «Qué hace», escena del poder del
+comandante, duelo por rareza, ataques por tipo de criatura, Nexo de cristal
+con corona 3D, golpe final, combos, reacciones y muertes por criatura,
+clima y luz de tensión, cartas vivas, cámara, música y sonidos por ataque,
+cara a cara inicial, final épico, repetir jugada, previsión al apuntar,
+flechas de amenaza, habilidades animadas, cadena, animación por hechizo,
+firma y marco por facción, frases de comandantes, sobres y Álbum, títulos,
+marcos y racha, epitafios, botón «Rematar», suelo de lava de la Caldera,
+página de Mazos y menú nuevos. 747 pruebas unitarias.
+
+**Decisiones del propietario que hay que respetar**
+- Todo el texto en español, también los mensajes de trabajo.
+- Sin figuras 3D en lugar de fichas (descartado).
+- Quitado el mapa rojo de casillas en peligro: no lo quiere (el juego debe
+  ser menos predecible). Sí quiere las flechas de amenaza.
+- No hay contrahechizos en las reglas y no se inventan sin su permiso.
+- Los sobres son solo de colección: no limitan mazos (cambiarlo es de reglas).
+- Arte nuevo: el suyo hecho con Gemini vale (procedencia confirmada).
+
+**Pendiente, por prioridad**
+1. Rendimiento: control de intensidad de efectos en Ajustes y calidad
+   automática si va lento. La e2e «las chapas de las unidades no se pisan en
+   móvil» es intermitente en la Caldera (pasa en `main`): las fichas tardan
+   en salir. Revisar con GPU.
+2. Repaso en móvil de lo nuevo (sobres, álbum, cara a cara, bocadillos,
+   sellos, Mazos).
+3. Ritmo: una partida del propietario duró 111 min en 21 turnos; medir y
+   ajustar el ritmo «Normal».
+4. IA de Goblins y Tercios (ver `docs/EQUILIBRIO-2026-10-31.md`).
+5. Suelos propios por facción como el de lava (ver abajo).
+
+**Encargos de imagen (para Codex)**
+- Suelos por facción: textura cenital de terreno, 2048 × 2048, sin marco,
+  sin río/elemento dominante en el centro (o separado aparte, como el río
+  de lava). Cómo se montó la lava: nota «Suelo de lava de la Caldera» y
+  `NATURAL_TILE_MAPS` / `LavaTileMaterial` / `LavaRiver.tsx` en
+  `src/battle/Board3D.tsx`. Mapas actuales en `public/assets/terrain/`.
+- Antes de generar arte, leer `docs/GUIA-PROMPTS-ARTE.md` y
+  `docs/INTERFAZ-MUNDOS-2026-11-01.md` (inventario: los WebP se versionan,
+  los maestros PNG no están en Git).
+
+**Pruebas en la nube**: sin GPU varias e2e fallan por tiempo igual que en
+`main` (lista en notas de abajo). Para capturas fiables: congelar reloj y
+animaciones (`e2e/battle-spectacle-shots.spec.ts`).
+
+---
+
+## Mazos, menú y carga del tablero — 2 de noviembre de 2026 (Claude Code, nube) · PUNTO DE RETOMA
+
+**Sesión cerrada por saldo de la nube (quedaban ~5 $).** Todo está subido a
+`claude/sweet-clarke-76ugku` y publicado en la vista previa.
+
+- **Mazos** (`DecksPage`): galería de 19 estandartes con retrato del
+  comandante, sello y color de facción (antes, pestañas de texto partidas
+  en cinco líneas); estandarte del comandante en el panel; curva de coste;
+  al elegir mazo baja sola a la lista. La galería es `div role=group` (con
+  `<nav>` el e2e del menú encontraba dos «activos»).
+- **Menú** (`AppShell`): icono propio por sección en vez de 01–08, gema en
+  la activa y «Jugar» como botón dorado principal.
+- **Resumen final en móvil:** textos cortos para que los botones quepan.
+- **Carga del tablero:** la decoración (clima, corona del Nexo, marco) se
+  monta 1,2 s después (`useDeferredDecor`) y la lava de la Caldera carga en
+  su propio `Suspense` (antes retrasaba todo el tablero).
+
+**Abierto:** `e2e/mobile.spec.ts` «las chapas de las unidades no se pisan
+en móvil» es intermitente aquí (1 de 2 pasa; en `main` pasa): espera 3 s a
+que aparezcan las fichas y en la Caldera, sin GPU, tardan más. Revisar con
+GPU; si sigue, medir el primer fotograma de la escena.
+
+**Siguiente recomendado:** control de intensidad de efectos y calidad
+automática; repaso en móvil; IA de Goblins y Tercios; suelos por facción
+con imágenes del propietario (Gemini, 2048 px, vista cenital, sin marco).
+
+---
+
+## Epitafios y golpe de gracia — 2 de noviembre de 2026 (Claude Code, nube)
+
+Elegidas por el propietario de una lista de 51 ideas.
+
+- **Epitafio** (`battle/Epitaphs.tsx`): al destruirse una unidad rara o
+  mítica, su `flavor` sale en cursiva sobre la casilla y sube despacio.
+- **Rematar** (`pages/battle/FinishingBlow.tsx`): si una unidad propia
+  puede derribar ya el Nexo rival (`getValidAttacks.canAttackNexus` +
+  `previewAttackNexus.lethal`), sale un botón dorado «Rematar». Lanza una
+  escena de 2,2 s con el comandante y después el `attack-nexus` normal.
+  Probado en navegador hasta la pantalla de Victoria.
+
+---
+
+## Suelo de lava de la Caldera — 2 de noviembre de 2026 (Claude Code, nube)
+
+Imagen **creada por el propietario con Gemini** (procedencia confirmada por
+él; sin licencia de terceros). Original de 1024 px en el chat, no en Git.
+Se eligió la opción A propuesta: losas de roca + río en la costura.
+
+- `public/assets/terrain/lava-caldera-roca-v1.webp`: recorte de la roca sin
+  el río (esquina superior derecha, sin el filete dorado del borde),
+  ampliado a 1024. Sustituye a `basalto-caldera-v1.webp` en
+  `NATURAL_TILE_MAPS.basalt` (el antiguo sigue en el repositorio).
+- `lava-caldera-brillo-v1.webp`: solo las grietas naranjas; en reposo es el
+  `emissiveMap` de las losas de la Caldera. Al resaltar una losa vuelve el
+  brillo de siempre para que el resaltado se lea igual.
+- `lava-caldera-rio-v1.webp`: el río girado 50° y recortado con bordes
+  suaves; `LavaRiver.tsx` lo pone en la costura central de la Caldera
+  (sustituye a `Midline` solo ahí), fluye y su resplandor late.
+
+Pendiente: que el propietario confirme si las cartas se leen bien sobre la
+lava; si quiere, misma técnica para el suelo de otras facciones.
+
+---
+
+## Fichas pegadas: seleccionar y atacar — 1 de noviembre de 2026 (Claude Code, nube)
+
+El propietario: con cartas en casillas pegadas costaba mucho seleccionar la
+propia, el aviso de ataque solo salía en un punto y el clic no atacaba.
+**Regresión causada por cambios de esta misma rama**, corregida:
+
+1. El aura de motas (`Sparkles`) de raras y míticas estaba dentro del grupo
+   con manejadores de la ficha; three toca los puntos con margen de 1 unidad
+   y se tragaba clics y hover de lo que había alrededor. Ahora `raycast={() => null}`.
+2. Se quitó el «clic que atraviesa» la mitad alta de la carta al mover
+   (quedaba solo al desplegar desde la mano).
+3. La rival justo detrás de la propia quedaba tapada desde la cámara:
+   `preferredPiece` da prioridad al objetivo válido entre todo lo que hay
+   bajo el puntero (clic y aviso), y la losa de un objetivo cuenta como el
+   objetivo (`hoveredOccupantId` y `onCell`).
+
+Prueba nueva permanente `e2e/stacked-pieces.spec.ts` (ratón real:
+seleccionar junto a otra, sello al apuntar, atacar): pasa. `battle-ui`
+falla por tiempo en esta máquina también sin estos cambios (comprobado con
+`git stash`).
+
+---
+
+## Selección de carta y casilla más fiable — 1 de noviembre de 2026 (Claude Code, nube)
+
+El propietario: «a veces le doy clic y no coge la carta que quiero o no va
+al lugar que quiero». Causas encontradas y arreglos:
+
+1. **Clics ignorados durante animaciones:** `onHandSelect` salía si la cola
+   estaba ocupada; con las animaciones nuevas pasaba a menudo. Elegir carta
+   ya no espera a la cola (las acciones sobre casillas ya se permitían).
+2. **Carta que «huía» al pasar el ratón** (`HandFan`): se levantaba el hueco
+   entero y el puntero quedaba sobre la vecina. Ahora el hueco (`.fanCard`)
+   no se mueve; solo la capa `.lift`. El hueco también selecciona.
+3. **La elegida tapaba la fila de despliegue** y pulsar ahí la soltaba:
+   sube 16 px en vez de 44.
+4. **Clics convertidos en arrastre** (`useCardDrag`): umbral 14 px y además
+   tiene que ir hacia arriba (10 px).
+5. **Casillas tapadas por cartas de pie al mover:** pulsar la parte alta de
+   una carta (y > 0,62) que tapa una casilla válida llega a la casilla.
+6. **Clic en casilla no válida con unidad elegida:** mensaje explicando por qué.
+
+Pruebas: 747 unitarias, lint y build; e2e de mano y tablero (`battle-ui`,
+`home`, `card-faces`, `game-flow`) correctas. `drag-and-drop` sigue fallando
+por tiempo igual que en `main` (máquina sin GPU).
+
+---
+
+## Ajustes tras probar el propietario — 1 de noviembre de 2026 (Claude Code, nube)
+
+- **Quitado el mapa rojo de peligro** (punto 3 de las once mejoras). Decisión
+  del propietario: no hace falta saber dónde te pueden atacar; el juego es
+  mejor menos predecible. Se borró `dangerCells` y `DangerHeat`. **Se
+  conservan las flechas de amenaza**, que le gustaron (alcance y si hay
+  contragolpe).
+- **Despliegue entre dos fichas:** desde el ángulo de cámara, las cartas de
+  pie tapaban parte de la casilla de detrás y se quedaban el clic, así que
+  no se podía desplegar en una casilla válida rodeada de fichas. Ahora, al
+  colocar una carta, si la ficha no es objetivo y detrás hay una casilla
+  válida (`userData.validCell`), el clic sigue hasta la casilla.
+- Recordatorio para quien retome: las casillas verdes brillantes son las de
+  despliegue válidas (fila propia y alrededor de unidades propias que ya
+  llevan un turno o han actuado). El verde apagado del fondo es el terreno.
+
+---
+
+## Sobres, álbum, perfil y racha — 1 de noviembre de 2026, noche (Claude Code, nube)
+
+**Misma rama y PR.** El propietario pidió los puntos 12, 14 y 15.
+
+- **Sobres** (`store/collection.ts`, `components/PackOpening.tsx`): uno por
+  victoria (`useMatchRecorder`). Cinco cartas de menos a más raras
+  (`rollPack`, determinista por semilla, la última puede ser mítica, 8 %
+  doradas). **Decisión:** es colección para lucir; no limita qué se puede
+  jugar ni toca mazos ni equilibrio.
+- **Álbum** (`pages/AlbumPage.tsx`, ruta `/album`, nueva pestaña en el
+  menú): progreso, copias, doradas, siluetas y filtro por facción.
+- **Títulos y marcos** (`store/profile.ts`, `ProfileShowcase`,
+  `ProfileBadges`): ligados a los logros existentes; se eligen en el álbum
+  y se ven en el panel del comandante y en el cara a cara.
+- **Racha** (`StreakEmblem`): niveles a 1, 3, 5 y 10 victorias seguidas;
+  portada, partida y pantalla final.
+
+Persistencia nueva en `localStorage`: `cronicas-nexo-coleccion` (v1).
+**Pruebas:** 747 unitarias correctas, lint y build correctos; captura en
+navegador del álbum y de la apertura completa sin errores.
+
+---
+
+## Once mejoras de claridad y facciones — 1 de noviembre de 2026, noche (Claude Code, nube)
+
+**Misma rama y PR** (`claude/sweet-clarke-76ugku`, vista previa en
+https://sefiro888.github.io/cronicas-nube/). El propietario eligió y pidió
+hacerlas «punto por punto de manera impresionante». Todo es presentación.
+
+1. **Previsión al apuntar** (`attackPieceVerdicts` en `battleHints.ts`):
+   sello en cada ficha («Muere», «Sobrevive con N», «Devuelve N», «Muere en
+   el contragolpe», «+N al Nexo», «¡Golpe letal!»).
+2. y 3. **Flechas de amenaza y mapa de peligro** (`threats.ts`,
+   `ThreatOverlay.tsx`): estado hipotético en el que le toca al dueño y se
+   pregunta al motor; el mapa sale al decidir dónde mover o desplegar.
+4. **Habilidades que hablan** (`TraitFlourish.tsx`): lanza de Perforar,
+   corazón de Vínculo vital, estrellas de Aturdir, muro de Guardia, placas
+   de Escudo; se disparan desde el duelo.
+5. **Reacción en cadena** (director, `CHAIN_EFFECT`): «×N» con cada muerte
+   que llega detrás de un daño de explosión.
+6. **Animación por hechizo** (`spellStyle.ts`, `SpellStyles.tsx`): bola de
+   fuego, rayo, tormenta, curación, robo, escarcha, bendición, juicio y
+   empuje; el lanzamiento dura ×1,8 (`SPELL_CAST_STRETCH`).
+7. **Zona marcada** (`TargetZone`) antes de los hechizos de área.
+8. **Respuesta**: en las reglas NO hay contrahechizos (comprobado); se
+   rotulan las reacciones que sí existen: Escudo, Petardazo y silencio.
+9. **Firma por facción** (`FactionSignature.tsx`) al invocar, golpear y morir.
+10. **Marco del tablero** (`FactionFrame.tsx`): bordes, estandartes y
+    costura con el color de cada facción.
+11. **Frases de comandantes** (`commanderQuotes.ts`, `CommanderQuote.tsx`):
+    textos originales por facción al usar el poder, al recibir 3+ en el
+    Nexo y al ganar.
+
+**Pruebas:** 742 unitarias correctas (5 omitidas), lint y build correctos;
+prueba de humo en navegador sin errores de consola. Se rebajó la columna de
+luz del Nexo en reposo porque la del propio cruzaba el tablero.
+
+**Pendiente:** que el propietario lo pruebe con GPU y diga qué ajustar.
+Si quiere contrahechizos de verdad, es un cambio de reglas: pedir permiso.
+
+---
+
+## Batería de mejoras visuales — 1 de noviembre de 2026, tarde (Claude Code, nube)
+
+**Misma rama y PR que la nota siguiente** (`sefiro888/cronicas-nube`, rama
+`claude/sweet-clarke-76ugku`). El propietario hizo público el repositorio y
+activó GitHub Pages: cada push a una rama `claude/**` se publica en
+https://sefiro888.github.io/cronicas-nube/ (`.github/workflows/vista-previa.yml`,
+rama `gh-pages`). No es el juego oficial ni toca `magicfable`.
+
+**Decisiones del propietario:** quiere todo el texto en español, también los
+mensajes de trabajo. Pidió hacer TODAS las mejoras de la batería salvo la 19
+(figuras 3D en lugar de fichas). No se cambia el equilibrio.
+
+- **Ataques distintos** (`attackStyle.ts`, `AttackStyles.tsx`): tajos,
+  zarpazos, mazazo, espíritus, flechas, disparo, rayo, aliento de dragón y
+  púas según tipo, alcance, facción y fuerza de la carta.
+- **Nexo**: monolito de cristal en el duelo (`CombatDuel`) y corona 3D
+  (`NexusCrown.tsx`): cristal flotante, satélites, columna de luz, cúpula de
+  escudo, desgaste (humo, esquirlas, satélites que caen), fase de peligro
+  con un cuarto de Vida (también viñeta roja en pantalla) e implosión al caer.
+- **Combate**: golpe final a cámara lenta (`isFinisher` mira la cola ya
+  resuelta), contraataque, combos, reacción por criatura y muertes propias
+  (`creatureFx.ts`, `CreatureReactions.tsx`), números de daño por tipo y
+  crítico desde 5.
+- **Escenario** (`BattleSkies.tsx`): clima por escenario que arrecia con la
+  tensión y reacciona a golpes, luz de tensión, cicatrices que duran cuatro
+  turnos, polvo al pisar, aves o dragones lejanos que se espantan.
+- **Cartas**: ilustración viva en raras y míticas, holográfico ampliado,
+  reposo vivo de las fichas, aura de rareza e invocación por rareza
+  (`RarityArrival.tsx`). El evento `summon` lleva ahora `cardId` (solo
+  presentación; las 490 pruebas del motor siguen correctas).
+- **Interfaz**: cámara que acompaña con `setViewOffset`, capa de tensión en
+  la música (`setBattleTension`), un sonido por tipo de ataque, barrido del
+  comandante en el cambio de turno, vitrina de la mejor jugada y «Ver el
+  golpe decisivo», botón «↺ Repetir jugada» (eventos copiados con el sufijo
+  `REPLAY_MARK`, a cámara lenta y sin tocar el estado) y presentación cara a
+  cara al empezar (`BattleIntro`).
+
+**Pruebas:** 734 unitarias correctas (5 omitidas), `lint` y `build`
+correctos en cada bloque. Prueba de humo en navegador: la batalla carga sin
+errores de consola y se ven las coronas del Nexo. La batería e2e completa
+dio 101 correctas y 7 fallos que **también fallan en `main`** sin estos
+cambios (máquina de la nube sin GPU: animaciones 3D que no acaban a tiempo).
+
+**Pendiente:** que el propietario lo pruebe en la web de vista previa con un
+equipo con GPU, sobre todo el rendimiento del clima y la corona en calidad
+alta; ajustar intensidades según lo que diga. La presentación cara a cara
+dura 3,6 s y se puede saltar.
+
+---
+
+## Espectáculo de batalla — 1 de noviembre de 2026 (Claude Code, nube)
+
+**Hecho en el repositorio de pruebas `sefiro888/cronicas-nube`, rama
+`claude/sweet-clarke-76ugku`, con PR para que el propietario lo revise. NO
+está en `magicfable` ni publicado.** Si gusta, se trae a mano al proyecto
+principal (ver `NUBE.md`).
+
+Petición del propietario, con capturas: que el combate, el poder del
+comandante y la carta en grande sean mucho más claros y espectaculares, que
+cada término del glosario tenga identidad propia y que la rareza se note en
+cualquier acción. Dejó la ejecución a criterio del agente («de la mejor
+manera que tú veas»). No se ha tocado el motor ni el equilibrio.
+
+- **Identidad de términos** (`src/components/keywordIdentity.tsx`): cada
+  término del glosario tiene icono SVG propio, color y familia (ataque,
+  defensa, control, recurso, mecánica de facción, regla). El texto de las
+  cartas pinta cada término con su color y el tooltip lleva icono y familia.
+  Prueba nueva: todo término del glosario necesita identidad.
+- **Glosario ampliado**: Petardazo, Golpe veloz, Chispa, Formación, Descarga,
+  Canto (y Hunde) y Vuelo salían en cartas sin explicación en ningún sitio.
+- **A quién afecta cada carta** (`src/battle/castImpact.ts`): al despachar
+  una acción con carta o poder, el almacén compara el tablero de antes y
+  después y guarda el resultado por id de evento (`castImpacts`). Así se
+  sabe, por ejemplo, que «¿Y si…?» dio Petardazo a 3 unidades, aunque el
+  motor no emita ningún evento por ello. Las partidas en red
+  (`replaceMatch`) no lo calculan: la carta se ve igual, sin la lista.
+- **Carta en grande** (`CastSpotlight`): panel «Qué hace» con a quién afecta
+  (retrato y cambios de cada unidad), duración leída del texto y cada término
+  con su icono, definición y animación por familia. Rara y mítica aterrizan
+  con onda; la común ya no lleva rayos, para que la rareza se note.
+- **Poder de comandante**: escena propia antes de la carta. El retrato entra
+  en un círculo de runas con ondas de choque, destello y el nombre del poder
+  en grande. Después, en el tablero, cada unidad afectada muestra su cambio
+  (`src/battle/ImpactMarks.tsx`), una tras otra como una onda.
+- **Combate** (`CombatDuel`): carga, embestida con «hit-stop», destello y
+  sacudida según el daño; tajo y chispas del color de la rareza de quien
+  golpea; grietas según el daño; la carta destruida estalla en fragmentos de
+  su ilustración; rótulos «¡Golpe!», «¡Brutal!» y «¡Letal!». Marcos por
+  rareza (filo verde, zafiro animado con brasas, corona prismática dorada y
+  algo más grande en la mítica). Las habilidades del duelo llevan su icono.
+  En el tablero 3D, el estallido del impacto crece también con la rareza.
+- Movimiento reducido: se mantiene toda la información y se quitan vuelos,
+  fragmentos, chispas y destellos.
+
+**Pruebas:** 731 unitarias correctas (5 omitidas), `build` y `lint`
+correctos. Capturas con `e2e/battle-spectacle-shots.spec.ts` (fuera del
+gate, `RUN_SHOTS=1`) a 1366 × 768: poder de Bromuro con 3 goblins y duelo de
+una mítica que destruye a una común. Ese guion congela el reloj y las
+animaciones porque en la nube no hay GPU y cada captura tarda más de un
+segundo. La batería e2e completa: ver el resultado anotado debajo.
+
+**Pendiente / ideas siguientes:** revisar a 1920 × 1080 y en móvil en un
+equipo con GPU; sonidos propios por rareza y por término (hoy se reutilizan
+los existentes); golpe final a cámara lenta; previsión del resultado en el
+duelo; reacción del retrato del comandante. El ritmo no se ha cambiado
+(`presentation.ts`): la escena del poder cabe en los 5 s ya pedidos.
+
+---
+
 ## Portada, navegación y Torre — 1 de noviembre de 2026 (Codex)
 
 **PUBLICADO Y COMPROBADO EN LA WEB.** Implementación en `5817113` y nota de

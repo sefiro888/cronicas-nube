@@ -39,13 +39,18 @@ import { HistoryLog } from '../battle/ui/HistoryLog'
 import { HowToPlay, hasSeenHowTo, markHowToSeen } from '../battle/ui/HowToPlay'
 import { GuidedTutorial } from '../battle/ui/GuidedTutorial'
 import { GlossaryPanel } from '../components/GlossaryPanel'
-import { actionHintFor, attackNexusPreviewLines, attackPiecePreviewLines, cardStatLine, isBoardCard, pieceStatLine, requiresPieceTarget } from '../battle/ui/battleHints'
+import { actionHintFor, attackNexusPreviewLines, attackNexusVerdicts, attackPieceVerdicts, attackPiecePreviewLines, cardStatLine, isBoardCard, pieceStatLine, requiresPieceTarget } from '../battle/ui/battleHints'
 import { describePendingActions, pendingTurnActions } from '../battle/ui/pendingTurnActions'
 import { CardInspector, FactionSigil } from '../components'
 import { GameIcon } from '../components/GameIcon'
 import { inspectionStatuses } from '../battle/inspectionStatuses'
 import { useNetworkSync } from '../multiplayer/useNetworkSync'
-import { useSoundtrack } from '../services/useAudioMix'
+import { useBattleTension, useSoundtrack } from '../services/useAudioMix'
+import { REPLAY_MARK } from '../store/match'
+import { threatLinks } from '../battle/threats'
+import { TRAIT_FX_MS, type TraitFx } from '../battle/TraitFlourish'
+import { gridToWorldX, gridToWorldZ, nexusWorldZ } from '../battle/grid/gridCoordinates'
+import { battleStrain } from '../battle/scenarios/BattleClimate'
 import { useMatchStore } from '../store/match'
 import { canPayOffering, offeringCost, offeringOf } from '../game/duna'
 import { resolveScenario } from '../battle/scenarioForFaction'
@@ -60,6 +65,7 @@ import { withBase } from '../utils/assets'
 import { AI_GAP_SCALE, PACE_LABELS, PRESENTATION_PACES } from '../battle/presentation'
 import { TYPE_LABELS } from '../utils/cardLabels'
 import { CastSpotlight } from './battle/CastSpotlight'
+import { NEXUS_DANGER_RATIO } from '../battle/NexusCrown'
 import { CombatDuel } from './battle/CombatDuel'
 import { DevPanel } from './battle/DevPanel'
 import { DragGhost } from './battle/DragGhost'
@@ -67,6 +73,11 @@ import { EnemyPanel } from './battle/EnemyPanel'
 import { ESSENCE_LABELS, PHASE_LABELS } from './battle/labels'
 import { MatchResultDialog } from './battle/MatchResultDialog'
 import { MulliganDialog } from './battle/MulliganDialog'
+import { BattleIntro } from './battle/BattleIntro'
+import { CommanderQuote } from './battle/CommanderQuote'
+import { FinishingBlow } from './battle/FinishingBlow'
+import { useProfile } from '../components/useProfile'
+import { StreakEmblem } from '../components/ProfileBadges'
 import { ScryDialog } from './battle/ScryDialog'
 import { SparkDialog } from './battle/SparkDialog'
 import { TacticalDialog } from './battle/TacticalDialog'
@@ -80,6 +91,7 @@ export function BattlePage() {
   const [searchParams] = useSearchParams()
   const preferences = usePreferences()
   const store = useMatchStore()
+  const profile = useProfile()
   const room = useNetworkStore((state) => state.room)
   const role = useNetworkStore((state) => state.role)
   // En solitario y para el anfitrión, «yo» soy el bando 'player' del motor;
@@ -152,6 +164,9 @@ export function BattlePage() {
       sitio al tablero. En PC siempre está visible, este estado no se usa ahí. */
   const [ownPanelOpenMobile, setOwnPanelOpenMobile] = useState(false)
   /** Aviso breve tras cambiar el ritmo desde la propia partida. */
+  // Semilla de la partida cuya presentación ya se vio (o se saltó).
+  const [introSeed, setIntroSeed] = useState<number>()
+  const finishIntro = useCallback(() => setIntroSeed(useMatchStore.getState().match?.seed), [])
   const [paceHint, setPaceHint] = useState<string>()
   // Con temporizador y no con el fin de la animación: con movimiento reducido
   // no hay animación y el aviso se quedaba para siempre.
@@ -207,7 +222,7 @@ export function BattlePage() {
   // cuando el golpe se ve caer, no antes.
   const displayedNexusHealth = useMemo(() => {
     const pending = (owner: PlayerId) => store.pendingAnimations
-      .filter((event) => event.type === 'nexus-damage' && event.targetId === `${owner}-nexus`)
+      .filter((event) => event.type === 'nexus-damage' && event.targetId === `${owner}-nexus` && !event.id.includes(REPLAY_MARK))
       .reduce((total, event) => total + (event.amount ?? 0), 0)
     return {
       player: (store.match?.players.player.nexusHealth ?? 0) + pending('player'),
@@ -233,6 +248,11 @@ export function BattlePage() {
   )
   // Capa ambiental generativa del escenario activo (se apaga sola al salir).
   useSoundtrack(scenario === 'solar-court' ? 'duna' : scenario === 'bestiary-ravine' ? 'grove' : scenario, Boolean(match))
+  // La música se intensifica con la partida: misma tensión que la luz y el clima.
+  const musicTension = match ? Math.round(battleStrain(match.turn, (['player', 'ai'] as const).map((id) => ({
+    health: match.players[id].nexusHealth, maxHealth: COMMANDER_BY_ID[match.players[id].commanderId]?.nexusHealth ?? 35,
+  }))) * 20) / 20 : 0
+  useBattleTension(musicTension, Boolean(match) && !match?.winner)
 
   /**
    * Resultado del piso de Torre. Se apunta una sola vez por partida: el
@@ -452,18 +472,91 @@ export function BattlePage() {
   const [hoveredTargetId, setHoveredTargetId] = useState<string>()
   const onHoverPiece = useCallback((pieceId?: string) => setHoveredTargetId(pieceId), [])
   const onHoverNexus = useCallback((playerId?: PlayerId) => setHoveredTargetId(playerId ? `${playerId}-nexus` : undefined), [])
+  // La casilla de un objetivo cuenta como el objetivo: desde la cámara, la
+  // carta rival que está justo detrás de la propia puede quedar tapada del
+  // todo, pero su losa casi siempre asoma.
+  const hoveredOccupantId = useMemo(() => {
+    if (!match || !hoveredCell) return undefined
+    return match.board.find((piece) => piece.position.x === hoveredCell.x && piece.position.y === hoveredCell.y)?.instanceId
+  }, [match, hoveredCell])
+  const aimedTargetId = hoveredTargetId ?? hoveredOccupantId
   const attackPreview = useMemo(() => {
+    const hoveredTargetId = aimedTargetId
     if (!match || !selectedPiece || selectedCard || !hoveredTargetId) return undefined
     if (hoveredTargetId === `${RIVAL}-nexus` && attacks.canAttackNexus) {
       const preview = previewAttackNexus(match, selectedPiece.instanceId)
-      return preview ? { targetId: hoveredTargetId, lines: attackNexusPreviewLines(preview) } : undefined
+      return preview ? {
+        targetId: hoveredTargetId, attackerId: selectedPiece.instanceId, lines: attackNexusPreviewLines(preview),
+        target: attackNexusVerdicts(preview), attacker: [{ tone: 'safe' as const, title: 'Sin contragolpe' }],
+      } : undefined
     }
     if (attacks.pieceIds.includes(hoveredTargetId)) {
       const preview = previewAttackPiece(match, selectedPiece.instanceId, hoveredTargetId)
-      return preview ? { targetId: hoveredTargetId, lines: attackPiecePreviewLines(preview) } : undefined
+      if (!preview) return undefined
+      const verdicts = attackPieceVerdicts(preview)
+      return { targetId: hoveredTargetId, attackerId: selectedPiece.instanceId, lines: attackPiecePreviewLines(preview), ...verdicts }
     }
     return undefined
-  }, [match, selectedPiece, selectedCard, hoveredTargetId, attacks, RIVAL])
+  }, [match, selectedPiece, selectedCard, aimedTargetId, attacks, RIVAL])
+
+  // Golpe de gracia: la unidad propia que puede derribar el Nexo rival ya,
+  // con el golpe más fuerte. Usa la misma previsión del motor que el sello
+  // «¡Golpe letal!», así que el botón solo sale si el remate es seguro.
+  const finisher = useMemo(() => {
+    if (!match || match.winner || match.activePlayer !== ME || queueBusy) return undefined
+    let best: { readonly pieceId: string; readonly damage: number } | undefined
+    for (const piece of match.board) {
+      if (piece.owner !== ME || !getValidAttacks(match, piece.instanceId).canAttackNexus) continue
+      const preview = previewAttackNexus(match, piece.instanceId)
+      if (preview?.lethal && (!best || preview.damage > best.damage)) best = { pieceId: piece.instanceId, damage: preview.damage }
+    }
+    return best
+  }, [match, ME, queueBusy])
+  const [finishing, setFinishing] = useState<string>()
+
+  // Habilidades que «hablan»: cada palabra clave que actúa en el duelo lanza
+  // su animación sobre el tablero una sola vez (ver TraitFlourish).
+  const [traitFx, setTraitFx] = useState<readonly TraitFx[]>([])
+  const seenTraitFx = useRef(new Set<string>())
+  useEffect(() => {
+    const exchange = director.exchange
+    if (!exchange || exchange.phase !== 'clash') return
+    const at = (position?: Position): readonly [number, number] | undefined => position && [gridToWorldX(position.x), gridToWorldZ(position.y)]
+    const defenderAt = at(exchange.defender.piece?.position)
+    const attackerAt = at(exchange.attacker.piece?.position)
+    const found: TraitFx[] = []
+    const add = (kind: TraitFx['kind'], where?: readonly [number, number], to?: readonly [number, number]) => {
+      const id = `${exchange.key}-${kind}`
+      if (!where || seenTraitFx.current.has(id)) return
+      seenTraitFx.current.add(id)
+      found.push({ id, kind, at: where, to })
+    }
+    const triggered = exchange.attacker.triggered
+    if (triggered.includes('pierce') && defenderAt) add('pierce', defenderAt, [defenderAt[0], nexusWorldZ(exchange.defender.owner)])
+    if (triggered.includes('lifelink') && defenderAt && attackerAt) add('lifelink', defenderAt, [attackerAt[0], nexusWorldZ(exchange.attacker.owner)])
+    if (triggered.includes('stun')) add('stun', defenderAt)
+    if (exchange.defender.triggered.includes('shield')) add('shield', defenderAt)
+    if (exchange.attacker.triggered.includes('shield')) add('shield', attackerAt)
+    const defenderCard = exchange.defender.cardId ? CARD_BY_ID[exchange.defender.cardId] : undefined
+    if (defenderCard?.keywords.includes('guard') || exchange.defender.piece?.grantedKeywords?.includes('guard')) add('guard', defenderAt)
+    if (found.length === 0) return
+    const show = window.setTimeout(() => setTraitFx((list) => [...list, ...found]), 0)
+    const hide = window.setTimeout(() => setTraitFx((list) => list.filter((fx) => !found.includes(fx))), TRAIT_FX_MS + 200)
+    return () => { window.clearTimeout(show); window.clearTimeout(hide) }
+  }, [director.exchange])
+
+  // Flechas de amenaza: la unidad seleccionada o, si no hay, la señalada con
+  // el cursor (propia o rival). Sin carta en la mano elegida, que entonces el
+  // tablero habla de despliegue.
+  const threatFocus = useMemo(() => {
+    if (!match || selectedCard || match.winner) return undefined
+    const pieceId = selectedPiece?.instanceId ?? (hoveredTargetId && !hoveredTargetId.endsWith('-nexus') ? hoveredTargetId : undefined)
+    if (!pieceId) return undefined
+    const links = threatLinks(match, pieceId)
+    if (links.targets.length === 0 && links.attackers.length === 0 && !links.hitsNexus) return undefined
+    return { pieceId, ...links }
+  }, [match, selectedPiece, selectedCard, hoveredTargetId])
+
 
   // Unidades propias que aún pueden mover o atacar: reciben un anillo de
   // disponibilidad en el tablero. Se recalcula solo cuando cambia la partida.
@@ -517,6 +610,12 @@ export function BattlePage() {
     state.selectHand(undefined)
     state.selectPiece(undefined)
   }, [])
+  // Al acabar la escena del golpe de gracia se lanza el ataque al Nexo de verdad.
+  const launchFinisher = useCallback(() => {
+    const pieceId = finishing
+    setFinishing(undefined)
+    if (pieceId && doAction({ type: 'attack-nexus', playerId: ME, attackerId: pieceId })) finishSelection()
+  }, [finishing, doAction, finishSelection, ME])
 
   // Soltar una carta sobre una casilla la juega ahí directamente. Se mantiene
   // en un ref porque quien lo dispara es el hook de arrastre, montado antes de
@@ -550,7 +649,10 @@ export function BattlePage() {
     // ese clic alternaría la selección de la carta recién jugada.
     if (consumeDragged()) return
     if (!match || !player) return
-    if (match.activePlayer !== ME || match.winner || queueBusy) return
+    // Elegir carta es solo interfaz: se permite aunque haya una animación en
+    // curso. Antes se ignoraba en silencio y, con animaciones largas, el
+    // jugador pulsaba una carta y no pasaba nada.
+    if (match.activePlayer !== ME || match.winner) return
     const instance = player.hand.find((candidate) => candidate.instanceId === instanceId)
     const card = instance ? CARD_BY_ID[instance.cardId] : undefined
     if (!instance || !card) return
@@ -559,7 +661,7 @@ export function BattlePage() {
       return
     }
     useMatchStore.getState().selectHand(store.selectedHandId === instanceId ? undefined : instanceId)
-  }, [match, player, queueBusy, store.selectedHandId, doAction, finishSelection, ME, consumeDragged])
+  }, [match, player, store.selectedHandId, doAction, finishSelection, ME, consumeDragged])
 
   const inspectCard = useCallback((cardId?: string, pieceId?: string) => useMatchStore.getState().inspect(cardId, pieceId), [])
   const closeInspection = useCallback(() => useMatchStore.getState().inspect(undefined), [])
@@ -595,14 +697,31 @@ export function BattlePage() {
 
   const onCell = useCallback((position: Position) => {
     if (photoMode) return
+    // Pulsar la losa de un objetivo es pulsar el objetivo (ver hoveredOccupantId).
+    const occupant = match?.board.find((piece) => piece.position.x === position.x && piece.position.y === position.y)
+    if (occupant && match?.activePlayer === ME) {
+      if (selectedInstance && selectedCard && !isBoardCard(selectedCard)) {
+        if (doAction({ type: 'play-card', playerId: ME, cardInstanceId: selectedInstance.instanceId, target: { kind: 'piece', pieceId: occupant.instanceId }, offering })) finishSelection()
+        return
+      }
+      if (selectedPiece && attacks.pieceIds.includes(occupant.instanceId)) {
+        if (doAction({ type: 'attack-piece', playerId: ME, attackerId: selectedPiece.instanceId, defenderId: occupant.instanceId })) finishSelection()
+        return
+      }
+    }
     if (selectedInstance && selectedCard && isBoardCard(selectedCard)) {
       if (doAction({ type: 'play-card', playerId: ME, cardInstanceId: selectedInstance.instanceId, position, target: { kind: 'none' }, offering })) finishSelection()
       return
     }
     if (selectedPiece && moves.some((cell) => cell.x === position.x && cell.y === position.y)) {
       if (doAction({ type: 'move', playerId: ME, pieceId: selectedPiece.instanceId, to: position })) finishSelection()
+      return
     }
-  }, [photoMode, selectedInstance, selectedCard, selectedPiece, moves, doAction, finishSelection, ME, offering])
+    // Pulsar una casilla que no sirve ya no es silencioso: se dice por qué.
+    if (selectedPiece && selectedPiece.owner === ME && match?.activePlayer === ME) {
+      useMatchStore.setState({ message: moves.length > 0 ? 'No puede ir ahí: elige una de las casillas resaltadas.' : 'Esta unidad ya no puede moverse este turno.' })
+    }
+  }, [photoMode, selectedInstance, selectedCard, selectedPiece, moves, attacks, doAction, finishSelection, ME, offering, match])
 
   const onPiece = useCallback((pieceId: string) => {
     if (photoMode || !match) return
@@ -903,6 +1022,11 @@ export function BattlePage() {
         />
       )}
 
+      {/* Fase de peligro: con tu Nexo a un cuarto de Vida o menos, los bordes
+          de la pantalla laten en rojo. La corona 3D del Nexo late a la vez. */}
+      {match && !photoMode && displayedNexusHealth[ME] > 0
+        && displayedNexusHealth[ME] <= (COMMANDER_BY_ID[match.players[ME].commanderId]?.nexusHealth ?? 35) * NEXUS_DANGER_RATIO
+        && <div className={styles.dangerVignette} data-reduced-motion={preferences.reducedMotion || undefined} aria-hidden="true" />}
       <div className={styles.arena}>
         <div
           className={styles.boardFrame}
@@ -935,6 +1059,9 @@ export function BattlePage() {
             quality={preferences.graphicsQuality}
             scenario={scenario}
             activeEvent={visualEvent}
+            castImpact={visualEvent ? store.castImpacts[visualEvent.id] : undefined}
+            threatFocus={queueBusy ? undefined : threatFocus}
+            traitFx={traitFx}
             pendingEvents={store.pendingAnimations}
             cursorCell={boardCursor.cell}
           />
@@ -969,12 +1096,58 @@ export function BattlePage() {
           >
             {preferences.presentationPace === 'cinematic' ? '🎬' : preferences.presentationPace === 'normal' ? '▶' : '⏩'}
           </button>
+          {/* Rematar: sale cuando una unidad propia puede derribar el Nexo
+              rival este turno; lanza la escena del comandante y luego el golpe. */}
+          {finisher && !finishing && !photoMode && (
+            <button type="button" className={styles.finishButton} onClick={() => setFinishing(finisher.pieceId)}>
+              <span aria-hidden="true">⚔</span> Rematar
+              <small>Golpe de gracia al Nexo rival</small>
+            </button>
+          )}
+          {/* Repetir la última jugada a cámara lenta: el estado no cambia, solo
+              se vuelven a reproducir sus eventos con el ritmo cinemático. */}
+          {store.lastPlay && !photoMode && (
+            <button
+              className={`${styles.paceButton} ${styles.replayButton}`}
+              type="button"
+              disabled={queueBusy}
+              onClick={() => store.replayLastPlay()}
+              aria-label="Repetir la última jugada"
+              title="Repetir la última jugada"
+            >
+              ↺
+            </button>
+          )}
           {paceHint && !photoMode && (
             <div key={paceHint} className={styles.paceHint} role="status">
               {paceHint}
             </div>
           )}
           {!photoMode && <RecentPlays plays={director.recentPlays} me={ME} onInspect={inspectCard} />}
+          {/* El comandante habla: poder, golpe fuerte a su Nexo o victoria. */}
+          {director.quote && !photoMode && COMMANDER_BY_ID[match.players[director.quote.owner].commanderId] && (
+            <CommanderQuote
+              key={director.quote.key}
+              commander={COMMANDER_BY_ID[match.players[director.quote.owner].commanderId]!}
+              text={director.quote.text}
+              mine={director.quote.owner === ME}
+            />
+          )}
+          {/* Respuesta: sello lateral con el tipo de reacción. */}
+          {director.reaction && !photoMode && (
+            <div key={director.reaction.key} className={styles.reaction} data-kind={director.reaction.kind} role="status">
+              <small>Respuesta</small>
+              <strong>{director.reaction.title}</strong>
+              <span>{director.reaction.detail}</span>
+            </div>
+          )}
+          {/* Reacción en cadena: crece y se calienta con cada muerte encadenada. */}
+          {director.chain && !photoMode && (
+            <div key={director.chain.key} className={styles.chain} data-level={Math.min(director.chain.count, 5)} role="status">
+              <span>¡Reacción en cadena!</span>
+              <strong>×{director.chain.count}</strong>
+            </div>
+          )}
           {director.exchange && !photoMode && (
             <CombatDuel
               exchange={director.exchange}
@@ -983,6 +1156,7 @@ export function BattlePage() {
               nexusHealth={displayedNexusHealth}
               holding={director.duelHolding}
               onSkip={director.dismissDuel}
+              combo={director.combo?.key === director.exchange.key ? director.combo.count : undefined}
             />
           )}
           {director.eventBanner && !director.exchange && (
@@ -1016,11 +1190,16 @@ export function BattlePage() {
           <section className={styles.panelSection}>
             <span className={styles.panelLabel}>Comandante</span>
             <div className={`${styles.commander} ${styles.ownCommander}`}>
-              <div className={styles.portraitFrame}>
+              <div className={styles.portraitFrame} data-profile-frame={profile.frame.id}>
                 <img className={styles.portrait} src={commander ? withBase(commander.art.webp) : undefined} alt="" />
                 {commander && <FactionSigil faction={commander.faction} size="large" decorative className={styles.commanderSigil} />}
               </div>
               <div className={styles.commanderIdentity}><strong>{commander?.name}</strong><small>{commander?.title}</small></div>
+            </div>
+            {/* Tu perfil: el título elegido y la racha, ganados con logros y victorias. */}
+            <div className={styles.profileStrip}>
+              <span className={styles.profileTitle}>{profile.title.label}</span>
+              <StreakEmblem streak={profile.streak} compact />
             </div>
             {commander && <p className={styles.commanderRules}>{commander.rules}</p>}
             {player.runo !== undefined && <p className={styles.commanderBoon}>Runo: {player.runo} · +{Math.floor(player.runo / 3)} Ataque a tus unidades</p>}
@@ -1336,6 +1515,22 @@ export function BattlePage() {
         />
       )}
 
+      {finishing && COMMANDER_BY_ID[match.players[ME].commanderId] && (
+        <FinishingBlow
+          commander={COMMANDER_BY_ID[match.players[ME].commanderId]!}
+          attackerName={CARD_BY_ID[match.board.find((piece) => piece.instanceId === finishing)?.cardId ?? '']?.name ?? 'Tu unidad'}
+          onDone={launchFinisher}
+        />
+      )}
+      {/* Cara a cara al empezar: una vez por partida, antes del mulligan. */}
+      {match.turn <= 1 && introSeed !== match.seed && !photoMode && COMMANDER_BY_ID[match.players[ME].commanderId] && COMMANDER_BY_ID[match.players[ME === 'player' ? 'ai' : 'player'].commanderId] && (
+        <BattleIntro
+          own={COMMANDER_BY_ID[match.players[ME].commanderId]!}
+          ownTitle={profile.title.label}
+          rival={COMMANDER_BY_ID[match.players[ME === 'player' ? 'ai' : 'player'].commanderId]!}
+          onDone={finishIntro}
+        />
+      )}
       {inspected && <CardInspector card={inspected} statusEffects={inspectionStatuses(inspectedPiece)} onClose={closeInspection} />}
 
       {match.winner && !queueBusy && (
@@ -1357,6 +1552,7 @@ export function BattlePage() {
           rematchPeer={rematchPeer}
           onRematch={requestRematch}
           onRepeat={repeat}
+          onReplay={store.lastPlay ? () => store.replayLastPlay() : undefined}
           onHome={() => leaveToHome('/')}
           onDownloadLog={() => downloadMatchLog({
             match,

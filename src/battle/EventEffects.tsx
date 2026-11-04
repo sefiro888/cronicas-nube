@@ -12,8 +12,18 @@ import {
 import { glowTexture, type GlowTint } from './textures'
 import { RitualSeal } from './RitualSeal'
 import { AttackTrail } from './AttackTrail'
-import { ImpactDebris, materialOf } from './ImpactDebris'
+import { ArrowVolley, BarbVolley, ClawStrike, CrushStrike, DragonBreath, GunShot, LightningBolt, SlashStrike, SpectralStrike } from './AttackStyles'
+import { attackKindFor, attackWeight } from './attackStyle'
+import { DeathFlourish, HitSpill } from './CreatureReactions'
+import { StepRipple } from './BattleSkies'
+import { RarityArrival } from './RarityArrival'
+import { Blessing, DrawCards, Fireball, FrostWave, HealingLight, PushWave, SkyJudgement, Storm } from './SpellStyles'
+import { spellKindFor } from './spellStyle'
+import { FactionSignature } from './FactionSignature'
+import { SPELL_CAST_STRETCH } from './eventTiming'
+import type { CastImpact } from './castImpact'
 import { ARRIVAL_LANDING } from './arrivalMotion'
+import { ImpactDebris, materialOf } from './ImpactDebris'
 
 /** Color y textura de brillo por facción — a juego con `accentColor` en `factions.ts`. */
 const FACTION_TONE: Readonly<Record<FactionId, { readonly color: string; readonly glow: GlowTint }>> = {
@@ -377,6 +387,8 @@ function NexusShock({ at, tone, timing }: { at: readonly [number, number]; tone:
 interface EventEffectsProps {
   readonly event: AnimationEvent
   readonly reducedMotion: boolean
+  /** A quién afectó la carta lanzada (ver castImpact): da los objetivos de los hechizos de área. */
+  readonly impact?: CastImpact
 }
 
 /**
@@ -386,7 +398,16 @@ interface EventEffectsProps {
 /** Intensidad continua (0-1) del destello de impacto según el daño real repartido. */
 const powerFor = (amount?: number): number => Math.max(0, Math.min(1, ((amount ?? 0) - 1) / 5))
 
-export function EventEffects({ event, reducedMotion }: EventEffectsProps) {
+/**
+ * Plus de espectáculo por rareza de quien golpea. El propietario pidió que
+ * cada rareza se sintiera distinta en cualquier acción: un golpe de una
+ * mítica tiene que estallar más que el de una común aunque haga el mismo
+ * daño. Se suma a la potencia por cantidad, que sigue mandando.
+ */
+const RARITY_POWER: Readonly<Record<string, number>> = { common: 0, uncommon: 0.15, rare: 0.4, mythic: 0.75 }
+const rarityPower = (cardId?: string): number => RARITY_POWER[cardId ? CARD_BY_ID[cardId]?.rarity ?? 'common' : 'common'] ?? 0
+
+export function EventEffects({ event, reducedMotion, impact }: EventEffectsProps) {
   const timing: TimedProps = { durationMs: event.durationMs, reducedMotion }
   const tone = toneOf(event.effectId, event.faction)
   const card = event.cardId ? CARD_BY_ID[event.cardId] : undefined
@@ -395,7 +416,11 @@ export function EventEffects({ event, reducedMotion }: EventEffectsProps) {
       return event.to ? (
         <>
           <SummonRitual cell={event.to} tone={tone} timing={timing} faction={event.faction} />
-          <LandingShock cell={event.to} tone={tone} timing={timing} heavy={Boolean(event.cast)} />
+          <LandingShock cell={event.to} tone={tone} timing={timing} heavy={Boolean(event.cast) || card?.rarity === 'mythic'} />
+          {!reducedMotion && <FactionSignature at={[boardX(event.to.x), boardZ(event.to.y)]} faction={event.faction} mode="summon" durationMs={event.durationMs} />}
+          {card && !reducedMotion && (
+            <RarityArrival at={[boardX(event.to.x), boardZ(event.to.y)]} rarity={card.rarity} tone={tone} durationMs={event.durationMs} landing={ARRIVAL_LANDING} />
+          )}
         </>
       ) : null
     case 'attack': {
@@ -404,7 +429,22 @@ export function EventEffects({ event, reducedMotion }: EventEffectsProps) {
       const from: readonly [number, number] | undefined = event.from ? [boardX(event.from.x), boardZ(event.from.y)] : undefined
       const to: readonly [number, number] | undefined = event.to ? [boardX(event.to.x), boardZ(event.to.y)] : target
       const melee = card ? (card.range ?? 1) <= 1 : Boolean(from && to && Math.hypot(to[0] - from[0], to[1] - from[1]) < 1.9)
-      return from && to ? <AttackTrail from={from} to={to} tone={tone} faction={event.faction} durationMs={event.durationMs} melee={melee} /> : null
+      if (!from || !to) return null
+      // Cada tipo de criatura golpea a su manera (ver attackStyle.ts); el
+      // arco con estela queda para los proyectiles mágicos.
+      const style = { from, to, tone, durationMs: event.durationMs, weight: attackWeight(card?.attack) }
+      switch (attackKindFor(card, melee)) {
+        case 'slash': return <SlashStrike {...style} />
+        case 'claw': return <ClawStrike {...style} />
+        case 'crush': return <CrushStrike {...style} />
+        case 'spectral': return <SpectralStrike {...style} />
+        case 'arrow': return <ArrowVolley {...style} />
+        case 'shot': return <GunShot {...style} />
+        case 'bolt': return <LightningBolt {...style} />
+        case 'breath': return <DragonBreath {...style} />
+        case 'barbs': return <BarbVolley {...style} />
+        default: return <AttackTrail from={from} to={to} tone={tone} faction={event.faction} durationMs={event.durationMs} melee={melee} />
+      }
     }
     case 'spell': {
       if (reducedMotion) return null
@@ -414,6 +454,26 @@ export function EventEffects({ event, reducedMotion }: EventEffectsProps) {
       const to: readonly [number, number] | undefined = event.to
         ? [boardX(event.to.x), boardZ(event.to.y)]
         : event.targetId ? NEXUS_POSITION[event.targetId] : undefined
+      // Cada hechizo con su propia animación (ver spellStyle.ts). Los
+      // objetivos salen de lo que la carta cambió de verdad en el tablero.
+      if (event.cast && from) {
+        const targets = (impact?.pieces ?? []).map((piece) => [boardX(piece.position.x), boardZ(piece.position.y)] as const)
+        const aimed = targets.length > 0 ? targets : to ? [to] : []
+        const castMs = event.durationMs * SPELL_CAST_STRETCH
+        const props = { from, targets: aimed, tone, durationMs: castMs }
+        switch (spellKindFor(event.cast.sourceId, event.cast.kind)) {
+          case 'fireball': return <Fireball {...props} />
+          case 'bolt': return aimed[0] ? <LightningBolt from={from} to={aimed[0]} tone={tone} durationMs={castMs} weight={0.6} /> : null
+          case 'storm': return <Storm {...props} />
+          case 'heal': return <HealingLight {...props} />
+          case 'draw': return <DrawCards {...props} />
+          case 'frost': return <FrostWave {...props} />
+          case 'blessing': return <Blessing {...props} />
+          case 'judgement': return <SkyJudgement {...props} />
+          case 'push': return <PushWave {...props} />
+          default: break
+        }
+      }
       // El viaje anuncia el lanzamiento; el impacto pertenece al evento de
       // daño ya resuelto, evitando que la víctima estalle antes del proyectil.
       return from && to ? <AttackTrail from={from} to={to} tone={tone} faction={event.faction} durationMs={event.durationMs} melee={false} spell /> : null
@@ -421,10 +481,17 @@ export function EventEffects({ event, reducedMotion }: EventEffectsProps) {
     case 'damage':
       return event.to ? (
         <>
-        <ImpactBurst cell={[boardX(event.to.x), boardZ(event.to.y)]} tone={tone} timing={timing} power={powerFor(event.amount)} />
+        <ImpactBurst cell={[boardX(event.to.x), boardZ(event.to.y)]} tone={tone} timing={timing} power={Math.min(1.6, powerFor(event.amount) + rarityPower(event.cardId))} />
         {!reducedMotion && <ImpactDebris at={[boardX(event.to.x), boardZ(event.to.y)]} cardId={event.targetCardId} durationMs={event.durationMs} />}
+        {!reducedMotion && <FactionSignature at={[boardX(event.to.x), boardZ(event.to.y)]} faction={event.faction} mode="hit" durationMs={event.durationMs} />}
+        {!reducedMotion && <HitSpill at={[boardX(event.to.x), boardZ(event.to.y)]} cardId={event.targetCardId} durationMs={event.durationMs} amount={event.amount ?? 1} />}
         </>
       ) : null
+    case 'move':
+      // Casillas vivas: al pisar la losa se levanta un anillo de polvo.
+      return event.to && !reducedMotion
+        ? <StepRipple at={[boardX(event.to.x), boardZ(event.to.y)]} tone={tone} durationMs={event.durationMs} />
+        : null
     case 'shield':
       return event.to ? (
         <ImpactBurst cell={[boardX(event.to.x), boardZ(event.to.y)]} tone="#a8ecff" timing={timing} />
@@ -435,6 +502,8 @@ export function EventEffects({ event, reducedMotion }: EventEffectsProps) {
       return event.to ? <>
         <DestroyEmbers cell={event.to} tone={tone} timing={timing} cardId={event.cardId} />
         {!reducedMotion && <ImpactDebris at={[boardX(event.to.x), boardZ(event.to.y)]} cardId={event.cardId} durationMs={event.durationMs} destruction />}
+        {!reducedMotion && <FactionSignature at={[boardX(event.to.x), boardZ(event.to.y)]} faction={card?.faction ?? event.faction} mode="death" durationMs={event.durationMs} />}
+        {!reducedMotion && <DeathFlourish at={[boardX(event.to.x), boardZ(event.to.y)]} cardId={event.cardId} durationMs={event.durationMs} />}
       </> : null
     case 'nexus-damage': {
       const at = event.targetId ? NEXUS_POSITION[event.targetId] : undefined

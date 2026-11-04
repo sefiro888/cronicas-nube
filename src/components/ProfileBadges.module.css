@@ -1,0 +1,88 @@
+/* ── Retrato con marco ── */
+.framed {
+  --size: 72px;
+  --c1: #b07a3a;
+  --c2: #e6b878;
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: var(--size);
+  height: var(--size);
+  flex: none;
+}
+.framed img {
+  position: relative;
+  z-index: 1;
+  width: 84%;
+  height: 84%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(from var(--spin, 0deg), var(--c1), var(--c2), var(--c1), var(--c2), var(--c1));
+  box-shadow: 0 0 calc(var(--size) * 0.18) color-mix(in srgb, var(--c2) 50%, transparent);
+}
+.framed[data-frame='plata'] { --c1: #8f98a8; --c2: #f2f6ff; }
+.framed[data-frame='acero'] { --c1: #3c4452; --c2: #a8b4c8; }
+.framed[data-frame='oro'] { --c1: #b8860b; --c2: #fff0a0; }
+.framed[data-frame='oro'] .ring { animation: frameSpin 6s linear infinite; }
+.framed[data-frame='llamas'] { --c1: #ff3b1a; --c2: #ffd25a; }
+.framed[data-frame='llamas'] .ring { animation: frameSpin 2.4s linear infinite, flameFlicker 0.35s steps(2) infinite; }
+.framed[data-frame='tormenta'] { --c1: #2a3a8a; --c2: #9fdcff; }
+.framed[data-frame='tormenta'] .ring { animation: frameSpin 1.6s linear infinite, stormFlash 2.6s steps(1) infinite; }
+.framed[data-frame='runas'] { --c1: #1f6f6a; --c2: #8ff0e0; }
+.framed[data-frame='runas'] .ring { background: repeating-conic-gradient(from var(--spin, 0deg), var(--c1) 0deg 12deg, var(--c2) 12deg 18deg); animation: frameSpin 9s linear infinite; }
+.framed[data-frame='prisma'] .ring { background: conic-gradient(from var(--spin, 0deg), #ff5f6d, #ffc371, #f9f871, #57e6a4, #5fc3ff, #b06fff, #ff5f6d); animation: frameSpin 3s linear infinite; }
+.framed[data-frame='real'] { --c1: #6a1b9a; --c2: #ffd76a; }
+.framed[data-frame='real'] .ring { animation: frameSpin 4s linear infinite; box-shadow: 0 0 calc(var(--size) * 0.3) rgba(255, 215, 106, 0.7); }
+.framed[data-frame='real']::after { content: '♛'; position: absolute; z-index: 2; top: calc(var(--size) * -0.22); color: #ffd76a; font-size: calc(var(--size) * 0.3); text-shadow: 0 0 10px #ffb347; }
+@property --spin { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+@keyframes frameSpin { to { --spin: 360deg; } }
+@keyframes flameFlicker { 50% { filter: brightness(1.25); } }
+@keyframes stormFlash { 0%, 90%, 100% { filter: none; } 92% { filter: brightness(2.2); } }
+
+/* ── Emblema de racha ── */
+.streak {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 12px 3px 6px;
+  border-radius: 20px;
+  color: #fff3d6;
+  background: linear-gradient(90deg, rgba(150, 50, 10, 0.85), rgba(20, 12, 8, 0.85));
+  box-shadow: 0 0 14px rgba(255, 120, 40, 0.5);
+  font: 800 13px var(--display);
+}
+.streak small { color: #ffc89a; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; }
+.flame { position: relative; display: inline-block; width: 18px; height: 22px; }
+.flame i {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 70%;
+  height: 90%;
+  border-radius: 50% 50% 45% 45% / 65% 65% 35% 35%;
+  background: radial-gradient(circle at 50% 75%, #fff6c0, #ffb02a 45%, #ff4a1a 80%);
+  transform: translateX(-50%);
+  transform-origin: 50% 100%;
+  animation: flameDance 0.6s ease-in-out infinite alternate;
+}
+.flame i:nth-child(2) { width: 50%; height: 65%; opacity: 0.8; animation-delay: -0.2s; }
+.flame i:nth-child(3) { width: 30%; height: 40%; background: #fffbe0; animation-delay: -0.4s; }
+.streak[data-level='2'] .flame { width: 22px; height: 28px; }
+.streak[data-level='3'] { background: linear-gradient(90deg, rgba(30, 70, 160, 0.9), rgba(10, 12, 20, 0.85)); box-shadow: 0 0 20px rgba(110, 180, 255, 0.7); }
+.streak[data-level='3'] .flame { width: 24px; height: 30px; }
+.streak[data-level='3'] .flame i { background: radial-gradient(circle at 50% 75%, #ffffff, #8fd8ff 45%, #3a6aff 85%); }
+.streak[data-level='4'] { background: linear-gradient(90deg, #8a5a10, #2a1806); box-shadow: 0 0 28px rgba(255, 210, 90, 0.9); animation: legendGlow 1.4s ease-in-out infinite alternate; }
+.streak[data-level='4'] .flame { width: 26px; height: 34px; }
+.streak[data-level='4'] .flame i { background: radial-gradient(circle at 50% 75%, #ffffff, #ffe27a 40%, #ff9a2a 85%); }
+.streak[data-compact] { padding: 2px 9px 2px 4px; font-size: 12px; }
+@keyframes flameDance { from { transform: translateX(-50%) scaleY(0.9) rotate(-4deg); } to { transform: translateX(-50%) scaleY(1.08) rotate(4deg); } }
+@keyframes legendGlow { from { box-shadow: 0 0 16px rgba(255, 210, 90, 0.6); } to { box-shadow: 0 0 36px rgba(255, 210, 90, 1); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .ring, .flame i, .streak { animation: none !important; }
+}

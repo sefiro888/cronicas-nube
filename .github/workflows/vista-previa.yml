@@ -1,0 +1,52 @@
+name: Vista previa en GitHub Pages
+
+# Vista previa para que el propietario pruebe en el navegador los cambios sin
+# instalar nada (lo pidió el 1 de noviembre de 2026). Desde el 4 de noviembre
+# también se publica `main`, donde ya está todo integrado.
+# No es el juego publicado: ese sale solo de sefiro888/magicfable. Se sirve en
+# https://sefiro888.github.io/cronicas-nube/ desde la rama `gh-pages`.
+#
+# Se publica en una rama y no con `deploy-pages` porque el entorno
+# `github-pages` solo admite despliegues desde la rama principal, y aquí lo
+# que se quiere ver es justo una rama sin fusionar.
+
+on:
+  push:
+    branches: [main, 'claude/**']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: vista-previa
+  cancel-in-progress: true
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx tsc -b
+      - run: npx vite build --base=/cronicas-nube/
+      # Copia para que las rutas profundas (p. ej. /battle) sirvan la SPA.
+      - run: cp dist/index.html dist/404.html
+      # Sin esto, Pages pasa los archivos por Jekyll y descarta los que
+      # empiezan por guion bajo.
+      - run: touch dist/.nojekyll
+      - name: Subir a la rama gh-pages
+        working-directory: dist
+        env:
+          RAMA: ${{ github.ref_name }}
+        run: |
+          git init -q -b gh-pages
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Vista previa de $RAMA (${GITHUB_SHA::7})"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" gh-pages

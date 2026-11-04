@@ -1,13 +1,26 @@
 import { useEffect, useRef, useState } from 'react'
-import type { AnimationEvent, PlayerId } from '../../game'
+import { CARD_BY_ID, COMMANDER_BY_ID, type AnimationEvent, type PlayerId } from '../../game'
+import { HURT_QUOTE_DAMAGE, quoteFor, type QuoteMoment } from '../commanderQuotes'
+import { attackKindFor } from '../attackStyle'
+import { REPLAY_MARK } from '../../store/match'
 import { playSynthCue, type SoundCue } from '../../services/audio'
 import { useMatchStore } from '../../store/match'
 import type { PreferencesState } from '../../store/preferences'
 import { ARRIVAL_LANDING } from '../arrivalMotion'
 import { eventDuration } from '../eventTiming'
-import { clashExchange, duelIntroDuration, endsExchange, foldExchange, openExchange, pushRecentPlay, recentPlayFor, spotlightFor, type CombatExchange, type RecentPlay, type Spotlight } from '../presentation'
+import { clashExchange, duelIntroDuration, endsExchange, foldExchange, isFinisher, openExchange, pushRecentPlay, recentPlayFor, spotlightFor, type CombatExchange, type RecentPlay, type Spotlight } from '../presentation'
 
 /** Traduce un evento del motor a su señal sonora. `me` es el bando que controla este navegador. */
+export interface Reaction {
+  readonly key: string
+  readonly kind: 'block' | 'burst' | 'silence'
+  readonly title: string
+  readonly detail: string
+}
+
+/** Daños que salen de una muerte o una explosión y pueden encadenar más muertes. */
+const CHAIN_EFFECT = /petardazo|mine|splash|explos|deathburst/
+
 const cueForEvent = (event: AnimationEvent, me: PlayerId): SoundCue | undefined => {
   switch (event.type) {
     case 'draw': return 'draw'
@@ -16,7 +29,12 @@ const cueForEvent = (event: AnimationEvent, me: PlayerId): SoundCue | undefined 
     case 'summon': return 'summon'
     case 'spell': return 'spell'
     case 'move': return 'move'
-    case 'attack': return 'attack'
+    case 'attack': {
+      // Cada tipo de criatura suena a su manera (acero, zarpa, pólvora...).
+      const card = event.cardId ? CARD_BY_ID[event.cardId] : undefined
+      const kind = attackKindFor(card, (card?.range ?? 1) <= 1)
+      return kind === 'orb' ? 'attack' : kind === 'barbs' ? 'attack-claw' : `attack-${kind}`
+    }
     case 'damage': return 'impact'
     case 'nexus-damage': return 'impact'
     case 'shield': return 'shield'
@@ -82,6 +100,14 @@ export interface EventDirector {
   dismissDuel: () => void
   /** Quién golpea a quién en el intercambio que se está reproduciendo. */
   exchange?: CombatExchange
+  /** Frase del comandante que habla ahora. */
+  quote?: { readonly key: string; readonly owner: PlayerId; readonly text: string }
+  /** Respuesta del tablero a la jugada en curso (Escudo, Petardazo, silencio). */
+  reaction?: Reaction
+  /** Reacción en cadena en curso (desde la segunda muerte encadenada). */
+  chain?: { readonly key: string; readonly count: number }
+  /** Racha de ataques del mismo bando en este turno (desde el segundo). */
+  combo?: { readonly key: string; readonly count: number; readonly owner: PlayerId }
   /** Sacudida de pantalla: clave nueva por golpe y su fuerza. */
   impact?: { readonly key: string; readonly strength: 'light' | 'heavy' }
   /** Últimas jugadas de ambos bandos, la más reciente primero. */
@@ -120,6 +146,32 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
   const [impact, setImpact] = useState<{ readonly key: string; readonly strength: 'light' | 'heavy' }>()
   const [duelHold, setDuelHold] = useState<{ readonly key: string; readonly durationMs: number }>()
   const [recentPlays, setRecentPlays] = useState<readonly RecentPlay[]>([])
+  /**
+   * Ataques encadenados por el mismo bando en un turno. A partir del segundo
+   * se enseña «Combo ×N» y los efectos del duelo crecen: el propietario quería
+   * que encadenar golpes se sintiera como una racha.
+   */
+  const [combo, setCombo] = useState<{ readonly key: string; readonly count: number; readonly owner: PlayerId }>()
+  const comboRef = useRef<{ owner?: PlayerId; count: number }>({ count: 0 })
+  /**
+   * Reacción en cadena: una muerte que provoca otra (el Petardazo de una
+   * unidad que cae mata a su vecina, que a su vez estalla...). Se cuenta
+   * cada destrucción que llega justo detrás de un daño de explosión.
+   */
+  const [chain, setChain] = useState<{ readonly key: string; readonly count: number }>()
+  /**
+   * Respuesta: algo del tablero reacciona a la jugada (un Escudo absorbe el
+   * golpe, una unidad estalla al morir, una carta deja a otra sin
+   * habilidades). En las reglas no hay contrahechizos que anulen cartas;
+   * estas son las reacciones que sí existen y que antes pasaban sin aviso.
+   */
+  const [reaction, setReaction] = useState<Reaction>()
+  /** Bocadillo del comandante que habla ahora (poder, golpe fuerte o victoria). */
+  const [quote, setQuote] = useState<{ readonly key: string; readonly owner: PlayerId; readonly text: string }>()
+  const reactedRef = useRef(new Set<string>())
+  /** Evento que abrió la jugada en curso: agrupa las respuestas de una misma jugada. */
+  const playRootRef = useRef('')
+  const chainRef = useRef({ count: 0, splash: false })
 
   // 1) Si no hay evento en reproducción, avanza la cola. Antes de una carta
   // lanzada se detiene a presentarla: es el único momento en que ambos bandos
@@ -134,12 +186,15 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
     const introMs = duelIntroDuration(preferences.presentationPace, preferences.animationSpeed)
     if (next?.type === 'attack' && introMs > 0 && !preferences.reducedMotion && !presentedRef.current.has(next.id)) {
       const attacker = state.match?.board.find((piece) => piece.instanceId === next.actorId)
-      const opened = openExchange(next, attacker?.owner ?? state.match?.activePlayer ?? me, state.match?.board)
+      const base = openExchange(next, attacker?.owner ?? state.match?.activePlayer ?? me, state.match?.board)
+      const finisher = base ? isFinisher(next, state.pendingAnimations, state.match) : false
+      const opened = base && finisher ? { ...base, finisher } : base
       if (opened) {
         const deferred = window.setTimeout(() => {
           presentedRef.current.add(next.id)
           setExchange(opened)
-          setDuelHold({ key: next.id, durationMs: introMs })
+          // El golpe decisivo se queda un poco más en pantalla antes de caer.
+          setDuelHold({ key: next.id, durationMs: finisher ? introMs * 1.35 : introMs })
         }, 0)
         return () => window.clearTimeout(deferred)
       }
@@ -147,6 +202,7 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
     if (next?.cast && !presentedRef.current.has(next.id)) {
       const shown = spotlightFor(next, state.match, me, {
         pace: preferences.presentationPace, animationSpeed: preferences.animationSpeed,
+        impact: state.castImpacts[next.id],
       })
       if (shown) {
         const latest = state.history[state.history.length - 1]
@@ -190,7 +246,46 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
     // Los canales laterales actualizan estado de React fuera del cuerpo del
     // efecto para no encadenar renders síncronos.
     const sideChannel = window.setTimeout(() => {
+      // Respuestas (ver `reaction`). Una por jugada y tipo para no repetirlas.
+      if (currentEvent.type === 'attack' || currentEvent.cast || currentEvent.type === 'turn') playRootRef.current = currentEvent.id
+      const rootKey = playRootRef.current
+      const respond = (next: Reaction) => {
+        const id = `${rootKey}-${next.kind}`
+        if (reactedRef.current.has(id)) return
+        reactedRef.current.add(id)
+        setReaction({ ...next, key: currentEvent.id })
+      }
+      if (currentEvent.type === 'shield' && (currentEvent.amount ?? 0) > 0) {
+        respond({ key: '', kind: 'block', title: '¡Bloqueado!', detail: `El Escudo absorbe ${currentEvent.amount}` })
+      } else if (currentEvent.type === 'damage' && /petardazo/.test(currentEvent.effectId ?? '')) {
+        respond({ key: '', kind: 'burst', title: '¡Petardazo!', detail: 'Estalla al morir y daña a sus vecinas' })
+      } else if (currentEvent.cast && state.castImpacts[currentEvent.id]?.pieces.some((piece) => piece.changes.some((change) => change.label === 'Silenciada'))) {
+        respond({ key: '', kind: 'silence', title: '¡Anulada!', detail: 'Sus habilidades dejan de actuar' })
+      }
+      // Frases de los comandantes (ver commanderQuotes).
+      const speak = (owner: PlayerId, moment: QuoteMoment) => {
+        const commanderId = state.match?.players[owner].commanderId
+        const faction = commanderId ? COMMANDER_BY_ID[commanderId]?.faction : undefined
+        if (faction) setQuote({ key: currentEvent.id, owner, text: quoteFor(faction, moment, currentEvent.id) })
+      }
+      if (currentEvent.cast?.kind === 'power' && (currentEvent.actorId === 'player' || currentEvent.actorId === 'ai')) speak(currentEvent.actorId, 'power')
+      else if (currentEvent.type === 'nexus-damage' && (currentEvent.amount ?? 0) >= HURT_QUOTE_DAMAGE && currentEvent.targetId?.endsWith('-nexus') && !currentEvent.id.includes(REPLAY_MARK)) {
+        speak(currentEvent.targetId.replace('-nexus', '') as PlayerId, 'hurt')
+      } else if (currentEvent.type === 'victory' && (currentEvent.actorId === 'player' || currentEvent.actorId === 'ai')) speak(currentEvent.actorId, 'win')
+      // Reacción en cadena (ver chainRef): se reinicia con cada jugada nueva.
+      const run = chainRef.current
+      if (currentEvent.type === 'attack' || currentEvent.cast || currentEvent.type === 'turn') {
+        chainRef.current = { count: 0, splash: false }
+      } else if (currentEvent.type === 'damage' && CHAIN_EFFECT.test(currentEvent.effectId ?? '')) {
+        run.splash = true
+      } else if (currentEvent.type === 'destroy') {
+        run.count = run.splash ? Math.max(1, run.count) + 1 : Math.max(1, run.count)
+        if (run.splash && run.count >= 2) setChain({ key: currentEvent.id, count: run.count })
+        run.splash = false
+      }
       if (currentEvent.type === 'turn') {
+        comboRef.current = { count: 0 }
+        setCombo(undefined)
         setBanner(currentEvent.actorId === me ? 'Tu turno' : 'Turno rival')
       }
       if (currentEvent.type === 'spell' && currentEvent.effectId === 'scry-top-cards' && currentEvent.actorId === me) {
@@ -216,6 +311,11 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
         // El dueño se lee de la pieza: el turno activo falla con golpes que
         // ocurren fuera de turno (represalias, efectos al inicio del turno).
         const attacker = state.match?.board.find((piece) => piece.instanceId === currentEvent.actorId)
+        const owner = attacker?.owner ?? state.match?.activePlayer ?? me
+        const run = comboRef.current
+        run.count = run.owner === owner ? run.count + 1 : 1
+        run.owner = owner
+        if (run.count >= 2) setCombo({ key: currentEvent.id, count: run.count, owner })
         setExchange((open) => {
           if (open?.key === currentEvent.id) return clashExchange(open)
           const opened = openExchange(currentEvent, attacker?.owner ?? state.match?.activePlayer ?? me, state.match?.board)
@@ -226,7 +326,8 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
       } else {
         setExchange((open) => (open ? foldExchange(open, currentEvent) : open))
       }
-      const play = recentPlayFor(currentEvent, state.match?.board ?? [])
+      // Una jugada repetida no vuelve a entrar en el historial.
+      const play = currentEvent.id.includes(REPLAY_MARK) ? undefined : recentPlayFor(currentEvent, state.match?.board ?? [])
       if (play) setRecentPlays((list) => pushRecentPlay(list, play))
       const amount = currentEvent.amount ?? 0
       if (currentEvent.type === 'destroy' || currentEvent.type === 'nexus-damage' || (currentEvent.type === 'damage' && amount > 0)) {
@@ -252,6 +353,24 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
       window.clearTimeout(landing)
     }
   }, [currentEvent, preferences.animationSpeed, preferences.effectsVolume, preferences.masterVolume, preferences.muted, preferences.reducedMotion, preferences.presentationPace, me])
+
+  useEffect(() => {
+    if (!quote) return
+    const timer = window.setTimeout(() => setQuote(undefined), 3400)
+    return () => window.clearTimeout(timer)
+  }, [quote])
+
+  useEffect(() => {
+    if (!reaction) return
+    const timer = window.setTimeout(() => setReaction(undefined), 1900)
+    return () => window.clearTimeout(timer)
+  }, [reaction])
+
+  useEffect(() => {
+    if (!chain) return
+    const timer = window.setTimeout(() => setChain(undefined), 2200)
+    return () => window.clearTimeout(timer)
+  }, [chain])
 
   // Cada habilidad que se enciende en el duelo suena una vez: el brillo
   // dorado se ve, pero entre el golpe y el daño se perdía sin un aviso sonoro.
@@ -377,6 +496,10 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
     duelHolding: Boolean(duelHold),
     dismissDuel,
     exchange,
+    combo,
+    chain,
+    reaction,
+    quote,
     impact,
     recentPlays,
     resetBanners,

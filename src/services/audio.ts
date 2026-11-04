@@ -17,6 +17,16 @@ export type SoundCue =
   | 'victory'
   | 'defeat'
   | 'ui'
+  // Un sonido por tipo de ataque (ver battle/attackStyle.ts): antes todos
+  // los golpes sonaban con el mismo silbido.
+  | 'attack-slash'
+  | 'attack-claw'
+  | 'attack-crush'
+  | 'attack-spectral'
+  | 'attack-arrow'
+  | 'attack-shot'
+  | 'attack-bolt'
+  | 'attack-breath'
 
 /**
  * Una voz es una capa de la señal: un oscilador (o una ráfaga de ruido) con su
@@ -97,6 +107,61 @@ export const voicesForCue = (cue: SoundCue): readonly Voice[] => {
       return [
         { wave: 'noise', freq: 4200, toFreq: 1200, at: 0, duration: 0.13, gain: 0.42, q: 2.4 },
         { wave: 'square', freq: 300, toFreq: 120, at: 0.01, duration: 0.1, gain: 0.16 },
+      ]
+    case 'attack-slash':
+      // Acero: silbido largo y un tintineo metálico al final.
+      return [
+        { wave: 'noise', freq: 5200, toFreq: 1600, at: 0, duration: 0.18, gain: 0.4, q: 3.2 },
+        { wave: 'triangle', freq: 1900, toFreq: 1700, at: 0.12, duration: 0.22, gain: 0.12 },
+        { wave: 'triangle', freq: 2850, at: 0.13, duration: 0.16, gain: 0.07 },
+      ]
+    case 'attack-claw':
+      // Zarpazo: tres desgarros cortos y un gruñido grave.
+      return [
+        { wave: 'noise', freq: 2400, toFreq: 900, at: 0, duration: 0.07, gain: 0.38, q: 1.4 },
+        { wave: 'noise', freq: 2600, toFreq: 900, at: 0.06, duration: 0.07, gain: 0.36, q: 1.4 },
+        { wave: 'noise', freq: 2800, toFreq: 900, at: 0.12, duration: 0.08, gain: 0.34, q: 1.4 },
+        { wave: 'sawtooth', freq: 110, toFreq: 80, at: 0, duration: 0.3, gain: 0.14 },
+      ]
+    case 'attack-crush':
+      // Mazazo: golpe sordo enorme y temblor de piedra.
+      return [
+        { wave: 'sine', freq: 90, toFreq: 30, at: 0.05, duration: 0.5, gain: 0.85 },
+        { wave: 'noise', freq: 400, toFreq: 90, at: 0.05, duration: 0.45, gain: 0.55, q: 0.5 },
+        { wave: 'square', freq: 55, toFreq: 40, at: 0.06, duration: 0.25, gain: 0.2 },
+      ]
+    case 'attack-spectral':
+      // Espíritus: lamento que sube y baja con un susurro.
+      return [
+        { wave: 'sine', freq: 520, toFreq: 880, at: 0, duration: 0.45, gain: 0.18, attack: 0.12 },
+        { wave: 'sine', freq: 530, toFreq: 300, at: 0.2, duration: 0.4, gain: 0.14, attack: 0.08 },
+        { wave: 'noise', freq: 3000, toFreq: 1400, at: 0, duration: 0.5, gain: 0.16, q: 4, attack: 0.15 },
+      ]
+    case 'attack-arrow':
+      // Flecha: cuerda que se suelta y zumbido que cruza.
+      return [
+        { wave: 'triangle', freq: 180, toFreq: 120, at: 0, duration: 0.08, gain: 0.3 },
+        { wave: 'noise', freq: 6000, toFreq: 2500, at: 0.04, duration: 0.3, gain: 0.22, q: 6 },
+      ]
+    case 'attack-shot':
+      // Pólvora: estampido seco y cola de humo.
+      return [
+        { wave: 'noise', freq: 1800, toFreq: 300, at: 0, duration: 0.09, gain: 0.8, q: 0.4 },
+        { wave: 'sine', freq: 160, toFreq: 50, at: 0, duration: 0.2, gain: 0.6 },
+        { wave: 'noise', freq: 500, toFreq: 200, at: 0.06, duration: 0.5, gain: 0.18, q: 0.3, attack: 0.05 },
+      ]
+    case 'attack-bolt':
+      // Rayo: chasquido eléctrico con zumbido que tiembla.
+      return [
+        { wave: 'noise', freq: 7000, toFreq: 3000, at: 0, duration: 0.06, gain: 0.5, q: 0.8 },
+        { wave: 'sawtooth', freq: 70, toFreq: 140, at: 0.02, duration: 0.35, gain: 0.18 },
+        { wave: 'square', freq: 1400, toFreq: 300, at: 0.05, duration: 0.25, gain: 0.08 },
+      ]
+    case 'attack-breath':
+      // Aliento de dragón: rugido grave y llamarada que crece.
+      return [
+        { wave: 'sawtooth', freq: 85, toFreq: 60, at: 0, duration: 0.6, gain: 0.3, attack: 0.05 },
+        { wave: 'noise', freq: 900, toFreq: 2600, at: 0.05, duration: 0.7, gain: 0.5, q: 0.5, attack: 0.15 },
       ]
     case 'impact':
       // Golpe: sub-grave con caída + capa de ruido sordo.
@@ -994,4 +1059,76 @@ export const __resetAudioForTests = (): void => {
   }
   engine = null
   mix = { master: 0.75, effects: 0.7, music: 0.35, muted: false }
+}
+
+
+// ── Tensión de la batalla ────────────────────────────────────────────────
+
+/**
+ * Capa de tensión sobre el ambiente: un zumbido grave con pulso que crece con
+ * la tensión de la partida (turnos y Vida del Nexo más tocado). El ambiente
+ * del sitio sigue igual; esta capa entra por encima y se retira sola cuando
+ * la partida se calma. Así la música se intensifica sin cambiar de tema.
+ */
+interface TensionHandle {
+  oscillators: OscillatorNode[]
+  lfo: OscillatorNode
+  filter: BiquadFilterNode
+  gain: GainNode
+  pulse: GainNode
+}
+
+let tension: TensionHandle | null = null
+
+export const setBattleTension = (level: number): void => {
+  const active = getEngine()
+  if (!active) return
+  const { context } = active
+  const clamped = Math.max(0, Math.min(1, level))
+  if (!tension) {
+    const gain = context.createGain()
+    gain.gain.value = 0
+    const pulse = context.createGain()
+    pulse.gain.value = 0.6
+    const filter = context.createBiquadFilter()
+    filter.type = 'lowpass'
+    filter.frequency.value = 180
+    const lfo = context.createOscillator()
+    lfo.frequency.value = 1
+    const lfoDepth = context.createGain()
+    lfoDepth.gain.value = 0.4
+    lfo.connect(lfoDepth).connect(pulse.gain)
+    const oscillators = [55, 55.6, 82.4].map((freq, index) => {
+      const oscillator = context.createOscillator()
+      oscillator.type = index === 2 ? 'triangle' : 'sawtooth'
+      oscillator.frequency.value = freq
+      oscillator.connect(filter)
+      oscillator.start()
+      return oscillator
+    })
+    filter.connect(pulse).connect(gain).connect(active.music)
+    lfo.start()
+    tension = { oscillators, lfo, filter, gain, pulse }
+  }
+  const now = context.currentTime
+  // Por debajo de un tercio no se oye: una partida tranquila no debe zumbar.
+  const audible = Math.max(0, (clamped - 0.33) / 0.67)
+  tension.gain.gain.setTargetAtTime(audible * audible * 0.22, now, 1.5)
+  tension.filter.frequency.setTargetAtTime(160 + audible * 900, now, 1.5)
+  tension.lfo.frequency.setTargetAtTime(0.8 + audible * 3.2, now, 1.5)
+}
+
+export const stopBattleTension = (): void => {
+  const handle = tension
+  if (!handle) return
+  tension = null
+  const active = getEngine()
+  const now = active?.context.currentTime ?? 0
+  handle.gain.gain.setTargetAtTime(0, now, 0.4)
+  window.setTimeout(() => {
+    for (const oscillator of [...handle.oscillators, handle.lfo]) {
+      try { oscillator.stop() } catch { /* ya parado: inocuo */ }
+    }
+    try { handle.gain.disconnect() } catch { /* ya desconectado: inocuo */ }
+  }, 2000)
 }

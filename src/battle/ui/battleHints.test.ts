@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { CARD_BY_ID, type BoardPiece } from '../../game'
-import { actionHintFor, cardStatLine, isBoardCard, pieceStatLine, requiresPieceTarget } from './battleHints'
+import { actionHintFor, attackNexusVerdicts, attackPieceVerdicts, cardStatLine, isBoardCard, pieceStatLine, requiresPieceTarget } from './battleHints'
 
 const piece = (overrides: Partial<BoardPiece> = {}): BoardPiece => ({
   instanceId: 'p1',
@@ -106,5 +106,20 @@ describe('battleHints', () => {
 
   it('con la partida terminada no hay ninguna pista', () => {
     expect(actionHintFor({ ...idleContext, finished: true, selectedPiece: piece() })).toBeUndefined()
+  })
+})
+
+describe('veredictos de la previsión', () => {
+  it('cada ficha dice lo que le va a pasar', () => {
+    const verdicts = attackPieceVerdicts({ damageToDefender: 3, defenderHealthAfter: 0, defenderDies: true, retaliationToAttacker: 2, attackerHealthAfter: 1, attackerDies: false, pierceOverkill: 1 })
+    expect(verdicts.target.map((v) => v.title)).toEqual(['Muere', '+1 al Nexo'])
+    expect(verdicts.attacker.map((v) => v.title)).toEqual(['Devuelve 2'])
+  })
+
+  it('avisa si la atacante muere en el contragolpe y del golpe letal al Nexo', () => {
+    const verdicts = attackPieceVerdicts({ damageToDefender: 1, defenderHealthAfter: 3, defenderDies: false, retaliationToAttacker: 4, attackerHealthAfter: 0, attackerDies: true, pierceOverkill: 0 })
+    expect(verdicts.target[0]!.title).toBe('Sobrevive con 3')
+    expect(verdicts.attacker[0]!.tone).toBe('counterKill')
+    expect(attackNexusVerdicts({ damage: 5, nexusHealthAfter: 0, lethal: true })[0]!.title).toBe('¡Golpe letal!')
   })
 })

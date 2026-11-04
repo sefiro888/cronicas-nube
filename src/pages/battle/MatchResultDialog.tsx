@@ -6,6 +6,9 @@ import type { BestPlay, HealthSnapshot } from '../../store/match'
 import type { RecordSummary } from '../../store/records'
 import { HealthChart } from './HealthChart'
 import { withBase } from '../../utils/assets'
+import { Link } from 'react-router-dom'
+import { useProfile } from '../../components/useProfile'
+import { StreakEmblem } from '../../components/ProfileBadges'
 import styles from '../BattlePage.module.css'
 import heroStyles from './ResultHero.module.css'
 
@@ -30,6 +33,8 @@ interface MatchResultDialogProps {
   onRepeat: () => void
   onHome: () => void
   onDownloadLog: () => void
+  /** Vuelve a ver el golpe que decidió la partida (la última jugada, a cámara lenta). */
+  onReplay?: () => void
   reducedMotion?: boolean
 }
 
@@ -87,6 +92,7 @@ const formatDuration = (seconds: number): string => {
 }
 
 export function MatchResultDialog(props: MatchResultDialogProps) {
+  const { streak } = useProfile()
   const won = props.match.winner === props.me
   return (
     <div className={styles.resultBackdrop}>
@@ -102,11 +108,35 @@ export function MatchResultDialog(props: MatchResultDialogProps) {
           <div><strong>{props.stats.cardsPlayed}</strong><span>Jugadas</span></div>
         </div>
         <HealthChart history={props.healthHistory} me={props.me} />
-        {props.bestPlay && (
-          <p className={styles.bestPlay}>
-            🏆 Mejor jugada: <strong>{CARD_BY_ID[props.bestPlay.cardId ?? '']?.name ?? 'Una unidad'}</strong>{' '}
-            {props.bestPlay.by === props.me ? 'tuya' : 'del rival'} hizo <strong>{props.bestPlay.amount}</strong> de daño en el turno {props.bestPlay.turn}.
-          </p>
+        {props.bestPlay && (() => {
+          const card = CARD_BY_ID[props.bestPlay.cardId ?? '']
+          // La mejor jugada, como vitrina: la carta con su arte y el dato
+          // grande, en vez de una frase suelta al final de la lista.
+          return (
+            <div className={heroStyles.bestShowcase} data-mine={props.bestPlay.by === props.me || undefined}>
+              {card && <img src={withBase(card.art.webp)} alt="" />}
+              <div>
+                <small>🏆 Mejor jugada · turno {props.bestPlay.turn}</small>
+                <strong>{card?.name ?? 'Una unidad'}</strong>
+                <span>{props.bestPlay.by === props.me ? 'Tuya' : 'Del rival'}: <b>{props.bestPlay.amount}</b> de daño de un golpe</span>
+              </div>
+            </div>
+          )
+        })()}
+        {/* Recompensas de la victoria: el sobre ganado y la racha. */}
+        {/* Recompensas y repetición en una sola fila: apiladas hacían la
+            pantalla final muy alta, y el recuento de debajo (con margen
+            negativo para pegarse a la gráfica) se montaba sobre el botón. */}
+        {((won && !props.isPvp) || props.onReplay) && (
+          <div className={heroStyles.rewardRow}>
+            {won && !props.isPvp && <Link to="/album" className={heroStyles.packReward}>🎁 +1 sobre<span className={heroStyles.longText}> · ábrelo en el álbum</span></Link>}
+            {won && !props.isPvp && <StreakEmblem streak={streak} />}
+            {props.onReplay && (
+              <button type="button" className={heroStyles.replayDecisive} onClick={props.onReplay}>
+                🎬 <span className={heroStyles.longText}>Ver el golpe decisivo</span><span className={heroStyles.shortText}>Repetir golpe</span>
+              </button>
+            )}
+          </div>
         )}
         {props.tally.played > 1 && (
           <p className={styles.resultTally}>

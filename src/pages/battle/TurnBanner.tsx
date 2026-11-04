@@ -20,6 +20,15 @@ export function TurnBanner({ text, mine, commander, turn, reducedMotion }: TurnB
   const accent = commander ? FACTION_BY_ID[commander.faction].accentColor : '#d8b46a'
   return (
     <div className={styles.banner} data-side={mine ? 'own' : 'rival'} data-reduced-motion={reducedMotion || undefined} role="status" style={{ '--accent': accent } as CSSProperties}>
+      {/* Barrido: el comandante cruza la franja en grande, recortado en
+          diagonal, con un filo de luz delante. Va antes del retrato para que
+          este quede encima y se siga leyendo quién juega. */}
+      {commander && !reducedMotion && (
+        <span className={styles.sweep} aria-hidden="true">
+          <img src={withBase(commander.art.webp)} alt="" />
+        </span>
+      )}
+      {!reducedMotion && <span className={styles.edge} aria-hidden="true" />}
       <span className={styles.band} aria-hidden="true" />
       <span className={styles.portrait} aria-hidden="true">
         {commander && <img src={withBase(commander.art.webp)} alt="" />}
