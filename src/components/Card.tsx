@@ -7,7 +7,7 @@ import { FactionSigil, FACTION_LABELS } from './FactionSigil';
 import { GlossaryText } from './GlossaryText';
 import { RarityGem, RARITY_LABELS } from './RarityGem';
 import styles from './Card.module.css';
-import { FIMBUL_ART_CLIP, FIMBUL_FRAME, frameRuleSize } from '../presentation/cardFrames';
+import { artClipFor, cardFrameFor, frameRuleSize } from '../presentation/cardFrames';
 
 export type CardSize = 'thumbnail' | 'hand' | 'board' | 'gallery' | 'inspect';
 export type CardStatusId =
@@ -215,13 +215,22 @@ export function Card({
   const statuses = statusEffects.map(resolveStatus);
   const isExhausted = exhausted || statuses.some((status) => status.id === 'exhausted');
   const isInteractive = Boolean(onSelect || onInspect);
-  const framed = card.faction === 'fimbul';
-  const { x, y, width, height } = FIMBUL_FRAME.art;
-  const cardStyle = { '--card-color': card.color, ...(framed && {
-    '--frame-window': FIMBUL_ART_CLIP, '--frame-rule-size': `${frameRuleSize(card.rules.length)}cqw`,
-    '--frame-art-x': `${x * 100}%`, '--frame-art-y': `${y * 100}%`,
-    '--frame-art-width': `${width * 100}%`, '--frame-art-height': `${height * 100}%`,
-  }) } as CSSProperties;
+  const frame = cardFrameFor(card.faction);
+  const cardStyle = frame ? {
+    '--card-color': card.color,
+    '--frame-window': artClipFor(frame),
+    '--frame-rule-size': `${frameRuleSize(card.rules.length * 70 / frame.rules[2])}cqw`,
+    '--frame-art-x': `${frame.art.x * 100}%`, '--frame-art-y': `${frame.art.y * 100}%`,
+    '--frame-art-width': `${frame.art.width * 100}%`, '--frame-art-height': `${frame.art.height * 100}%`,
+    '--frame-title-ink': frame.titleInk, '--frame-type-ink': frame.ribbonInk,
+    '--frame-title-x': `${frame.title[0]}%`, '--frame-title-y': `${frame.title[1]}%`, '--frame-title-width': `${frame.title[2]}%`,
+    '--frame-cost-x': `${frame.cost[0]}%`, '--frame-cost-y': `${frame.cost[1]}%`, '--frame-cost-ink': frame.costInk,
+    '--frame-type-x': `${frame.ribbon[0]}%`, '--frame-type-y': `${frame.ribbon[1]}%`, '--frame-type-width': `${frame.ribbon[2]}%`,
+    '--frame-rules-x': `${frame.rules[0]}%`, '--frame-rules-y': `${frame.rules[1]}%`,
+    '--frame-rules-width': `${frame.rules[2]}%`, '--frame-rules-height': `${frame.rules[3]}%`,
+    '--frame-attack-x': `${frame.attack[0]}%`, '--frame-attack-y': `${frame.attack[1]}%`,
+    '--frame-health-x': `${frame.health[0]}%`, '--frame-health-y': `${frame.health[1]}%`, '--frame-stat-ink': frame.statInk,
+  } as CSSProperties : { '--card-color': card.color } as CSSProperties;
   const typeLine = card.subtype ? `${CARD_TYPE_LABELS[card.type]} — ${card.subtype}` : CARD_TYPE_LABELS[card.type];
   const stateDescription = [
     playable === true ? 'jugable' : playable === false ? 'no jugable' : '',
@@ -294,8 +303,8 @@ export function Card({
       style={cardStyle}
       data-card-id={card.id}
       data-faction={card.faction}
-      data-frame={framed ? 'fimbul-hielo' : undefined}
-      data-frame-dense={framed && card.rules.length > 110 || undefined}
+      data-frame={frame?.id}
+      data-frame-dense={frame && card.rules.length > 110 || undefined}
       data-rarity={card.rarity}
       data-reduced-motion={reducedMotion || undefined}
       data-frozen={statuses.some((status) => status.id === 'frozen') || undefined}
@@ -312,10 +321,10 @@ export function Card({
       onPointerMove={tiltEnabled ? handlePointerMove : undefined}
       onPointerLeave={tiltEnabled ? resetTilt : undefined}
     >
-      {framed && <img className={styles.factionFrame} src={withBase(FIMBUL_FRAME.asset)} alt="" aria-hidden="true" draggable={false} />}
+      {frame && <img className={styles.factionFrame} src={withBase(frame.asset)} alt="" aria-hidden="true" draggable={false} />}
       <span className={styles.frameFiligree} aria-hidden="true" />
       <span className={styles.foil} aria-hidden="true" />
-      <ManaCostBadge cost={card.cost} affordable={playable} framed={framed} />
+      <ManaCostBadge cost={card.cost} affordable={playable} framed={Boolean(frame)} />
       <div className={styles.header}>
         <h3 className={styles.name}>{card.name}</h3>
         {card.unique && <span className={styles.unique} title="Carta única" aria-label="Carta única">✦</span>}

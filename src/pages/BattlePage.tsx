@@ -1,3 +1,4 @@
+import { cardFrameFor } from '../presentation/cardFrames'
 import { effectiveAttack } from '../game/fimbul'
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
@@ -446,7 +447,7 @@ export function BattlePage() {
   const rivalCommander = rival ? COMMANDER_BY_ID[rival.commanderId] : undefined
   const inspected = store.inspectedCardId ? CARD_BY_ID[store.inspectedCardId] : undefined
   const inspectedPiece = match?.board.find((piece) => piece.instanceId === store.inspectedPieceId)
-  const inspectedStats = inspected?.faction === 'fimbul' && inspectedPiece && match ? {
+  const inspectedStats = inspected && cardFrameFor(inspected.faction) && inspectedPiece && match ? {
     attack: inspected.attack === undefined ? undefined : effectiveAttack(inspectedPiece, inspected, match),
     health: inspected.health === undefined ? undefined : inspectedPiece.currentHealth,
     resistance: inspected.resistance === undefined ? undefined : inspectedPiece.currentHealth,

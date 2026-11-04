@@ -1,3 +1,4 @@
+import { cardFrameFor } from '../presentation/cardFrames'
 import { useCardFaceTexture } from './useCardFaceTexture'
 import { useFrame } from '@react-three/fiber'
 import { memo, useEffect, useRef, useState } from 'react'
@@ -146,7 +147,7 @@ const FallenCard = memo(function FallenCard({ fallen, reducedMotion }: { fallen:
           { key: 'back', y: -0.038, spin: Math.PI },
         ].map(({ key, y, spin }, index) => (
           <mesh key={key} position={[0, y, 0]} rotation={[-Math.PI / 2, spin, 0]}>
-            <planeGeometry args={[card?.faction === 'fimbul' ? 0.60 : 0.73, 0.9]} />
+            <planeGeometry args={[cardFrameFor(card?.faction) ? 0.60 : 0.73, 0.9]} />
             <meshStandardMaterial ref={(material) => { artwork.current[index] = material }} map={texture} emissiveMap={texture} emissive="#ffffff" emissiveIntensity={0.6} color="#ffffff" transparent opacity={1} roughness={0.62} />
           </mesh>
         ))}

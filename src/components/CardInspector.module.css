@@ -190,5 +190,5 @@
   .shortcutHint { display: none; }
 }
 
-.exhibit > article[data-frame='fimbul-hielo'] { width: min(100%, 22rem, calc(41.33vh - 1.4rem)); }
-@media (max-width: 700px) { .exhibit > article[data-frame='fimbul-hielo'] { width: min(100%, 18rem); } }
+.exhibit > article[data-frame] { width: min(100%, 22rem, calc(41.33vh - 1.4rem)); }
+@media (max-width: 700px) { .exhibit > article[data-frame] { width: min(100%, 18rem); } }

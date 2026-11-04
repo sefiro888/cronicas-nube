@@ -66,6 +66,27 @@ animaciones (`e2e/battle-spectacle-shots.spec.ts`).
 
 ---
 
+## Chasis y suelos de facción — 4 de noviembre de 2026 (Codex)
+
+- La rama local `codex/arte-de-facciones` incorpora la prueba de Fimbul y
+  extiende su composición a los 15 chasis entregados. Las coordenadas del
+  título, coste, ilustración, reglas y medallones se miden por plantilla en
+  `src/presentation/cardFrames.ts`. La carta HTML y la ficha de batalla
+  comparten esa configuración. Los originales se conservan en `tools/art-inbox/`.
+- Los 18 suelos propios disponibles se aplican en el escenario natal del
+  comandante local. Las facciones que comparten escenario conservan cada una
+  su suelo. Furia mantiene la roca, el brillo y el río ya adaptados en la
+  Caldera. Los grabados completos se reparten entre las 64 losas.
+- Pendientes de archivo original: chasis de Orden, Olimpo, Sombra y Vacío,
+  y suelo de Samsara. Los PNG etiquetados Samsara y Quinto Sol son idénticos.
+  El motivo de calendario solar se usa en Quinto Sol, pendiente de
+  confirmación. Samsara conserva la arenisca del ghat.
+- Capturas por facción en `tools/captures/facciones/`. Para reproducirlas,
+  ejecutar `npm run test:e2e -- e2e/faction-art-shots.spec.ts` con
+  `RUN_FACTION_SHOTS=1`.
+
+---
+
 ## Prueba de carta y suelo de Fimbul — 4 de noviembre de 2026 (Codex)
 
 - Primera facción elegida por el propietario. Originales en

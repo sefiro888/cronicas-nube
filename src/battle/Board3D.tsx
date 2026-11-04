@@ -1,3 +1,5 @@
+import { resolveScenario } from './scenarioForFaction'
+import { cardFrameFor } from '../presentation/cardFrames'
 import { useCardFaceTexture } from './useCardFaceTexture'
 import { Html, OrbitControls, Sparkles, useCursor, useTexture } from '@react-three/drei'
 import { Canvas, type ThreeElements, type ThreeEvent, useFrame, useThree } from '@react-three/fiber'
@@ -5,7 +7,7 @@ import { lazy, memo, Suspense, useEffect, useMemo, useRef, useState, type CSSPro
 import { AdditiveBlending, DoubleSide, MathUtils, PerspectiveCamera as ThreePerspectiveCamera, Plane, Raycaster, SRGBColorSpace, Vector2, Vector3 } from 'three'
 import type { Group, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, PointLight, Texture } from 'three'
 import { BOARD_CELL_COUNT, BOARD_SIZE, CARD_BY_ID, COMMANDER_BY_ID } from '../game'
-import type { AnimationEvent, BoardPiece, MatchState, PlayerId, Position } from '../game'
+import type { AnimationEvent, BoardPiece, FactionId, MatchState, PlayerId, Position } from '../game'
 import { runoAttackBonus } from '../game/kalevala'
 import { formationAttackBonus } from '../game/tercios'
 import type { MovementHazard } from '../game/movementHazard'
@@ -342,6 +344,7 @@ const tileVariantFor = (position: Position): number =>
 
 const photographicTileVariants = new WeakMap<Texture, readonly Texture[]>()
 const NATURAL_TILE_MAPS = {
+  ice: '/assets/terrain/hielo-fiordo-v1.webp',
   stone: '/assets/terrain/marmol-ciudadela-v1.webp',
   // Roca de lava creada por el propietario (Gemini), recortada de una imagen
   // suya sin el río; el río va aparte en la costura central (LavaRiver).
@@ -378,13 +381,38 @@ const tileVariantsOf = (source: Texture): readonly Texture[] => {
   return cached
 }
 
-const fimbulTileMaps = new WeakMap<Texture, readonly Texture[]>()
+const FACTION_FLOORS: Partial<Record<FactionId, string>> = {
+  arcane: 'suelo-arcane-v1.webp',
+  bestiario: 'suelo-bestiario-v1.webp',
+  duna: 'suelo-duna-v1.webp',
+  fimbul: 'suelo-fimbul-v1.webp',
+  forja: 'suelo-forja-v1.webp',
+  goblins: 'suelo-goblins-v1.webp',
+  jade: 'suelo-jade-v1.webp',
+  kalevala: 'suelo-kalevala-v1.webp',
+  marea: 'suelo-marea-v1.webp',
+  nature: 'suelo-nature-v1.webp',
+  olimpo: 'suelo-olimpo-v1.webp',
+  order: 'suelo-order-v1.webp',
+  plaga: 'suelo-plaga-v1.webp',
+  sol: 'suelo-sol-v1.webp',
+  shadow: 'suelo-shadow-v1.webp',
+  tercios: 'suelo-tercios-v1.webp',
+  void: 'suelo-void-v1.webp',
+}
+
+const DARK_FACTION_FLOORS = new Set([
+  FACTION_FLOORS.forja, FACTION_FLOORS.goblins, FACTION_FLOORS.marea,
+  FACTION_FLOORS.plaga, FACTION_FLOORS.shadow,
+])
+
+const factionTileMaps = new WeakMap<Texture, readonly Texture[]>()
 
 // Cada losa muestra su fragmento de la talla completa. Las juntas siguen
 // perteneciendo a la geometría del tablero y separan también los resaltados.
-function FimbulTileMaterial({ position, material }: { position: Position; material: ThreeElements['meshStandardMaterial'] }) {
-  const source = useTexture(withBase('/assets/terrain/suelo-fimbul-v1.webp'))
-  let maps = fimbulTileMaps.get(source)
+function FactionTileMaterial({ floor, position, material }: { floor: string; position: Position; material: ThreeElements['meshStandardMaterial'] }) {
+  const source = useTexture(withBase(`/assets/terrain/${floor}`))
+  let maps = factionTileMaps.get(source)
   if (!maps) {
     maps = Array.from({ length: BOARD_CELL_COUNT }, (_, index) => {
       const map = source.clone()
@@ -396,9 +424,15 @@ function FimbulTileMaterial({ position, material }: { position: Position; materi
       map.needsUpdate = true
       return map
     })
-    fimbulTileMaps.set(source, maps)
+    factionTileMaps.set(source, maps)
   }
-  return <meshStandardMaterial {...material} map={maps[position.y * BOARD_SIZE + position.x]} emissiveMap={null} />
+  const map = maps[position.y * BOARD_SIZE + position.x]
+  // Un poco de luz del propio mapa recupera el grabado en los suelos oscuros.
+  // En casillas con aviso, el color de juego tiene prioridad sobre el dibujo.
+  if (material.emissiveIntensity === 0 && DARK_FACTION_FLOORS.has(floor)) {
+    return <meshStandardMaterial key="relief" {...material} map={map} emissiveMap={map} emissive="#ffffff" emissiveIntensity={0.26} />
+  }
+  return <meshStandardMaterial key="markers" {...material} map={map} emissiveMap={null} />
 }
 
 /** Mapa de brillo de las grietas de lava de la Caldera (mismos recortes que la roca). */
@@ -448,7 +482,7 @@ function useDeferredDecor(): boolean {
   return ready
 }
 
-const BoardCell = memo(function BoardCell({ position, valid, hazard, occupied, scorched, rubble, cover, terrainStyle, organicForest, own, deployRow, threatened, intent, colorblindMode, reducedMotion, onCell, onHover }: { position: Position; valid: boolean; hazard?: MovementHazard; occupied: boolean; scorched: boolean; rubble: boolean; cover: boolean; terrainStyle: BoardTileStyle; organicForest: boolean; own: boolean; deployRow: boolean; threatened: boolean; intent: 'move' | 'deploy'; colorblindMode?: boolean; reducedMotion: boolean; onCell: (position: Position) => void; onHover?: (position?: Position) => void }) {
+const BoardCell = memo(function BoardCell({ position, valid, hazard, occupied, scorched, rubble, cover, terrainStyle, floor, organicForest, own, deployRow, threatened, intent, colorblindMode, reducedMotion, onCell, onHover }: { position: Position; valid: boolean; hazard?: MovementHazard; occupied: boolean; scorched: boolean; rubble: boolean; cover: boolean; terrainStyle: BoardTileStyle; floor?: string; organicForest: boolean; own: boolean; deployRow: boolean; threatened: boolean; intent: 'move' | 'deploy'; colorblindMode?: boolean; reducedMotion: boolean; onCell: (position: Position) => void; onHover?: (position?: Position) => void }) {
   const [hovered, setHovered] = useState(false)
   useCursor(hovered && valid)
   const onClick = () => onCell(position)
@@ -506,9 +540,9 @@ const BoardCell = memo(function BoardCell({ position, valid, hazard, occupied, s
       {/* La normal se genera aparte: el color claro de una veta no debe
           convertirse en un relieve falso. El resplandor conserva el dibujo. */}
       <Suspense fallback={<meshStandardMaterial {...material} />}>
-        {terrainStyle === 'ice' ? <FimbulTileMaterial position={position} material={material} /> : <DetailedTileMaterial terrainStyle={terrainStyle === 'forest' && !organicForest ? 'bestiary' : terrainStyle} variant={((Math.imul(position.x + 1, 73856093) ^ Math.imul(position.y + 1, 19349663)) >>> 0) % 24} material={material} />}
+        {floor ? <FactionTileMaterial floor={floor} position={position} material={material} /> : <DetailedTileMaterial terrainStyle={terrainStyle === 'forest' && !organicForest ? 'bestiary' : terrainStyle} variant={((Math.imul(position.x + 1, 73856093) ^ Math.imul(position.y + 1, 19349663)) >>> 0) % 24} material={material} />}
       </Suspense>
-      {(terrainStyle === 'basalt' || terrainStyle === 'forest' || terrainStyle === 'ice') && valid && !hazard && <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, height / 2 + 0.003, 0]} raycast={() => null}>
+      {(terrainStyle === 'basalt' || terrainStyle === 'forest' || floor) && valid && !hazard && <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, height / 2 + 0.003, 0]} raycast={() => null}>
         <planeGeometry args={[TILE_SIZE * 0.94, TILE_SIZE * 0.94]} />
         {/* El azul desaparecía al multiplicarse por superficies oscuras.
             La veladura conserva el material y distingue el destino. */}
@@ -766,7 +800,7 @@ const preferredPiece = (event: ThreeEvent<MouseEvent | PointerEvent>): string | 
 const BoardCard = memo(function BoardCard({ deploying = false, piece, runo, formationBonus, selected, targetable, ready, active, mine, crowded, stackSafe, onPiece, onInspect, onHover, previewLines, reducedMotion, impulse, impact, arrival, waiting }: { deploying?: boolean; piece: BoardPiece; runo: number; formationBonus: number; selected: boolean; targetable: boolean; ready: boolean; active: boolean; mine: boolean; crowded: boolean; stackSafe: boolean; onPiece: (pieceId: string) => void; onInspect?: (cardId: string, pieceId?: string) => void; onHover?: (pieceId?: string) => void; previewLines?: readonly PreviewVerdict[]; reducedMotion: boolean; impulse?: Impulse; impact?: AnimationEvent; arrival?: AnimationEvent; waiting: boolean }) {
   const card = CARD_BY_ID[piece.cardId]
   const displayedAttack = Math.max(0, (card?.attack ?? 0) + piece.attackModifier + (card?.type === 'unit' ? runoAttackBonus(runo) : 0) + formationBonus)
-  const factionFrame = card?.faction === 'fimbul'
+  const factionFrame = cardFrameFor(card?.faction)
   const texture = useCardFaceTexture(card, card?.art.webp ?? '/assets/cards/art/fuente-furia.webp',
     card?.type === 'unit' ? displayedAttack : undefined, piece.currentHealth)
   const group = useRef<Group>(null)
@@ -1783,6 +1817,10 @@ function Scene(props: Board3DProps) {
   }, [props.state.board, props.localPlayerId])
   const ownDeployRow = props.localPlayerId === 'player' ? BOARD_SIZE - 1 : 0
   const terrainStyle = TERRAIN_STYLE[props.scenario as Exclude<ScenarioId, 'auto'>] ?? 'stone'
+  const faction = COMMANDER_BY_ID[props.state.players[props.localPlayerId].commanderId]?.faction
+  // La elección manual de otro escenario conserva sus materiales propios.
+  const floor = (faction && resolveScenario('auto', faction) === props.scenario ? FACTION_FLOORS[faction] : undefined)
+    ?? (props.scenario === 'fimbul' ? FACTION_FLOORS.fimbul : undefined)
 
   /**
    * Quién se mueve en el golpe que está sonando ahora: el atacante embiste
@@ -1861,6 +1899,7 @@ function Scene(props: Board3DProps) {
             rubble={rubbleSet.has(key)}
             cover={coverSet.has(key)}
             terrainStyle={terrainStyle}
+            floor={floor}
             organicForest={props.scenario === 'grove'}
             own={isOwnHalf(position.y, props.localPlayerId)}
             deployRow={position.y === ownDeployRow}
