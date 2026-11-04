@@ -1,5 +1,70 @@
 # Estado del proyecto y por dónde seguir
 
+## TRASPASO A CODEX — 4 de noviembre de 2026 (léelo primero)
+
+El propietario pasa el proyecto a Codex (también para generar imágenes).
+Resumen de dónde está todo; el detalle de cada bloque va en las notas de
+debajo, de la más reciente a la más antigua.
+
+**Dónde está el trabajo**
+- Repositorio de pruebas `sefiro888/cronicas-nube`, rama
+  `claude/sweet-clarke-76ugku`, PR #1 (descripción completa y al día). Nada
+  de esto está en `sefiro888/magicfable` (el juego oficial).
+- Vista previa pública: https://sefiro888.github.io/cronicas-nube/ — se
+  publica sola con cada push a una rama `claude/**`
+  (`.github/workflows/vista-previa.yml`, rama `gh-pages`).
+- Plan acordado con el propietario: probar aquí → cuando le convenza,
+  llevarlo a `magicfable` en una rama con PR (comprobando antes si
+  `magicfable` cambió desde la copia, `a8f9c72`) → seguir solo allí.
+
+**Qué se hizo (todo presentación; reglas y equilibrio intactos)**
+Glosario con identidad e iconos, panel «Qué hace», escena del poder del
+comandante, duelo por rareza, ataques por tipo de criatura, Nexo de cristal
+con corona 3D, golpe final, combos, reacciones y muertes por criatura,
+clima y luz de tensión, cartas vivas, cámara, música y sonidos por ataque,
+cara a cara inicial, final épico, repetir jugada, previsión al apuntar,
+flechas de amenaza, habilidades animadas, cadena, animación por hechizo,
+firma y marco por facción, frases de comandantes, sobres y Álbum, títulos,
+marcos y racha, epitafios, botón «Rematar», suelo de lava de la Caldera,
+página de Mazos y menú nuevos. 747 pruebas unitarias.
+
+**Decisiones del propietario que hay que respetar**
+- Todo el texto en español, también los mensajes de trabajo.
+- Sin figuras 3D en lugar de fichas (descartado).
+- Quitado el mapa rojo de casillas en peligro: no lo quiere (el juego debe
+  ser menos predecible). Sí quiere las flechas de amenaza.
+- No hay contrahechizos en las reglas y no se inventan sin su permiso.
+- Los sobres son solo de colección: no limitan mazos (cambiarlo es de reglas).
+- Arte nuevo: el suyo hecho con Gemini vale (procedencia confirmada).
+
+**Pendiente, por prioridad**
+1. Rendimiento: control de intensidad de efectos en Ajustes y calidad
+   automática si va lento. La e2e «las chapas de las unidades no se pisan en
+   móvil» es intermitente en la Caldera (pasa en `main`): las fichas tardan
+   en salir. Revisar con GPU.
+2. Repaso en móvil de lo nuevo (sobres, álbum, cara a cara, bocadillos,
+   sellos, Mazos).
+3. Ritmo: una partida del propietario duró 111 min en 21 turnos; medir y
+   ajustar el ritmo «Normal».
+4. IA de Goblins y Tercios (ver `docs/EQUILIBRIO-2026-10-31.md`).
+5. Suelos propios por facción como el de lava (ver abajo).
+
+**Encargos de imagen (para Codex)**
+- Suelos por facción: textura cenital de terreno, 2048 × 2048, sin marco,
+  sin río/elemento dominante en el centro (o separado aparte, como el río
+  de lava). Cómo se montó la lava: nota «Suelo de lava de la Caldera» y
+  `NATURAL_TILE_MAPS` / `LavaTileMaterial` / `LavaRiver.tsx` en
+  `src/battle/Board3D.tsx`. Mapas actuales en `public/assets/terrain/`.
+- Antes de generar arte, leer `docs/GUIA-PROMPTS-ARTE.md` y
+  `docs/INTERFAZ-MUNDOS-2026-11-01.md` (inventario: los WebP se versionan,
+  los maestros PNG no están en Git).
+
+**Pruebas en la nube**: sin GPU varias e2e fallan por tiempo igual que en
+`main` (lista en notas de abajo). Para capturas fiables: congelar reloj y
+animaciones (`e2e/battle-spectacle-shots.spec.ts`).
+
+---
+
 ## Mazos, menú y carga del tablero — 2 de noviembre de 2026 (Claude Code, nube) · PUNTO DE RETOMA
 
 **Sesión cerrada por saldo de la nube (quedaban ~5 $).** Todo está subido a
