@@ -6,7 +6,7 @@ probar las sesiones de Claude en la nube sin arriesgar el proyecto principal.
 
 - **No publica la web.** El flujo de despliegue se ha sustituido por
   `.github/workflows/comprobar.yml`, que solo ejecuta tests, build y lint.
-- **Vista previa pública:** cada push a una rama `claude/**` se publica en
+- **Vista previa pública:** cada push a `main` o a una rama `claude/**` se publica en
   https://sefiro888.github.io/cronicas-nube/ (rama `gh-pages`,
   `.github/workflows/vista-previa.yml`) para probarla en el navegador. La
   pidió el propietario el 1 de noviembre de 2026. No es el juego oficial.

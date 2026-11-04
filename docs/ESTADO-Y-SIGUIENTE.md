@@ -7,15 +7,16 @@ Resumen de dónde está todo; el detalle de cada bloque va en las notas de
 debajo, de la más reciente a la más antigua.
 
 **Dónde está el trabajo**
-- Repositorio de pruebas `sefiro888/cronicas-nube`, rama
-  `claude/sweet-clarke-76ugku`, PR #1 (descripción completa y al día). Nada
-  de esto está en `sefiro888/magicfable` (el juego oficial).
+- **Integrado en `main` de `sefiro888/cronicas-nube`** (PR #1 fusionado el
+  4 de noviembre de 2026 a petición del propietario). Trabajar desde `main`
+  en ramas nuevas con PR. Nada de esto está en `sefiro888/magicfable` (el
+  juego oficial): **el propietario pidió no tocar `magicfable` de momento**.
 - Vista previa pública: https://sefiro888.github.io/cronicas-nube/ — se
-  publica sola con cada push a una rama `claude/**`
-  (`.github/workflows/vista-previa.yml`, rama `gh-pages`).
-- Plan acordado con el propietario: probar aquí → cuando le convenza,
-  llevarlo a `magicfable` en una rama con PR (comprobando antes si
-  `magicfable` cambió desde la copia, `a8f9c72`) → seguir solo allí.
+  publica sola con cada push a `main` o a una rama `claude/**`
+  (`.github/workflows/vista-previa.yml`, rama `gh-pages`): enseña lo último
+  que se haya subido de cualquiera de ellas.
+- Si algún día se lleva a `magicfable`: rama con PR, comprobando antes si
+  `magicfable` cambió desde la copia (`a8f9c72`). Solo cuando él lo pida.
 
 **Qué se hizo (todo presentación; reglas y equilibrio intactos)**
 Glosario con identidad e iconos, panel «Qué hace», escena del poder del

@@ -1,7 +1,8 @@
 name: Vista previa en GitHub Pages
 
-# Vista previa para que el propietario pruebe en el navegador los cambios de
-# una rama de la nube sin instalar nada (lo pidió el 1 de noviembre de 2026).
+# Vista previa para que el propietario pruebe en el navegador los cambios sin
+# instalar nada (lo pidió el 1 de noviembre de 2026). Desde el 4 de noviembre
+# también se publica `main`, donde ya está todo integrado.
 # No es el juego publicado: ese sale solo de sefiro888/magicfable. Se sirve en
 # https://sefiro888.github.io/cronicas-nube/ desde la rama `gh-pages`.
 #
@@ -11,7 +12,7 @@ name: Vista previa en GitHub Pages
 
 on:
   push:
-    branches: ['claude/**']
+    branches: [main, 'claude/**']
   workflow_dispatch:
 
 permissions:
