@@ -66,6 +66,26 @@ animaciones (`e2e/battle-spectacle-shots.spec.ts`).
 
 ---
 
+## Reserva de Esencia y espacios inferiores — 5 de noviembre de 2026
+
+El propietario pidió más presencia y detalle para la reserva y aprovechar los
+laterales de la mano. Rama del bloque `codex/reserva-fantasia`.
+
+- Medallón labrado con emblema de facción, anillo de carga y cifras mayores.
+  Marco original de metal y remaches generado con ImageGen integrado, WebP
+  `public/assets/interface/reserva-esencia-v1.webp`. Maestro y prompt registrados
+  en `docs/INTERFAZ-MUNDOS-2026-11-01.md`.
+- Fondo inferior más cálido, grabado de facción y resumen vivo de cartas listas,
+  piezas en mesa, mazo y descarte. El recuento LISTAS comparte la validación
+  real del motor con las cartas de la mano.
+- Las fuentes se reparten en una fila adaptable. Se comprobó la reserva completa
+  con doce fuentes y diez cartas, además del ejemplo de Goblins con ocho cartas
+  y dos fuentes agotadas. Capturas en `tools/captures/reserva-fantasia/`.
+- 749 unitarias correctas y 5 omitidas, compilación y lint correctos. Pasada
+  general de navegador 138 correctas y 85 sondas opcionales omitidas. Los seis
+  casos de mano, reserva y móvil se repitieron tras el acabado final y pasan.
+  Compilación con base `/cronicas-nube/` comprobada con el nuevo WebP cargado.
+
 ## Sesión nocturna — 5 de noviembre de 2026 (Codex)
 
 Corte acordado a las 10:00, hora de Madrid. Solo `cronicas-nube`, en ramas

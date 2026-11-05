@@ -5,8 +5,12 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
   test(`diez cartas caben entre los atriles y permiten consultar sus extremos a ${width}`, async ({ page }) => {
     const base = createMatch(STARTER_DECKS[0]!, STARTER_DECKS[1]!, 42)
     const match: MatchState = {
-      ...base, phase: 'main', turn: 5, activePlayer: 'player', animations: [],
-      players: { ...base.players, player: { ...base.players.player, mulliganTaken: true } },
+      ...base, phase: 'main', turn: 25, activePlayer: 'player', animations: [],
+      players: { ...base.players, player: { ...base.players.player, mulliganTaken: true,
+        resources: Array.from({ length: 12 }, (_, index) => ({
+          instanceId: `fuente-${index}`, cardId: 'fuente-furia', faction: 'fury', exhausted: true,
+        })),
+      } },
     }
     await page.setViewportSize({ width, height })
     await page.addInitScript((match) => {
@@ -22,6 +26,7 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
     const rail = page.getByTestId('hand-scroll-rail')
     const cards = rail.locator('[data-card-id]')
     await expect(cards).toHaveCount(10)
+    await expect(page.getByLabel('Tu reserva de Esencia')).toBeInViewport({ ratio: 1 })
     const check = async () => {
       const bounds = (await rail.boundingBox())!
       for (const card of await cards.all()) {

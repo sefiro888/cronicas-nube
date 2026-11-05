@@ -1,6 +1,7 @@
 import { factionStageMusic, isFactionStage } from '../battle/scenarios/factionStages'
 import { cardFrameFor } from '../presentation/cardFrames'
 import { effectiveAttack } from '../game/fimbul'
+import { EssenceSeal } from './battle/EssenceSeal'
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
@@ -955,6 +956,10 @@ export function BattlePage() {
   // asomarse a una pieza rival (o repasar la propia) sin perder la selección
   // de acción que ya tenías en marcha por debajo.
   const activeInfo = viewedBoardCard ?? selectedCard ?? selectedBoardCard
+  const readyHandCount = player.hand.filter((instance) => {
+    const card = CARD_BY_ID[instance.cardId]
+    return card && canPlayHandCard(match, ME, card, instance)
+  }).length
   const viewingForeign = Boolean(viewedPiece && viewedPiece.owner !== ME)
   const canCastDirectly = Boolean(!viewedBoardCard && selectedCard && !isBoardCard(selectedCard) && !requiresPieceTarget(selectedCard))
   const revealedCard = director.revealedCardId ? CARD_BY_ID[director.revealedCardId] : undefined
@@ -1397,10 +1402,18 @@ export function BattlePage() {
           {player.hand.length === 0 ? 'Sin cartas en mano' : handTucked ? '▲ Mano' : '▼ Recoger'}
         </button>
         <section className={styles.handLedger} aria-label="Tu reserva de Esencia">
-          <span className={styles.ledgerTitle}>Tu reserva</span>
-          <div className={styles.essencePill} aria-label={`Esencia disponible: ${mana.available} de ${mana.total}`}>
-            <span className={styles.essenceSigil} aria-hidden="true"><FactionSigil faction={commander?.faction ?? 'fury'} decorative size="large" /></span>
-            <strong key={`${mana.available}/${mana.total}`} className={styles.essenceCount}>{mana.available} / {mana.total}</strong>
+          <span className={styles.ledgerWatermark} aria-hidden="true"><EssenceSeal /><FactionSigil faction={commander?.faction ?? 'fury'} decorative size="large" /></span>
+          <span className={styles.ledgerTitle}>Reserva de Esencia</span>
+          <div className={styles.essencePill} data-empty={mana.available === 0 || undefined}
+            style={{ '--essence-charge': `${mana.total ? mana.available / mana.total * 100 : 0}%`,
+              '--reserve-source-count': Math.max(1, Math.min(12, player.resources.length)) } as CSSProperties}
+            aria-label={`Esencia disponible: ${mana.available} de ${mana.total}`}>
+            <span className={styles.essenceSigil} aria-hidden="true"><EssenceSeal /><FactionSigil faction={commander?.faction ?? 'fury'} decorative size="large" /></span>
+            <div className={styles.reserveReadout}>
+              <small>Esencia disponible</small>
+              <strong key={`${mana.available}/${mana.total}`} className={styles.essenceCount}>{mana.available} / {mana.total}</strong>
+              <span>{mana.total === 0 ? 'Invoca tus fuentes' : mana.available === 0 ? 'Reserva agotada' : `Agotadas · ${mana.total - mana.available}`}</span>
+            </div>
             <span className={styles.essencePips} aria-hidden="true">
               {player.resources.slice(0, 12).map((resource) => (
                 <span
@@ -1412,6 +1425,7 @@ export function BattlePage() {
                 ><FactionSigil faction={resource.faction} decorative size="small" /></span>
               ))}
             </span>
+            <span className={styles.essenceChannel} aria-hidden="true"><i /></span>
           </div>
           <small className={styles.sourceStatus} data-used={player.resourcePlayedThisTurn || undefined}>
             {player.resourcePlayedThisTurn ? 'Fuente del turno utilizada' : player.hand.some(({ cardId }) => CARD_BY_ID[cardId]?.type === 'mana') ? 'Puedes jugar una fuente' : 'Sin fuentes en la mano'}
@@ -1436,6 +1450,12 @@ export function BattlePage() {
             ? !payment.payable ? 'Te falta Esencia para esta carta.'
               : selectedPlayable ? 'Esencia preparada para esta jugada.' : 'Esta carta aún necesita cumplir una condición de juego.'
             : match.activePlayer === ME ? 'Las cartas con halo y sello LISTA se pueden jugar.' : 'El rival está jugando su turno.'}</p>
+          <dl className={styles.handFacts}>
+            <div data-ready={readyHandCount > 0 || undefined}><dt>Listas</dt><dd aria-label="Cartas que puedes jugar">{readyHandCount}</dd></div>
+            <div><dt>En mesa</dt><dd>{match.board.filter(({ owner }) => owner === ME).length}</dd></div>
+            <div><dt>Mazo</dt><dd>{player.deck.length}</dd></div>
+            <div><dt>Descarte</dt><dd>{player.discard.length}</dd></div>
+          </dl>
         </section>
         <div className={styles.hints} aria-hidden="true">
           Clic — jugar · Clic derecho o I — inspeccionar · Esc — cancelar · E — fin de turno · H — recoger mano

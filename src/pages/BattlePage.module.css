@@ -1130,34 +1130,75 @@
   padding: 0 20px;
   border-top-color: color-mix(in srgb, var(--battle-accent) 55%, #625236);
   background:
-    repeating-linear-gradient(115deg, #ac8a4810 0 1px, transparent 1px 13px),
-    radial-gradient(ellipse at 0 100%, color-mix(in srgb, var(--battle-accent) 17%, transparent), transparent 45%),
-    radial-gradient(ellipse at 100% 100%, color-mix(in srgb, var(--battle-accent) 17%, transparent), transparent 45%),
-    linear-gradient(180deg, #272522f2, #101419fc 72%);
+    repeating-linear-gradient(0deg, #f2dba908 0 1px, transparent 1px 4px),
+    radial-gradient(ellipse at 0 100%, color-mix(in srgb, var(--battle-accent) 24%, #6e583f), transparent 46%),
+    radial-gradient(ellipse at 100% 100%, color-mix(in srgb, var(--battle-accent) 20%, #5b4d38), transparent 46%),
+    linear-gradient(180deg, #333439, #1a2029 72%);
 }
-.handLedger, .handContext { padding: 24px 2px 10px; align-self: start; min-width: 0; }
-.ledgerTitle { display: block; font: 700 9px/1.3 var(--display); letter-spacing: .2em; color: #cab181; text-transform: uppercase; margin-bottom: 14px; }
-.handLedger .essencePill { position: relative; left: auto; bottom: auto; transform: none; margin: 0; max-width: 100%; padding: 8px 9px; gap: 8px; flex-wrap: wrap; border-radius: 8px; border-color: color-mix(in srgb, var(--battle-accent) 55%, #9f8854); background: radial-gradient(ellipse at 30% 0, color-mix(in srgb, var(--battle-accent) 20%, #1a1c22), #0a1019); box-shadow: inset 0 0 0 2px #080a0f, 0 5px 14px #0006; }
-.essenceSigil { width: 32px; height: 32px; display: grid; place-items: center; border: 1px solid #bca57087; border-radius: 50%; background: radial-gradient(circle at 35% 20%, #f9e8b233, #090e1a 75%); color: var(--battle-accent); }
-.essenceSigil > span { width: 25px; height: 25px; }
-.essencePips { flex-wrap: wrap; gap: 5px; max-width: 100%; }
+.handLedger, .handContext { padding: 12px 2px 8px; align-self: start; min-width: 0; }
+.handLedger { position: relative; isolation: isolate; }
+.ledgerWatermark { position: absolute; z-index: -1; pointer-events: none; top: 6px; right: 0; width: 100%; aspect-ratio: 1; opacity: .09; }
+.ledgerWatermark > svg { width: 100%; height: 100%; }
+.ledgerWatermark > span { position: absolute; left: 30%; top: 30%; width: 40%; height: 40%; }
+.ledgerTitle { display: block; font: 700 9px/1.3 var(--display); letter-spacing: .18em; color: #dec896; text-transform: uppercase; margin-bottom: 7px; }
+.handLedger .essencePill {
+  position: relative; left: auto; bottom: auto; transform: none; margin: 0;
+  display: grid; grid-template-columns: auto minmax(0, 1fr); max-width: 100%; padding: 8px; gap: 5px 8px;
+  border-radius: 14px 3px 14px 3px; border-color: #b99c61;
+  background:
+    radial-gradient(ellipse at 15% 30%, color-mix(in srgb, var(--battle-accent) 14%, transparent), transparent 75%),
+    url('/assets/interface/reserva-esencia-v1.webp') center / 100% 100% no-repeat,
+    radial-gradient(ellipse at 15% 30%, color-mix(in srgb, var(--battle-accent) 28%, #1b2026), transparent 75%),
+    linear-gradient(135deg, #54452f, #191d21 18%, #0b1018 72%, #4d3a23);
+  box-shadow: inset 0 0 0 2px #141314, inset 0 0 0 3px #d6b76b47, 0 5px 14px #0008;
+}
+.essenceSigil {
+  position: relative; width: clamp(52px, 4vw, 72px); height: clamp(52px, 4vw, 72px);
+  display: grid; place-items: center; border: 0; border-radius: 50%; background: #0b1119; color: var(--battle-accent);
+  filter: drop-shadow(0 0 7px color-mix(in srgb, var(--battle-accent) 35%, transparent));
+}
+.essenceSigil > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.essenceSigil::after {
+  content: ''; position: absolute; inset: 13%; border-radius: 50%;
+  background: conic-gradient(from -90deg, var(--battle-accent) var(--essence-charge), #f3deb118 0);
+  mask-image: radial-gradient(circle, transparent 62%, #000 65% 80%, transparent 83%);
+  filter: drop-shadow(0 0 3px var(--battle-accent));
+}
+.essenceSigil > span { position: relative; z-index: 1; width: 48%; height: 48%; }
+.reserveReadout { min-width: 0; }
+.reserveReadout > small { display: block; color: #d9c399; font: 600 8px/1.3 system-ui, sans-serif; text-transform: uppercase; letter-spacing: .08em; }
+.reserveReadout .essenceCount { display: block; font-size: clamp(21px, 1.6vw, 30px); line-height: 1.25; color: #fff0cd; text-shadow: 0 2px 3px #000; white-space: nowrap; }
+.reserveReadout > span { display: block; color: #b6d9c5; font-size: 9px; line-height: 1.3; }
+.essencePill[data-empty] .reserveReadout > span { color: #b6a68c; }
+.essencePips { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(var(--reserve-source-count), minmax(0, 1fr)); gap: 3px; max-width: 100%; }
 .essencePips > span {
-  display: grid; place-items: center; width: 20px; height: 23px;
+  display: grid; place-items: center; justify-self: center; width: min(100%, 24px); height: 22px;
   clip-path: polygon(50% 0, 95% 20%, 86% 84%, 50% 100%, 14% 84%, 5% 20%);
   background: radial-gradient(circle at 35% 20%, #fff8, color-mix(in srgb, currentColor 75%, #142132) 40%, #10111b);
   box-shadow: none; color: var(--resource-color); opacity: 1;
 }
-.essencePips > span > span { width: 12px; height: 14px; background: none; clip-path: none; box-shadow: none; color: inherit; }
-.essencePips > span[data-exhausted='true'] { filter: grayscale(1) brightness(.48); opacity: .65; }
-.sourceStatus { display: block; margin-top: 13px; padding-left: 9px; border-left: 2px solid var(--battle-accent); color: #b9dfc0; font-size: 10px; line-height: 1.5; }
+.essencePips > span > span { width: min(11px, 100%); height: 13px; background: none; clip-path: none; box-shadow: none; color: inherit; }
+.essencePips > span[data-exhausted='true'] { filter: grayscale(.9) brightness(.8); opacity: .72; }
+.essenceChannel { grid-column: 1 / -1; display: block; height: 4px; border: 1px solid #b99c614f; background: #050a11; }
+.essenceChannel i { display: block; height: 100%; width: var(--essence-charge); background: linear-gradient(90deg, #fff1ac, var(--battle-accent)); box-shadow: 0 0 6px var(--battle-accent); }
+.sourceStatus { display: block; margin-top: 7px; padding: 4px 7px; border-left: 2px solid var(--battle-accent); background: linear-gradient(90deg, #a1ce9c16, transparent); color: #b9dfc0; font-size: 9px; line-height: 1.4; }
 .sourceStatus[data-used] { color: #9d988d; border-left-color: #655f50; }
-.handContext { padding-left: 16px; border-left: 1px solid #b79d6040; }
-.handContext strong { display: block; color: #f2e3c1; font: 600 13px/1.3 var(--display); }
-.handContext p { font-size: 11px; line-height: 1.5; color: #b7b2a3; margin-top: 10px; }
+.handContext { padding: 12px 10px 8px; border-inline: 1px solid #b79d6040; background: radial-gradient(ellipse at 50% 0, #d7b96c15, transparent 85%); }
+.handContext > strong { display: block; color: #f2e3c1; font: 600 clamp(14px, 1.1vw, 21px)/1.2 var(--display); }
+.handContext p { font-size: 10px; line-height: 1.4; color: #c9c0ab; margin: 5px 0 0; }
+.handFacts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; margin: 8px 0 0; }
+.handFacts > div { display: flex; align-items: baseline; justify-content: space-between; gap: 4px; padding: 3px 5px; border-bottom: 1px solid #b99c613d; background: #080c1459; }
+.handFacts dt { font-size: 8px; color: #b5a88e; text-transform: uppercase; letter-spacing: .05em; }
+.handFacts dd { margin: 0; font: 700 17px/1.2 var(--display); color: #f5e2b9; }
+.handFacts [data-ready] dd { color: #a8edbf; text-shadow: 0 0 7px #65d99663; }
 .handBar[data-tucked] .ledgerTitle, .handBar[data-tucked] .sourceStatus, .handBar[data-tucked] .handContext { display: none; }
 .handBar[data-tucked] .handLedger { padding: 5px 0; }
 .handBar[data-tucked] .essenceSigil { width: 25px; height: 25px; }
 .handBar[data-tucked] .essencePips { display: none; }
+.handBar[data-tucked] .reserveReadout > small, .handBar[data-tucked] .reserveReadout > span,
+.handBar[data-tucked] .essenceChannel, .handBar[data-tucked] .ledgerWatermark { display: none; }
+.handBar[data-tucked] .essencePill { padding: 3px 8px; }
+.handBar[data-tucked] .reserveReadout .essenceCount { font-size: 18px; }
 @media (max-width: 760px), (max-height: 500px) {
   .topbar { grid-template-columns: auto 1fr auto; }
   .headerRight { gap: 0; }
@@ -1170,5 +1211,8 @@
   .handLedger .essencePill { padding: 4px 7px; gap: 6px; }
   .handLedger .essenceSigil { width: 26px; height: 26px; }
   .handLedger .essencePips, .handLedger .ledgerTitle, .handLedger .sourceStatus, .handContext { display: none; }
+  .handLedger .reserveReadout > small, .handLedger .reserveReadout > span, .handLedger .essenceChannel { display: none; }
+  .handLedger .ledgerWatermark { display: none; }
+  .handLedger .reserveReadout .essenceCount { font-size: 17px; }
   .handBar[data-tucked] .handLedger { padding: 0; top: auto; bottom: 206px; }
 }
