@@ -323,3 +323,20 @@ Maestros PNG de 1536 × 1024 en `tools/art-inbox/panoramas-facciones/`, con
 el nombre de cada escenario. WebP de calidad 88 y variantes `-low` de
 768 × 512 y calidad 79 en `public/assets/scenarios/`. Las capturas de
 partida están en `tools/captures/facciones/`.
+
+### Vidriera de Orden y acabado cercano
+
+La vidriera original `public/assets/scenarios/vidriera-orden-v1.webp` usa
+512 × 768 y calidad 88. Su maestro se conserva como
+`tools/art-inbox/panoramas-facciones/vidriera-orden-v1.png`. Se generó con
+ImageGen integrado, sin referencias externas. El vidrio se recorta con
+geometría al vano real, manteniendo el águila, escudo y espada dentro del arco.
+Los sillares biselados y las columnas estriadas reutilizan la geometría del
+proyecto. Los pinos de Kalevala tienen ramas de agujas agrupadas y rocas de
+orilla como apoyo, para evitar el aspecto flotante de los primeros conos.
+
+Prompt completo de la vidriera
+
+```text
+Use case: game-asset. Original production texture for a high-detail mature fantasy strategy game Crónicas del Nexo, Orden faction. ONE tall rectangular panel of richly crafted medieval leaded stained glass, front view, fully flat orthographic texture filling entire canvas edge to edge. Ratio 2:3 vertical. A magnificent protective golden EAGLE with outstretched wings above an upright ceremonial shield and sword, surrounded by ornate Gothic tracery, small ivory-gold starburst motifs and tiny interlocking amber glass pieces. Dominant warm translucent honey amber, pale ivory, muted gold, smoky deep-blue small accents, only a few subdued violet pieces. Every feather individually cut from glass with dark thin lead seams, fine hairline cracks, subtle glass waviness, hammered artisan foil, tiny bubbles and centuries of darkened joinery. Extremely detailed physical material with luminous warm backlight, deep colored shadows, all detail sharply rendered but coherent readable central silhouette. Entire window is rectangular with NO arch silhouette and NO frame outside it, because it will be mapped inside an existing real 3D stone arch. No surrounding cathedral, no perspective, no wall, no illustration of a room, no people, no text, no lettering, no UI, no card border, no logos, no neon stripes. Original invented iconography, no real heraldry, no artists or franchises.
+```

@@ -103,8 +103,15 @@ locales por bloque. Conservar el punto de retoma al cerrar cada bloque.
   que chocaba con la introducción de batalla y la consulta de una ayuda
   oculta sin pasar el ratón. Ambas regresiones pasan al repetirlas. Ajustado
   también el tamaño del emblema de Esencia para dejar libre la cifra.
-- **Siguiente:** asentar la orilla de Kalevala, afinar arquitectura y repetir
-  capturas y validación global. Rama de retoma `codex/validacion-nocturna`.
+- **Pulido, 08:20 Madrid.** Orilla de roca bajo los pinos de Kalevala,
+  follaje por ramas, sillares biselados y columnas estriadas. Orden tiene una
+  vidriera original de águila, escudo y espada recortada en su arco. Las 14
+  vistas de los siete escenarios nuevos pasan, y las dos vistas de Orden
+  pasan de nuevo con la vidriera. Compilación y lint correctos. Dos pruebas
+  adicionales verifican que un comandante Fimbul en Duna o Samsara manuales
+  recibe las 64 losas de ese escenario, también con calidad baja.
+- **Siguiente:** repetición global y capturas definitivas de las 19 facciones.
+  Rama de retoma `codex/pulido-escenarios`.
 - **En cola:** marco de Olimpo elegido. Los otros tres chasis generados
   siguen como propuestas pendientes de valoración.
 

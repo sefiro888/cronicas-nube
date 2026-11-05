@@ -1,9 +1,14 @@
-import { Sparkles } from '@react-three/drei'
+import { Sparkles, useTexture } from '@react-three/drei'
+import { useEffect, useMemo } from 'react'
+import { DoubleSide, Shape, ShapeGeometry, SRGBColorSpace } from 'three'
 import type { GraphicsQuality } from '../../store/preferences'
 import { ReflectiveWater } from '../materials/ReflectiveWater'
 import { stoneMaps, type StoneFinish } from '../materials/stoneMaterial'
 import { timberMaps } from '../materials/timberMaterial'
 import { DistantVista } from './architecture/DistantVista'
+import { ShorePine } from './architecture/ShorePine'
+import { StoneColumns, StoneVault } from './architecture/StoneArchitecture'
+import { masonryBlockGeometry } from './architecture/stoneGeometry'
 import type { FactionStageId } from './factionStages'
 
 type Point = [number, number, number]
@@ -14,9 +19,10 @@ function Block({ position, size, color, finish, rotation, metalness = 0 }: {
   position: Point; size: Point; color: string; finish?: StoneFinish | 'timber'; rotation?: Point; metalness?: number
 }) {
   const maps = finish === 'timber' ? timberMaps() : finish ? stoneMaps(finish) : undefined
+  const stone = finish !== undefined && finish !== 'timber'
   return <mesh position={position} rotation={rotation} receiveShadow castShadow>
-    <boxGeometry args={size} />
-    <meshStandardMaterial {...maps} bumpScale={maps ? .075 : 0} color={color} roughness={.82} metalness={metalness} />
+    {stone ? <primitive attach="geometry" object={masonryBlockGeometry(...size)} /> : <boxGeometry args={size} />}
+    <meshStandardMaterial {...maps} vertexColors={stone} bumpScale={maps ? .035 : 0} color={color} roughness={.82} metalness={metalness} />
   </mesh>
 }
 
@@ -39,6 +45,31 @@ function StonePlatform({ color, finish, sides = 8, depth = .9 }: {
 }
 
 function DawnBastion() {
+  const loadedGlass = useTexture(`${import.meta.env.BASE_URL}assets/scenarios/vidriera-orden-v1.webp`)
+  const glass = useMemo(() => {
+    const texture = loadedGlass.clone()
+    texture.colorSpace = SRGBColorSpace
+    texture.anisotropy = 4
+    texture.needsUpdate = true
+    return texture
+  }, [loadedGlass])
+  useEffect(() => () => glass.dispose(), [glass])
+  const window = useMemo(() => {
+    const shape = new Shape()
+    shape.moveTo(-.77, .55)
+    shape.lineTo(.77, .55)
+    shape.lineTo(.77, 2.55)
+    shape.absarc(0, 2.55, .77, 0, Math.PI, false)
+    shape.closePath()
+    const geometry = new ShapeGeometry(shape, 20)
+    const positions = geometry.getAttribute('position')
+    const uv = geometry.getAttribute('uv')
+    for (let index = 0; index < positions.count; index += 1) {
+      uv.setXY(index, (positions.getX(index) + .77) / 1.54, (positions.getY(index) - .55) / 2.77)
+    }
+    return geometry
+  }, [])
+  useEffect(() => () => window.dispose(), [window])
   return <>
     <StonePlatform color="#c2b490" finish="limestone" />
     <Block position={[0, -.6, -4.92]} size={[9.6, .74, 3.25]} color="#aaa080" finish="limestone" />
@@ -48,16 +79,15 @@ function DawnBastion() {
         <Block position={[post * .94, 1.62, 0]} size={[.46, 2.8, .66]} color="#d0c4a3" finish="limestone" />
         <Block position={[post * .94, 2.52, .39]} size={[.6, .18, .18]} color="#b6954b" metalness={.4} />
       </group>)}
-      <Band position={[0, 2.55, 0]} radius={.95} tube={.19} arc={Math.PI} color="#d5c29b" />
+      <group position={[0, 2.55, 0]}>
+        <StoneVault radius={.77} thickness={.36} depth={.64} segments={11} color="#d5c29b" finish="limestone" quality="medium" />
+      </group>
       <Band position={[0, 2.55, .2]} radius={.83} tube={.045} arc={Math.PI} color="#d4a64c" />
-      {Array.from({ length: 7 }, (_, i) => {
-        const x = (i - 3) * .23
-        return <mesh key={i} position={[x, 1.72 + .25 * (1 - Math.abs(x)), .1]}>
-          <boxGeometry args={[.18, 1.75 + .65 * (1 - Math.abs(x)), .07]} />
-          <meshStandardMaterial color={i % 2 ? '#8862a7' : '#d7a244'}
-            emissive={i % 2 ? '#54336b' : '#f29c30'} emissiveIntensity={.52} />
-        </mesh>
-      })}
+      <mesh position={[0, 0, .11]}>
+        <primitive attach="geometry" object={window} />
+        <meshStandardMaterial map={glass} emissiveMap={glass} emissive="#dcbf8b" emissiveIntensity={.55}
+          roughness={.43} metalness={.08} side={DoubleSide} />
+      </mesh>
       <mesh position={[0, .9, .74]} rotation={[Math.PI / 2, 0, 0]}>
         <cylinderGeometry args={[.47, .39, .16, 10]} />
         <meshStandardMaterial color="#aa8140" metalness={.53} roughness={.45} />
@@ -78,10 +108,7 @@ function OlympusAcropolis() {
         size={[3.5 - .25 * step, .16, 1.7 - .29 * step]} color="#dacdb9" finish="marble" />)}
       {[-1.2, 0, 1.2].map((x) => <group key={x} position={[x, .48, 0]}>
         <Block position={[0, .12, 0]} size={[.64, .24, .64]} color="#dcd4c6" finish="marble" />
-        <mesh position={[0, 1.15, 0]} castShadow receiveShadow>
-          <cylinderGeometry args={[.21, .28, 2.1, 12]} />
-          <meshStandardMaterial {...stoneMaps('marble')} bumpScale={.035} color="#e4d9cb" />
-        </mesh>
+        <StoneColumns radius={.24} height={2.1} positions={[[0, .23, 0]]} finish="marble" color="#e4d9cb" quality="medium" />
         <Block position={[0, 2.27, 0]} size={[.57, .23, .59]} color="#c6a267" finish="marble" />
       </group>)}
       <Block position={[0, 2.99, 0]} size={[3.36, .34, .81]} color="#dcd5ca" finish="marble" />
@@ -183,11 +210,11 @@ function SampoLake({ quality, reducedMotion }: { quality: GraphicsQuality; reduc
       {Array.from({ length: 6 }, (_, i) => <Block key={i} position={[0, .05, i * .29]} size={[1.01, .15, .27]} color="#625a4c" finish="timber" />)}
       {SIDES.map((post) => <Block key={post} position={[post * .46, .43, .02]} size={[.12, .98, .15]} color="#4a463b" finish="timber" />)}
       {[0, 1, 2].map((i) => <group key={i} position={[side * (.15 + i * .5), -.07, -1.85 - i * .36]}>
-        <mesh position={[0, .55, 0]}><cylinderGeometry args={[.06, .12, 1.17, 7]} /><meshStandardMaterial color="#5a493b" /></mesh>
-        {[0, 1, 2].map((tier) => <mesh key={tier} position={[0, 1 + tier * .43, 0]} castShadow>
-          <coneGeometry args={[.59 - tier * .13, 1.16 - tier * .14, 7]} />
-          <meshStandardMaterial color={tier === 0 ? '#344e42' : '#456557'} roughness={1} />
-        </mesh>)}
+        <mesh position={[0, -.64, 0]} scale={[.9, .77, 1.15]} rotation={[0, i * .8, 0]} castShadow receiveShadow>
+          <dodecahedronGeometry args={[1, 1]} />
+          <meshStandardMaterial {...stoneMaps('granite')} color="#75817b" roughness={1} bumpScale={.045} />
+        </mesh>
+        <ShorePine seed={i + side * 4} />
       </group>)}
     </group>)}
     <group position={[0, 1.22, -5.9]} scale={[.9, .88, .9]} rotation={[.06, -.09, .03]}>
