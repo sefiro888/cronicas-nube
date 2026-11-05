@@ -43,7 +43,7 @@ export const HandFan = memo(function HandFan({ match, reducedMotion, localPlayer
   const liftStep = Math.min(3.6, 20 / Math.max(1, count))
   return (
     <div className={styles.handViewport} data-testid="hand-scroll-rail">
-    <div className={styles.hand} aria-label="Tu mano" data-reduced-motion={reducedMotion || undefined}>
+    <div className={styles.hand} style={{ '--fan-count': count } as CSSProperties} aria-label="Tu mano" data-reduced-motion={reducedMotion || undefined}>
       {orderedHand.map((instance, index) => {
         const card = CARD_BY_ID[instance.cardId]
         if (!card) return null

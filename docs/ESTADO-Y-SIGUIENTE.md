@@ -138,8 +138,15 @@ locales por bloque. Conservar el punto de retoma al cerrar cada bloque.
   correctos. La compilación con base `/cronicas-nube/` abre una partida de
   Olimpo desde Jugar y carga 108 recursos sin errores, incluido marco, suelo
   y panorama nuevos. Captura en `tools/captures/produccion/`.
-- **Siguiente:** preparar el borrador de revisión y vigilar sus comprobaciones.
-  Rama de retoma `codex/revision-final`. Vista local en
+- **Mano completa, 09:22 Madrid.** Las capturas de duelo mostraron diez cartas
+  invadiendo los atriles a 1366 px. El abanico usa ahora el ancho de su propio
+  carril y solapa solo cartas vecinas, con margen para rotar y levantar los
+  extremos. Dos pruebas nuevas comprueban los límites en reposo y al consultar
+  primera y última carta. Pasan a 1920 y 1366 px, junto con el gesto móvil y
+  los recorridos de coste. Borrador de revisión
+  [PR #2](https://github.com/sefiro888/cronicas-nube/pull/2).
+- **Siguiente:** validación global tras ajustar el abanico y comprobaciones
+  remotas del borrador. Rama de retoma `codex/revision-final`. Vista local en
   `http://127.0.0.1:4179/` y compilada en
   `http://127.0.0.1:4241/cronicas-nube/`.
 - **En cola:** Olimpo integrado. Los chasis detallados de Orden, Sombra y

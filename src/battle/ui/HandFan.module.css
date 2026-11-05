@@ -76,6 +76,19 @@
   box-shadow: 0 0 0 1px #17130d, 0 0 0 2px #eed39b, 0 0 10px #d4ac613d, 0 16px 30px #000a;
 }
 .hand[data-reduced-motion] .fanCard, .hand[data-reduced-motion] .lift { transition: none; animation: none; }
+@media (min-width: 761px) {
+  .handViewport { container-type: inline-size; }
+  .fanCard { margin: 0; }
+  /* El margen negativo en ambos extremos hacía que diez cartas invadieran
+     los atriles. Solo se solapan vecinas y se reservan 3 rem por lado para
+     la rotación y el crecimiento al consultar la primera o la última. */
+  .fanCard + .fanCard {
+    margin-left: min(
+      calc(var(--fan-overlap) * 2),
+      calc((100cqw - 6rem - 10.75rem) / max(1, calc(var(--fan-count) - 1)) - 10.75rem)
+    );
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .fanCard, .lift { transition: none; animation: none; }
 }
