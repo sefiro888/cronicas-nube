@@ -6,6 +6,8 @@ La prioridad es que apetezca jugar otra batalla por las decisiones que abre. Una
 
 **Primera entrega propuesta.** Indicadores 1–6 y medición de ritmo 21–24. Después, una misión completa de Fimbul que combine 31, 32 y 43. El resto queda en cola para elegir por número.
 
+La [auditoría posterior](AUDITORIA-COLA-Y-DISENO-NEXO.md) contrasta las 100 propuestas con el juego actual. El alcance básico de 30 y 76 ya existe. El 77 parte de una matriz de equilibrio operativa y el 79 de una reconexión ya implementada. Consultar el alcance restante antes de seleccionar un punto.
+
 ## Poderes visibles y decisiones de facción
 
 1. **Franja de poderes de ambos bandos.** Coloca el estado público junto al emblema de cada bando y abre la explicación al pulsar o enfocar. A 1366 × 768 y en móvil, conserva el valor breve a la vista y despliega el detalle debajo de la cabecera. Comprueba que funciona con la facción propia y con la rival.
