@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { CARD_BY_ID, STARTER_DECKS, createMatch, type MatchState } from '../src/game'
+import { resolveScenario } from '../src/battle/scenarioForFaction'
 import { cardFrameFor } from '../src/presentation/cardFrames'
 import { fiberModuleUrl } from './helpers/cameraSnapshot'
 import type { RootState } from '@react-three/fiber'
@@ -17,7 +18,7 @@ for (const deck of STARTER_DECKS) {
       const base = createMatch(deck, rival, 42)
       const frame = cardFrameFor(deck.faction)
       const floor = deck.faction === 'fury' ? 'lava-caldera-roca-v1.webp'
-        : deck.faction === 'samsara' ? 'arenisca-escalinata-v2.webp'
+        : deck.faction === 'samsara' || deck.faction === 'sol' ? `suelo-${deck.faction}-v2.webp`
         : `suelo-${deck.faction}-v1.webp`
       const match: MatchState = {
         ...base, turn: 5, phase: 'main', activePlayer: 'player', terrain: [], animations: [],
@@ -28,15 +29,15 @@ for (const deck of STARTER_DECKS) {
             (cardId, index) => ({ cardId, instanceId: `review-${index}` })) } },
       }
       await page.setViewportSize({ width, height })
-      await page.addInitScript(({ match, deckId }) => {
+      await page.addInitScript(({ match, deckId, scenario }) => {
         localStorage.setItem('cronicas-nexo-howto-visto', '1')
         localStorage.setItem('cronicas-nexo-preferences', JSON.stringify({ state: {
-          muted: true, reducedMotion: true, graphicsQuality: 'medium', scenario: 'auto', selectedDeckId: deckId,
+          muted: true, reducedMotion: true, graphicsQuality: 'medium', scenario, selectedDeckId: deckId,
         }, version: 7 }))
         localStorage.setItem('cronicas-nexo-match', JSON.stringify({ state: {
           match, history: [], matchLog: [], healthHistory: [], startedAtMs: Date.now(), elapsedSeconds: 0,
         }, version: 2 }))
-      }, { match, deckId: deck.id })
+      }, { match, deckId: deck.id, scenario: width === 1920 ? 'auto' : resolveScenario('auto', deck.faction) })
       const fiber = fiberModuleUrl(page)
       await page.goto('/battle')
       const url = await fiber

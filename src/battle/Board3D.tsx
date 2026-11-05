@@ -404,7 +404,8 @@ const FACTION_FLOORS: Partial<Record<FactionId, string>> = {
   olimpo: 'suelo-olimpo-v1.webp',
   order: 'suelo-order-v1.webp',
   plaga: 'suelo-plaga-v1.webp',
-  sol: 'suelo-sol-v1.webp',
+  samsara: 'suelo-samsara-v2.webp',
+  sol: 'suelo-sol-v2.webp',
   shadow: 'suelo-shadow-v1.webp',
   tercios: 'suelo-tercios-v1.webp',
   void: 'suelo-void-v1.webp',
@@ -421,6 +422,10 @@ const factionTileMaps = new WeakMap<Texture, readonly Texture[]>()
 // perteneciendo a la geometría del tablero y separan también los resaltados.
 function FactionTileMaterial({ floor, position, material }: { floor: string; position: Position; material: ThreeElements['meshStandardMaterial'] }) {
   const source = useTexture(withBase(`/assets/terrain/${floor}`))
+  // El maestro de Samsara incluye agua y escalones fuera del pavimento.
+  // Recortarlos en UV mantiene el PNG y centra el mandala sobre las losas.
+  const inset = floor === FACTION_FLOORS.samsara ? .13 : 0
+  const span = (1 - 2 * inset) / BOARD_SIZE
   let maps = factionTileMaps.get(source)
   if (!maps) {
     maps = Array.from({ length: BOARD_CELL_COUNT }, (_, index) => {
@@ -428,8 +433,8 @@ function FactionTileMaterial({ floor, position, material }: { floor: string; pos
       const { x, y } = CELL_POSITIONS[index]!
       map.colorSpace = SRGBColorSpace
       map.anisotropy = 4
-      map.repeat.set(1 / BOARD_SIZE, 1 / BOARD_SIZE)
-      map.offset.set(x / BOARD_SIZE, 1 - (y + 1) / BOARD_SIZE)
+      map.repeat.set(span, span)
+      map.offset.set(inset + x * span, 1 - inset - (y + 1) * span)
       map.needsUpdate = true
       return map
     })
