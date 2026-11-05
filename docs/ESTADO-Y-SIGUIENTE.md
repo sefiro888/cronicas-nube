@@ -1,5 +1,28 @@
 # Estado del proyecto y por dónde seguir
 
+## Nuevos diseños y cola de 100 propuestas — 5 de noviembre de 2026
+
+Rama `codex/propuestas-marcos-v2`, creada desde main con avance rápido al
+trabajo de `codex/revision-final`. Se terminaron cuatro propuestas nuevas para
+Olimpo, Orden, Sombra y Vacío con coste arriba a la izquierda y ventana grande.
+La superficie útil de ilustración medida es 30,9–31,3 % de la carta, comparable
+al 30,2 % del chasis anterior de Goblins. Se conserva detalle en bordes estrechos.
+Los cuatro WebP y la comparativa están en `docs/propuestas/marcos-v2/`.
+Maestros originales en `tools/art-inbox/propuestas-marcos-v2/` (solo local).
+Procedencia, prompts completos y mediciones en
+`docs/PROPUESTAS-MARCOS-V2-2026-11-05.md`.
+
+**Son propuestas pendientes de valoración, no están integradas.** El propietario
+pidió verlas primero. Tras elegirlas, medir todos los rótulos, integrar HTML y
+3D y revisar cartas reales en batalla; no copiar sin más las medidas anteriores.
+
+Después de terminar los cuatro diseños se elaboró
+`docs/COLA-100-MEJORAS-2026-11-05.md`: exactamente 100 propuestas, en diez áreas,
+con prioridades y bloques compatibles para trabajo paralelo. El usuario pidió
+esta batería para la cola futura; no significa que las cien estén implementadas
+ni que todos los cambios de reglas estén aprobados. Prototipar modos nuevos de
+forma separada y preservar la disponibilidad de todos los mazos.
+
 ## Ajuste solicitado de proporciones — 5 de noviembre de 2026
 
 El propietario detectó en la apertura de sobres que los cuatro chasis nuevos
