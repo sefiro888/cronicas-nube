@@ -7,7 +7,8 @@ import {
   canTakeMulligan,
   COMMANDER_BY_ID,
   FACTION_BY_ID,
-  effectiveCost,
+  canPlayHandCard,
+  handCardCost,
   getValidAttacks,
   getValidDeploymentPositions,
   getValidMoves,
@@ -411,10 +412,10 @@ export function BattlePage() {
     [match, selectedPiece],
   )
   const deployCells = useMemo<Position[]>(() => {
-    if (!match || !selectedCard || !isBoardCard(selectedCard) || match.activePlayer !== ME) return []
-    if (!planManaPayment(match.players[ME].resources, effectiveCost(match, ME, selectedCard)).payable) return []
+    if (!match || !selectedInstance || !selectedCard || !isBoardCard(selectedCard)) return []
+    if (!canPlayHandCard(match, ME, selectedCard, selectedInstance)) return []
     return [...getValidDeploymentPositions(match, ME)]
-  }, [match, selectedCard, ME])
+  }, [match, selectedCard, selectedInstance, ME])
   const validCells = selectedCard ? deployCells : moves
   const movementHazards = useMemo<ReadonlyMap<string, MovementHazard>>(() => {
     const hazards = new Map<string, MovementHazard>()
@@ -427,8 +428,8 @@ export function BattlePage() {
   }, [match, selectedPiece, selectedCard, ME, moves])
   const mana = summarizeMana(player?.resources ?? [])
   const rivalMana = summarizeMana(rival?.resources ?? [])
-  const payment = match && selectedCard
-    ? planManaPayment(player?.resources ?? [], effectiveCost(match, ME, selectedCard))
+  const payment = match && selectedCard && selectedInstance
+    ? planManaPayment(player?.resources ?? [], handCardCost(match, ME, selectedCard, selectedInstance))
     : undefined
   /**
    * Duna — Ofrenda: si el jugador ha decidido pagar Vida por el efecto
@@ -446,6 +447,10 @@ export function BattlePage() {
   const commander = player ? COMMANDER_BY_ID[player.commanderId] : undefined
   const rivalCommander = rival ? COMMANDER_BY_ID[rival.commanderId] : undefined
   const inspected = store.inspectedCardId ? CARD_BY_ID[store.inspectedCardId] : undefined
+  const [inspectedHandId, setInspectedHandId] = useState<string>()
+  const inspectedHand = player?.hand.find(({ instanceId }) => instanceId === inspectedHandId)
+  const inspectedCost = match && inspected && inspectedHand && inspectedHand.cardId === inspected.id
+    ? handCardCost(match, ME, inspected, inspectedHand) : undefined
   const inspectedPiece = match?.board.find((piece) => piece.instanceId === store.inspectedPieceId)
   const inspectedStats = inspected && cardFrameFor(inspected.faction) && inspectedPiece && match ? {
     attack: inspected.attack === undefined ? undefined : effectiveAttack(inspectedPiece, inspected, match),
@@ -670,8 +675,15 @@ export function BattlePage() {
     useMatchStore.getState().selectHand(store.selectedHandId === instanceId ? undefined : instanceId)
   }, [match, player, store.selectedHandId, doAction, finishSelection, ME, consumeDragged])
 
-  const inspectCard = useCallback((cardId?: string, pieceId?: string) => useMatchStore.getState().inspect(cardId, pieceId), [])
-  const closeInspection = useCallback(() => useMatchStore.getState().inspect(undefined), [])
+  const inspectCard = useCallback((cardId?: string, pieceId?: string) => {
+    setInspectedHandId(undefined)
+    useMatchStore.getState().inspect(cardId, pieceId)
+  }, [])
+  const inspectHandCard = useCallback((cardId: string, instanceId: string) => {
+    setInspectedHandId(instanceId)
+    useMatchStore.getState().inspect(cardId)
+  }, [])
+  const closeInspection = useCallback(() => inspectCard(), [inspectCard])
 
   /**
    * Poder del comandante. Los que piden objetivo entran en un modo de
@@ -1360,7 +1372,7 @@ export function BattlePage() {
           localPlayerId={ME}
           selectedHandId={store.selectedHandId}
           onSelect={onHandSelect}
-          onInspect={inspectCard}
+          onInspect={inspectHandCard}
           onDragStart={drag.start}
           draggingId={drag.draggingId}
           favoriteIds={favoriteHandIds}
@@ -1538,7 +1550,7 @@ export function BattlePage() {
           onDone={finishIntro}
         />
       )}
-      {inspected && <CardInspector card={inspected} statusEffects={inspectionStatuses(inspectedPiece)} combatStats={inspectedStats} onClose={closeInspection} />}
+      {inspected && <CardInspector card={inspected} statusEffects={inspectionStatuses(inspectedPiece)} combatStats={inspectedStats} cost={inspectedCost} onClose={closeInspection} />}
 
       {match.winner && !queueBusy && (
         <MatchResultDialog

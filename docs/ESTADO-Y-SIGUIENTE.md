@@ -66,6 +66,26 @@ animaciones (`e2e/battle-spectacle-shots.spec.ts`).
 
 ---
 
+## Sesión nocturna — 5 de noviembre de 2026 (Codex)
+
+Corte acordado a las 10:00, hora de Madrid. Solo `cronicas-nube`, en ramas
+locales por bloque. Conservar el punto de retoma al cerrar cada bloque.
+
+- **Coste y mano jugable, terminado en `codex/coste-y-mano`.** El motor
+  comparte el coste por copia con mano, inspector y despliegue. La señal
+  LISTA usa turno, pago, objetivo, despliegue y sacrificio. Las pruebas
+  cubren Renacer + Mandato y hechizos con Esencia sin objetivo. Pasaron 749
+  unitarias, compilación, lint y la prueba de mano en 1920, 1366 y 390 px.
+- **Siguiente:** siete escenarios exclusivos (Orden, Olimpo, Tercios, Vacío,
+  Plaga, Goblins, Kalevala). Después comprobar los 19 suelos en Automático
+  y en selección manual. Los PNG aprobados de Samsara y Quinto Sol están
+  en `tools/art-inbox/suelos-faccion/`. Duna conserva su suelo.
+- **En cola:** marco de Olimpo elegido, tres propuestas de marco pendientes
+  de valoración (Orden, Sombra, Vacío), figura del Nexo en duelo, barra
+  superior, zona inferior y símbolos de Esencia por facción.
+
+---
+
 ## Chasis y suelos de facción — 4 de noviembre de 2026 (Codex)
 
 - La rama local `codex/arte-de-facciones` incorpora la prueba de Fimbul y

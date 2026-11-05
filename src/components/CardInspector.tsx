@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, MouseEvent } from 'react';
 
-import type { CardDefinition } from '../game/types';
+import type { CardDefinition, ManaCost } from '../game/types';
 import { Card, CARD_TYPE_LABELS, formatManaCost } from './Card';
 import type { CardStatus, CardStatValues } from './Card';
 import { FactionSigil, FACTION_LABELS } from './FactionSigil';
@@ -14,6 +14,7 @@ import { FullArtwork } from './FullArtwork';
 import styles from './CardInspector.module.css';
 
 export interface CardInspectorProps {
+  readonly cost?: ManaCost;
   readonly combatStats?: CardStatValues;
   readonly card: CardDefinition | null;
   readonly open?: boolean;
@@ -50,6 +51,7 @@ export function CardInspector({
   playable,
   statusEffects = [],
   combatStats,
+  cost,
   className,
   onClose,
 }: CardInspectorProps) {
@@ -143,7 +145,7 @@ export function CardInspector({
             {view === 'art' ? (
               <FullArtwork key={card.id} card={card} className={styles.fullArtwork} />
             ) : (
-              <Card card={card} size="inspect" playable={playable} statusEffects={statusEffects} combatStats={combatStats} />
+              <Card card={card} size="inspect" playable={playable} statusEffects={statusEffects} combatStats={combatStats} cost={cost} />
             )}
           </div>
           <p className={styles.shortcutHint}>Pulsa <kbd>Esc</kbd> para cerrar</p>
@@ -176,7 +178,7 @@ export function CardInspector({
           <blockquote className={styles.flavor}>«{card.flavor}»</blockquote>
 
           <dl className={styles.metadata}>
-            <MetaItem label="Coste" value={formatManaCost(card.cost)} />
+            <MetaItem label="Coste" value={formatManaCost(cost ?? card.cost)} />
             {card.attack !== undefined && <MetaItem label="Ataque" value={combatStats?.attack ?? card.attack} />}
             {card.health !== undefined && <MetaItem label="Vida" value={combatStats?.health ?? card.health} />}
             {card.resistance !== undefined && <MetaItem label="Resistencia" value={combatStats?.resistance ?? card.resistance} />}

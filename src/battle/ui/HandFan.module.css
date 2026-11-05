@@ -63,7 +63,14 @@
   box-shadow: 0 0 0 1px #211925, 0 0 0 2px #b48aad, 0 0 7px #a474b233, 0 10px 24px #0009, inset 0 0 1.8rem #0008;
 }
 .fanCard[data-playable='true'] > .lift > [data-card-id] {
-  box-shadow: 0 0 0 1px #111a17, 0 0 0 2px #82bf9c, 0 0 8px #75d4a02b, 0 10px 24px #0009;
+  box-shadow: 0 0 0 1px #111a17, 0 0 0 2px #9df4c3, 0 0 14px #75d4a080, 0 10px 24px #0009;
+}
+.fanCard[data-playable='true'] > .lift > [data-card-id] > [class*='playableMark'] {
+  display: block;
+  top: 22%;
+  right: 10%;
+  font-size: clamp(8px, .6vw, 11px);
+  padding: .1em .42em;
 }
 .fanCard[data-selected='true'] > .lift > [data-card-id] {
   box-shadow: 0 0 0 1px #17130d, 0 0 0 2px #eed39b, 0 0 10px #d4ac613d, 0 16px 30px #000a;

@@ -1,7 +1,7 @@
 import { memo } from 'react'
 import type { CSSProperties } from 'react'
 import { Card } from '../../components'
-import { CARD_BY_ID, effectiveCost, planManaPayment, type MatchState, type PlayerId } from '../../game'
+import { CARD_BY_ID, canPlayHandCard, handCardCost, planManaPayment, type MatchState, type PlayerId } from '../../game'
 import styles from './HandFan.module.css'
 
 interface HandFanProps {
@@ -11,7 +11,7 @@ interface HandFanProps {
   readonly localPlayerId: PlayerId
   readonly selectedHandId?: string
   readonly onSelect: (instanceId: string) => void
-  readonly onInspect: (cardId: string) => void
+  readonly onInspect: (cardId: string, instanceId: string) => void
   /** Empieza a arrastrar esta carta hacia el tablero. */
   readonly onDragStart?: (instanceId: string, event: React.PointerEvent) => void
   /** Carta que se está arrastrando: se atenúa en el abanico mientras vuela. */
@@ -47,11 +47,9 @@ export const HandFan = memo(function HandFan({ match, reducedMotion, localPlayer
       {orderedHand.map((instance, index) => {
         const card = CARD_BY_ID[instance.cardId]
         if (!card) return null
-        const playable = match.activePlayer === localPlayerId && !match.winner && (
-          card.type === 'mana'
-            ? !player.resourcePlayedThisTurn
-            : planManaPayment(player.resources, effectiveCost(match, localPlayerId, card)).payable
-        )
+        const cost = handCardCost(match, localPlayerId, card, instance)
+        const affordable = planManaPayment(player.resources, cost).payable
+        const playable = canPlayHandCard(match, localPlayerId, card, instance)
         const selected = selectedHandId === instance.instanceId
         const offset = index - (count - 1) / 2
         const style = {
@@ -84,8 +82,10 @@ export const HandFan = memo(function HandFan({ match, reducedMotion, localPlayer
                 reducedMotion={reducedMotion}
                 selected={selected}
                 playable={playable}
+                cost={cost}
+                affordable={affordable}
                 onSelect={() => onSelect(instance.instanceId)}
-                onInspect={() => onInspect(card.id)}
+                onInspect={() => onInspect(card.id, instance.instanceId)}
               />
             </div>
             {onToggleFavorite && (

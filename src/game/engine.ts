@@ -8,7 +8,7 @@ import { isChallenge, isFurious } from './fimbul';
 import { attackSinksDefender, gainRuno, returnSunkenUnits, runoAttackBonus, runoFromSpell, sinkUnit } from './kalevala';
 import { grantPetardazoAll, sparkEffects, startSpark, type SparkFace } from './goblins';
 import { continuousHealthBonus, dischargeLine, formationActive, formationAttackBonus, hasDischarge, hasFormation } from './tercios';
-import { payMana, restoreMana } from './mana';
+import { payMana, planManaPayment, restoreMana } from './mana';
 import { COVER_REDUCTION, generateTerrain, givesCover, isBlocked } from './terrain';
 import { ELEMENTS } from './types';
 import type { ManaCost } from './types';
@@ -2013,6 +2013,49 @@ export const effectiveCost = (
   return { generic, colored: card.cost.colored };
 };
 
+const handCardPayment = (
+  state: MatchState,
+  playerId: PlayerId,
+  card: CardDefinition,
+  instance: CardInstance,
+) => {
+  // Samsara — Pira del Ghat: una copia que ha vuelto por Renacer puede traer
+  // consigo un descuento de coste genérico para este despliegue.
+  const player = state.players[playerId];
+  const baseCost = effectiveCost(state, playerId, card);
+  const renacerDiscount = Math.min(baseCost.generic, instance.costDiscount ?? 0);
+  // Xiwangmu (Jade): mientras tengas el Mandato, la primera carta de cada turno cuesta 1 menos.
+  const xiwangmuDiscount =
+    player.commanderId === 'xiwangmu-la-reina-madre'
+    && state.mandate === playerId
+    && !player.firstCardDiscountUsedThisTurn
+      ? Math.min(baseCost.generic - renacerDiscount, 1)
+      : 0;
+  const totalDiscount = renacerDiscount + xiwangmuDiscount;
+  return { cost: { ...baseCost, generic: baseCost.generic - totalDiscount }, xiwangmuDiscount };
+};
+
+// La mano y el cobro consultan los descuentos de la misma copia.
+export const handCardCost = (state: MatchState, playerId: PlayerId, card: CardDefinition, instance: CardInstance): ManaCost =>
+  handCardPayment(state, playerId, card, instance).cost;
+
+export const canPlayHandCard = (
+  state: MatchState,
+  playerId: PlayerId,
+  card: CardDefinition,
+  instance: CardInstance,
+): boolean => {
+  if (validateTurn(state, playerId)) return false;
+  const player = state.players[playerId];
+  if (card.type === 'mana') return !player.resourcePlayedThisTurn;
+  if (!planManaPayment(player.resources, handCardCost(state, playerId, card, instance)).payable) return false;
+  if (card.effects.some((effect) => effect.kind === 'sacrifice') && !hasSacrificeAvailable(state, playerId)) return false;
+  if (card.type === 'unit' || card.type === 'structure') {
+    return getValidDeploymentPositions(state, playerId).length > 0;
+  }
+  return !spellNeedsPiece(card) || validSpellTargets(state, playerId, card).length > 0;
+};
+
 export const playCard = (
   state: MatchState,
   playerId: PlayerId,
@@ -2056,19 +2099,7 @@ export const playCard = (
     return fail(state, 'target-required', 'Necesitas una unidad propia que sacrificar para jugar esta carta.');
   }
 
-  // Samsara — Pira del Ghat: una copia que ha vuelto por Renacer puede traer
-  // consigo un descuento de coste genérico para este despliegue.
-  const baseCost = effectiveCost(state, playerId, card);
-  const renacerDiscount = Math.min(baseCost.generic, instance.costDiscount ?? 0);
-  // Xiwangmu (Jade): mientras tengas el Mandato, la primera carta de cada turno cuesta 1 menos.
-  const xiwangmuDiscount =
-    player.commanderId === 'xiwangmu-la-reina-madre'
-    && state.mandate === playerId
-    && !player.firstCardDiscountUsedThisTurn
-      ? Math.min(baseCost.generic - renacerDiscount, 1)
-      : 0;
-  const totalDiscount = renacerDiscount + xiwangmuDiscount;
-  const cost = totalDiscount > 0 ? { ...baseCost, generic: baseCost.generic - totalDiscount } : baseCost;
+  const { cost, xiwangmuDiscount } = handCardPayment(state, playerId, card, instance);
   const payment = payMana(player.resources, cost);
   if (!payment.plan.payable) return fail(state, 'insufficient-mana', 'No hay Esencia disponible suficiente.');
   if (card.effects.some((effect) => effect.kind === 'spark') && sparkFace === undefined) {

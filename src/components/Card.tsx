@@ -30,6 +30,8 @@ export type CardStatus = CardStatusId | CardStatusEffect;
 export type CardStatValues = Readonly<Pick<CardDefinition, 'attack' | 'health' | 'resistance'>>;
 
 export interface CardProps {
+  readonly cost?: ManaCost;
+  readonly affordable?: boolean;
   readonly combatStats?: CardStatValues;
   readonly card: CardDefinition;
   readonly size?: CardSize;
@@ -203,6 +205,8 @@ export function Card({
   size = 'gallery',
   selected = false,
   playable,
+  cost = card.cost,
+  affordable = playable,
   disabled = false,
   exhausted = false,
   reducedMotion = false,
@@ -238,7 +242,7 @@ export function Card({
     selected ? 'seleccionada' : '',
     ...statuses.map((status) => status.label),
   ].filter(Boolean).join(', ');
-  const accessibleLabel = `${card.name}. ${typeLine}. Coste ${formatManaCost(card.cost)}. ${RARITY_LABELS[card.rarity]}${stateDescription ? `. ${stateDescription}` : ''}`;
+  const accessibleLabel = `${card.name}. ${typeLine}. Coste ${formatManaCost(cost)}. ${RARITY_LABELS[card.rarity]}${stateDescription ? `. ${stateDescription}` : ''}`;
 
   const tiltEnabled = isInteractive && TILT_SIZES.has(size) && !reducedMotion;
 
@@ -324,7 +328,7 @@ export function Card({
       {frame && <img className={styles.factionFrame} src={withBase(frame.asset)} alt="" aria-hidden="true" draggable={false} />}
       <span className={styles.frameFiligree} aria-hidden="true" />
       <span className={styles.foil} aria-hidden="true" />
-      <ManaCostBadge cost={card.cost} affordable={playable} framed={Boolean(frame)} />
+      <ManaCostBadge cost={cost} affordable={affordable} framed={Boolean(frame)} />
       <div className={styles.header}>
         <h3 className={styles.name}>{card.name}</h3>
         {card.unique && <span className={styles.unique} title="Carta única" aria-label="Carta única">✦</span>}
