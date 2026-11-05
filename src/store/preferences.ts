@@ -9,6 +9,7 @@ export type GraphicsQuality = 'low' | 'medium' | 'high'
  * siga siendo una sola lista.
  */
 export type ScenarioId = 'auto' | 'aether-citadel' | 'sanctuary' | 'caldera' | 'duna' | 'fimbul' | 'grove' | 'shore' | 'foundry' | 'jade-court' | 'wheel-ghat' | 'solar-court' | 'bestiary-ravine'
+  | 'bastion-alba' | 'acropolis-olimpo' | 'baluarte-tercios' | 'umbral-vacio' | 'cripta-plaga' | 'desguace-goblin' | 'lago-kalevala'
 export type AiDifficulty = 'easy' | 'normal' | 'hard'
 
 export interface PreferencesState {

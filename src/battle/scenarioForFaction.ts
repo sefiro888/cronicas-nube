@@ -1,4 +1,4 @@
-import type { FactionId } from '../game'
+import { FACTION_IDS, type FactionId } from '../game'
 import type { ScenarioId } from '../store/preferences'
 
 /**
@@ -14,34 +14,22 @@ const HOME: Readonly<Record<FactionId, Exclude<ScenarioId, 'auto'>>> = {
   fury: 'caldera',
   arcane: 'aether-citadel',
   nature: 'grove',
-  order: 'aether-citadel',
+  order: 'bastion-alba',
   shadow: 'sanctuary',
-  void: 'sanctuary',
+  void: 'umbral-vacio',
   duna: 'duna',
   fimbul: 'fimbul',
-  // Cosmología india en un patio funerario egipcio: Duna entierra, esto
-  // corre. Ya tiene su ghat.
   samsara: 'wheel-ghat',
-  // Corte celestial china en una plaza de mármol grecolatina: era el sitio
-  // más equivocado posible. Ya tiene el suyo.
   jade: 'jade-court',
-  // Olimpo es mármol pentélico, columnas acanaladas y azul egeo, y estaba en
-  // una isla nórdica de noche. La Ciudadela ya era su sitio, solo faltaba
-  // mudarlo: no ha hecho falta escenario nuevo.
-  olimpo: 'aether-citadel',
-  // El recinto solar conserva estuco y mosaico; compartir lava confundía
-  // su cosmología con Furia. Las bestias también dejan de habitar hielo prestado.
+  olimpo: 'acropolis-olimpo',
   sol: 'solar-court',
   bestiario: 'bestiary-ravine',
-  plaga: 'duna',
+  plaga: 'cripta-plaga',
   marea: 'shore',
-  // Compartía la Caldera con Furia, y su propio dosier avisaba del choque:
-  // Furia es volcánica (el fuego manda) y Forja industrial (el fuego lo
-  // mandan). Ahora tiene su patio.
   forja: 'foundry',
-  goblins: 'foundry',
-  tercios: 'aether-citadel',
-  kalevala: 'grove',
+  goblins: 'desguace-goblin',
+  tercios: 'baluarte-tercios',
+  kalevala: 'lago-kalevala',
 }
 
 /**
@@ -55,3 +43,7 @@ export const resolveScenario = (
   if (scenario !== 'auto') return scenario
   return (faction && HOME[faction]) ?? 'aether-citadel'
 }
+
+/** Un mapa elegido a mano lleva el suelo de su propia facción. */
+export const factionForScenario = (scenario: ScenarioId): FactionId | undefined =>
+  FACTION_IDS.find((faction) => HOME[faction] === scenario)

@@ -1,3 +1,4 @@
+import { factionStageMusic, isFactionStage } from '../battle/scenarios/factionStages'
 import { cardFrameFor } from '../presentation/cardFrames'
 import { effectiveAttack } from '../game/fimbul'
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
@@ -250,7 +251,7 @@ export function BattlePage() {
     match ? COMMANDER_BY_ID[match.players[ME].commanderId]?.faction : undefined,
   )
   // Capa ambiental generativa del escenario activo (se apaga sola al salir).
-  useSoundtrack(scenario === 'solar-court' ? 'duna' : scenario === 'bestiary-ravine' ? 'grove' : scenario, Boolean(match))
+  useSoundtrack(isFactionStage(scenario) ? factionStageMusic[scenario] : scenario === 'solar-court' ? 'duna' : scenario === 'bestiary-ravine' ? 'grove' : scenario, Boolean(match))
   // La música se intensifica con la partida: misma tensión que la luz y el clima.
   const musicTension = match ? Math.round(battleStrain(match.turn, (['player', 'ai'] as const).map((id) => ({
     health: match.players[id].nexusHealth, maxHealth: COMMANDER_BY_ID[match.players[id].commanderId]?.nexusHealth ?? 35,

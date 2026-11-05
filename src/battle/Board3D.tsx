@@ -1,4 +1,5 @@
-import { resolveScenario } from './scenarioForFaction'
+import { factionForScenario } from './scenarioForFaction'
+import { isFactionStage } from './scenarios/factionStages'
 import { cardFrameFor } from '../presentation/cardFrames'
 import { useCardFaceTexture } from './useCardFaceTexture'
 import { Html, OrbitControls, Sparkles, useCursor, useTexture } from '@react-three/drei'
@@ -65,6 +66,7 @@ import { battleStrain, BattleClimateProvider } from './scenarios/BattleClimate'
 import { ScenarioAtmosphere } from './scenarios/ScenarioAtmosphere'
 import { NexusFocus } from './NexusFocus'
 
+const FactionStage = lazy(() => import('./scenarios/FactionStage'))
 const AetherCitadel = lazy(() =>
   import('./scenarios/AetherCitadel').then((m) => ({ default: m.AetherCitadel })),
 )
@@ -331,6 +333,13 @@ const TERRAIN_STYLE: Readonly<Record<Exclude<ScenarioId, 'auto'>, BoardTileStyle
   'wheel-ghat': 'sandstone',
   'solar-court': 'stone',
   'bestiary-ravine': 'forest',
+  'bastion-alba': 'stone',
+  'acropolis-olimpo': 'stone',
+  'baluarte-tercios': 'sand',
+  'umbral-vacio': 'moss',
+  'cripta-plaga': 'moss',
+  'desguace-goblin': 'forge',
+  'lago-kalevala': 'forest',
 }
 
 /**
@@ -1817,10 +1826,8 @@ function Scene(props: Board3DProps) {
   }, [props.state.board, props.localPlayerId])
   const ownDeployRow = props.localPlayerId === 'player' ? BOARD_SIZE - 1 : 0
   const terrainStyle = TERRAIN_STYLE[props.scenario as Exclude<ScenarioId, 'auto'>] ?? 'stone'
-  const faction = COMMANDER_BY_ID[props.state.players[props.localPlayerId].commanderId]?.faction
-  // La elección manual de otro escenario conserva sus materiales propios.
-  const floor = (faction && resolveScenario('auto', faction) === props.scenario ? FACTION_FLOORS[faction] : undefined)
-    ?? (props.scenario === 'fimbul' ? FACTION_FLOORS.fimbul : undefined)
+  const faction = factionForScenario(props.scenario)
+  const floor = faction ? FACTION_FLOORS[faction] : undefined
 
   /**
    * Quién se mueve en el golpe que está sonando ahora: el atacante embiste
@@ -1852,7 +1859,9 @@ function Scene(props: Board3DProps) {
       ])}>
       <group name="scenario-stage">
       <Suspense fallback={<LoadingStage />}>
-        {props.scenario === 'aether-citadel' ? (
+        {isFactionStage(props.scenario) ? (
+          <FactionStage scenario={props.scenario} quality={props.quality} reducedMotion={props.reducedMotion} />
+        ) : props.scenario === 'aether-citadel' ? (
           <AetherCitadel quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} />
         ) : props.scenario === 'caldera' ? (
           <CalderaScenario quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} />

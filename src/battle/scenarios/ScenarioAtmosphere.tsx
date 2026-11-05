@@ -18,6 +18,13 @@ const ATMOSPHERE: Readonly<Record<Exclude<ScenarioId, 'auto'>, Atmosphere>> = {
   'wheel-ghat': { background: '#344966', fog: ['#6e87a3', 22, 60] },
   'solar-court': { background: '#b5b9ae', fog: ['#c5c6b6', 24, 63] },
   'bestiary-ravine': { background: '#49574f', fog: ['#83958b', 22, 58] },
+  'bastion-alba': { background: '#7d8a9c', fog: ['#a19e99', 18, 55] },
+  'acropolis-olimpo': { background: '#7d9eb5', fog: ['#9caeb9', 18, 55] },
+  'baluarte-tercios': { background: '#80878d', fog: ['#9e9b8f', 18, 55] },
+  'umbral-vacio': { background: '#211338', fog: ['#392359', 18, 55] },
+  'cripta-plaga': { background: '#253633', fog: ['#4a5a48', 18, 55] },
+  'desguace-goblin': { background: '#383940', fog: ['#555351', 18, 55] },
+  'lago-kalevala': { background: '#344c67', fog: ['#58778e', 18, 55] },
 }
 
 /** Debe ser hijo directo de Scene, fuera del grupo que gira para el invitado.
