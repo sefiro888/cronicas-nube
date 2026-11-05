@@ -40,6 +40,13 @@ const FIMBUL_FRAME: CardFrame = {
 
 const FRAMES: Partial<Record<FactionId, CardFrame>> = {
   fimbul: FIMBUL_FRAME,
+  olimpo: {
+    id: 'olimpo', asset: '/assets/cards/frames/olimpo-v1.webp',
+    art: { x: .124, y: .19, width: .752, height: .35 },
+    window: [[6, 0], [94, 0], [100, 10], [100, 90], [94, 100], [6, 100], [0, 90], [0, 10]],
+    title: [50, 14.7, 72], cost: [50, 6.3], ribbon: [50, 57.3, 70],
+    rules: [13, 63, 74, 16.4], attack: [18, 89.2], health: [82, 89.2],
+  },
   nature: {
     id: 'nature', asset: '/assets/cards/frames/nature-v1.webp',
     art: { x: 0.1, y: 0.13, width: 0.8, height: 0.45 },

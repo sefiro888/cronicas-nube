@@ -93,7 +93,11 @@ locales por bloque. Conservar el punto de retoma al cerrar cada bloque.
   facetados, con estados de gasto. En móvil queda encima del botón de turno.
   Pasaron 13 e2e de interfaz y la comprobación adicional de reserva visible
   y controles sin solapamientos a 1920, 1366 y 390 px. Compilación y lint verdes.
-- **Siguiente:** integrar el marco de Olimpo aprobado y validación global.
+- **Marco de Olimpo, terminado.** Original aprobado conservado en
+  `tools/art-inbox/cartas-faccion/marco-olimpo-aprobado.png`, WebP propio y
+  coordenadas medidas para los títulos, reglas y medallones. Pasaron las
+  dos vistas de batalla y la prueba de encaje del texto de la galería.
+- **Siguiente:** validación global y repaso de regresiones.
 - **En cola:** marco de Olimpo elegido. Los otros tres chasis generados
   siguen como propuestas pendientes de valoración.
 
