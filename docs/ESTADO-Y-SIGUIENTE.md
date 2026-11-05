@@ -1,5 +1,16 @@
 # Estado del proyecto y por dónde seguir
 
+## Indicadores de las fichas — petición añadida el 5 de noviembre de 2026
+
+Añadido el punto 101 a `docs/COLA-100-MEJORAS-2026-11-05.md`, con prioridad P0.
+El propietario señaló que el nombre, ataque y Vida superpuestos tapan la carta
+(captura de Lobo Salvaje) y pidió un diseño mucho más definido y de fantasía.
+Propuesta: carta despejada, placa de nombre compacta junto al pedestal y dos
+medallones de estadísticas al pie, con detalles por facción y cifras legibles.
+Datos esenciales siempre visibles; ampliar detalles mediante ratón, teclado o
+toque. Revisar cámaras, fichas vecinas y móvil antes de dar por buena la solución.
+Solo anotado en la cola, sin cambios de interfaz aplicados en este bloque.
+
 ## Nuevos diseños y cola de 100 propuestas — 5 de noviembre de 2026
 
 Rama `codex/propuestas-marcos-v2`, creada desde main con avance rápido al
