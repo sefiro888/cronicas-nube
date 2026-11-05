@@ -40,6 +40,27 @@ const FIMBUL_FRAME: CardFrame = {
 
 const FRAMES: Partial<Record<FactionId, CardFrame>> = {
   fimbul: FIMBUL_FRAME,
+  order: {
+    id: 'order', asset: '/assets/cards/frames/order-v1.webp',
+    art: { x: .18, y: .247, width: .64, height: .285 },
+    window: [[7, 0], [43, 0], [50, 7], [57, 0], [93, 0], [100, 7], [100, 93], [93, 100], [7, 100], [0, 93], [0, 7]],
+    title: [50, 19.5, 65], cost: [50, 11], ribbon: [50, 56.6, 57],
+    rules: [18, 61.3, 64, 20], attack: [14.7, 87.1], health: [85, 87.1],
+  },
+  shadow: {
+    id: 'shadow', asset: '/assets/cards/frames/shadow-v1.webp',
+    art: { x: .108, y: .218, width: .784, height: .343 },
+    window: [[5, 2], [44, 2], [50, 6], [56, 2], [95, 2], [100, 8], [97, 90], [92, 98], [7, 99], [0, 89], [0, 8]],
+    title: [50, 17.6, 70], cost: [50, 8.4], ribbon: [50, 58.8, 72],
+    rules: [13, 64.4, 74, 17.8], attack: [11.7, 88.3], health: [87, 88.3],
+  },
+  void: {
+    id: 'void', asset: '/assets/cards/frames/void-v1.webp',
+    art: { x: .108, y: .25, width: .784, height: .285 },
+    window: [[6, 0], [44, 0], [50, 5], [56, 0], [94, 0], [100, 8], [100, 93], [94, 100], [6, 100], [0, 93], [0, 8]],
+    title: [50, 20.2, 72], cost: [50, 11.7], ribbon: [50, 56.9, 72],
+    rules: [13, 62.5, 74, 20], attack: [14.2, 88.5], health: [86.2, 88.5],
+  },
   olimpo: {
     id: 'olimpo', asset: '/assets/cards/frames/olimpo-v1.webp',
     art: { x: .124, y: .19, width: .752, height: .35 },

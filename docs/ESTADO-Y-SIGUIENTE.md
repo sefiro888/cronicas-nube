@@ -154,8 +154,12 @@ locales por bloque. Conservar el punto de retoma al cerrar cada bloque.
   remotas del borrador. Rama de retoma `codex/revision-final`. Vista local en
   `http://127.0.0.1:4179/` y compilada en
   `http://127.0.0.1:4241/cronicas-nube/`.
-- **En cola:** Olimpo integrado. Los chasis detallados de Orden, Sombra y
-  Vacío siguen pendientes de aprobación del propietario.
+- **Últimos tres marcos, 09:36 Madrid.** El propietario aprobó explícitamente
+  las propuestas de Orden, Sombra y Vacío y se integraron sus WebP y ventanas
+  medidas. Se completan los 19 chasis. Los maestros aprobados se conservan en
+  `tools/art-inbox/cartas-faccion/marco-{order,shadow,void}-aprobado.png`.
+  Pasan sus seis vistas de batalla y el encaje de texto de toda la galería.
+  Rama del bloque `codex/marcos-orden-sombra-vacio`.
 
 ---
 
