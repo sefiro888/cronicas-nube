@@ -39,6 +39,26 @@ for (const [width, height] of [[1920, 1080], [1366, 768], [390, 844]] as const) 
     await hand.locator('[data-card-id="fuente-furia"]').click()
     await expect(dragon.getByText('LISTA', { exact: true })).toBeVisible()
     await expect(ash.getByText('LISTA', { exact: true })).toHaveCount(0)
+    const overlap = await page.locator('header').evaluate((header) => {
+      const items = [...header.querySelectorAll('button')].filter((item) => {
+        const bounds = item.getBoundingClientRect()
+        return bounds.top >= 0 && bounds.width > 0 && bounds.height > 0
+      })
+      return items.flatMap((item, index) => items.slice(index + 1).flatMap((other) => {
+        const a = item.getBoundingClientRect(), b = other.getBoundingClientRect()
+        return Math.min(a.right, b.right) - Math.max(a.left, b.left) > 1
+          && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 1
+          ? [item.getAttribute('aria-label') ?? item.textContent] : []
+      }))
+    })
+    expect(overlap).toEqual([])
+    const reserve = page.getByLabel('Tu reserva de Esencia')
+    await expect(reserve).toBeInViewport({ ratio: 1 })
+    if (width < 761) {
+      const ledgerBounds = (await reserve.boundingBox())!
+      const endBounds = (await page.getByRole('button', { name: 'Finalizar turno', exact: true }).boundingBox())!
+      expect(ledgerBounds.y + ledgerBounds.height).toBeLessThanOrEqual(endBounds.y)
+    }
     if (process.env.RUN_SHOTS) await page.screenshot({ path: `tools/captures/coste-y-mano/${width}x${height}.png` })
   })
 }

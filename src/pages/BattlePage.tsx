@@ -1003,6 +1003,7 @@ export function BattlePage() {
           <strong>{match.activePlayer === ME ? 'Tu turno' : 'Turno rival'}</strong>
           <span>Turno {match.turn} · {PHASE_LABELS[match.phase] ?? match.phase}</span>
         </div>
+        <div className={styles.headerRight}>
         <button
           type="button"
           className={styles.enemySummary}
@@ -1029,6 +1030,42 @@ export function BattlePage() {
           </div>
           <div className={styles.nexusOrb} title="Vida del Nexo rival"><GameIcon name="health" />{rival.nexusHealth}</div>
         </button>
+          <div className={styles.battleTools}>
+      <button
+        className={styles.photoModeButton}
+        type="button"
+        data-active={photoMode || undefined}
+        onClick={() => setPhotoMode((current) => !current)}
+        aria-pressed={photoMode}
+        aria-label={photoMode ? 'Salir del modo foto' : 'Modo foto: cámara libre para admirar el tablero'}
+        title={photoMode ? 'Salir del modo foto' : 'Modo foto: cámara libre para admirar el tablero, sin poder jugar mientras está activo'}
+      >
+        📷
+      </button>
+
+
+      <button
+        className={styles.helpButton}
+        type="button"
+        onClick={() => setHowToOpen(true)}
+        aria-label="Cómo jugar"
+        title="Cómo jugar"
+      >
+        ?
+      </button>
+
+      <button
+        className={styles.glossaryButton}
+        type="button"
+        onClick={() => setGlossaryOpen(true)}
+        aria-label="Glosario de términos"
+        title="Glosario de términos"
+      >
+        §
+      </button>
+
+          </div>
+        </div>
       </header>
 
       {enemyPanelOpen && <EnemyPanel rival={rival} onClose={() => setEnemyPanelOpen(false)} />}
@@ -1190,21 +1227,7 @@ export function BattlePage() {
               Saltar animaciones ({pendingCount})
             </button>
           )}
-          <div className={styles.essencePill} aria-label={`Esencia disponible: ${mana.available} de ${mana.total}`}>
-            <span className={styles.essenceSigil} aria-hidden="true"><GameIcon name="mana" /></span>
-            <strong key={`${mana.available}/${mana.total}`} className={styles.essenceCount}>{mana.available} / {mana.total}</strong>
-            <span className={styles.essencePips} aria-hidden="true">
-              {player.resources.slice(0, 12).map((resource) => (
-                <span
-                  key={resource.instanceId}
-                  data-faction={resource.faction}
-                  style={{ '--resource-color': FACTION_BY_ID[resource.faction].accentColor } as CSSProperties}
-                  data-exhausted={resource.exhausted}
-                  data-spend={(payment?.payable && payment.resourceIds.includes(resource.instanceId)) || undefined}
-                />
-              ))}
-            </span>
-          </div>
+
         </div>
         <aside className={styles.leftPanel} data-mobile-open={ownPanelOpenMobile || undefined}>
           <section className={styles.panelSection}>
@@ -1367,6 +1390,27 @@ export function BattlePage() {
         >
           {player.hand.length === 0 ? 'Sin cartas en mano' : handTucked ? '▲ Mano' : '▼ Recoger'}
         </button>
+        <section className={styles.handLedger} aria-label="Tu reserva de Esencia">
+          <span className={styles.ledgerTitle}>Tu reserva</span>
+          <div className={styles.essencePill} aria-label={`Esencia disponible: ${mana.available} de ${mana.total}`}>
+            <span className={styles.essenceSigil} aria-hidden="true"><FactionSigil faction={commander?.faction ?? 'fury'} decorative size="large" /></span>
+            <strong key={`${mana.available}/${mana.total}`} className={styles.essenceCount}>{mana.available} / {mana.total}</strong>
+            <span className={styles.essencePips} aria-hidden="true">
+              {player.resources.slice(0, 12).map((resource) => (
+                <span
+                  key={resource.instanceId}
+                  data-faction={resource.faction}
+                  style={{ '--resource-color': FACTION_BY_ID[resource.faction].accentColor } as CSSProperties}
+                  data-exhausted={resource.exhausted}
+                  data-spend={(payment?.payable && payment.resourceIds.includes(resource.instanceId)) || undefined}
+                ><FactionSigil faction={resource.faction} decorative size="small" /></span>
+              ))}
+            </span>
+          </div>
+          <small className={styles.sourceStatus} data-used={player.resourcePlayedThisTurn || undefined}>
+            {player.resourcePlayedThisTurn ? 'Fuente del turno utilizada' : player.hand.some(({ cardId }) => CARD_BY_ID[cardId]?.type === 'mana') ? 'Puedes jugar una fuente' : 'Sin fuentes en la mano'}
+          </small>
+        </section>
         <HandFan
           reducedMotion={preferences.reducedMotion}
           match={match}
@@ -1379,6 +1423,13 @@ export function BattlePage() {
           favoriteIds={favoriteHandIds}
           onToggleFavorite={toggleFavoriteHand}
         />
+        <section className={styles.handContext} aria-label="Información de la mano">
+          <span className={styles.ledgerTitle}>{selectedCard ? 'Carta elegida' : 'Tu mano'}</span>
+          <strong>{selectedCard?.name ?? `${player.hand.length} cartas`}</strong>
+          <p>{selectedCard && payment
+            ? payment.payable ? 'Esencia preparada. Elige dónde jugarla.' : 'Te falta Esencia para esta carta.'
+            : match.activePlayer === ME ? 'Las cartas con halo y sello LISTA se pueden jugar.' : 'El rival está jugando su turno.'}</p>
+        </section>
         <div className={styles.hints} aria-hidden="true">
           Clic — jugar · Clic derecho o I — inspeccionar · Esc — cancelar · E — fin de turno · H — recoger mano
         </div>
@@ -1424,42 +1475,11 @@ export function BattlePage() {
         ⛨
       </button>
 
-      <button
-        className={styles.photoModeButton}
-        type="button"
-        data-active={photoMode || undefined}
-        onClick={() => setPhotoMode((current) => !current)}
-        aria-pressed={photoMode}
-        aria-label={photoMode ? 'Salir del modo foto' : 'Modo foto: cámara libre para admirar el tablero'}
-        title={photoMode ? 'Salir del modo foto' : 'Modo foto: cámara libre para admirar el tablero, sin poder jugar mientras está activo'}
-      >
-        📷
-      </button>
       {photoMode && (
         <div className={styles.photoModeHint} role="status">
           Modo foto: mueve la cámara libremente. Pulsa 📷 para volver a jugar.
         </div>
       )}
-
-      <button
-        className={styles.helpButton}
-        type="button"
-        onClick={() => setHowToOpen(true)}
-        aria-label="Cómo jugar"
-        title="Cómo jugar"
-      >
-        ?
-      </button>
-
-      <button
-        className={styles.glossaryButton}
-        type="button"
-        onClick={() => setGlossaryOpen(true)}
-        aria-label="Glosario de términos"
-        title="Glosario de términos"
-      >
-        §
-      </button>
 
       {glossaryOpen && <GlossaryPanel onClose={() => setGlossaryOpen(false)} />}
 

@@ -86,7 +86,14 @@ locales por bloque. Conservar el punto de retoma al cerrar cada bloque.
 - **Nexo en duelo, implementado.** Relicario con pedestal, cristal facetado,
   brazos y medallones laterales, emblema de facción y Vida accesible. Prueba
   real de ataque y capturas a 1366 y 1920 px en `tools/captures/nexo-duelo*`.
-- **Siguiente:** barra superior, zona inferior y Esencia por facción.
+- **Interfaz de batalla, terminada en `codex/interfaz-batalla`.** Los
+  controles de cámara, ayuda y glosario están en el flujo de la cabecera y
+  separados de la Vida rival. La mano tiene atriles laterales de reserva y
+  contexto. La Esencia usa el emblema de cada facción dentro de cristales
+  facetados, con estados de gasto. En móvil queda encima del botón de turno.
+  Pasaron 13 e2e de interfaz y la comprobación adicional de reserva visible
+  y controles sin solapamientos a 1920, 1366 y 390 px. Compilación y lint verdes.
+- **Siguiente:** integrar el marco de Olimpo aprobado y validación global.
 - **En cola:** marco de Olimpo elegido. Los otros tres chasis generados
   siguen como propuestas pendientes de valoración.
 
