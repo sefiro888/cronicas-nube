@@ -175,7 +175,7 @@ function TerciosBastion({ quality }: { quality: GraphicsQuality }) {
 function VoidThreshold() {
   return <>
     <StonePlatform color="#51445e" finish="basalt" depth={1.9} />
-    {SIDES.map((side) => <group key={side} position={[side * 3.6, 1.03, -5.65]} scale={[.88, .87, .88]} rotation={[.13, side * -.4, side * .26]}>
+    {SIDES.map((side) => <group key={side} position={[side * 3.6, 1.03, -5.65]} scale={[.78, .75, .78]} rotation={[.13, side * -.4, side * .26]}>
       <group scale={[.9, 1.15, 1]}>
         <Band position={[0, 0, 0]} radius={1.53} tube={.2} arc={Math.PI * 1.61} color="#61566f" rotation={[0, 0, .28]} />
         {Array.from({ length: 17 }, (_, i) => {

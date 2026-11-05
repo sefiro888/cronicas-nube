@@ -132,10 +132,18 @@ locales por bloque. Conservar el punto de retoma al cerrar cada bloque.
   resoluciones. Además pasan los 19 recorridos de fuente, sello LISTA,
   selección de marco, despliegue y cobro de una unidad de cada facción.
   Se reproducen con `RUN_FACTION_FLOW=1` y `e2e/faction-playability.spec.ts`.
-- **Siguiente:** encuadre definitivo de los portales y validación de entrega.
-  Rama de retoma `codex/partida-coste-real`.
-- **En cola:** marco de Olimpo elegido. Los otros tres chasis generados
-  siguen como propuestas pendientes de valoración.
+- **Validación de entrega, 09:09 Madrid.** Portales completos dentro del
+  encuadre. Pasada global final 136 e2e correctas, 85 opcionales omitidas,
+  cero fallos. Unitarias 749 correctas y 5 omitidas, compilación y lint
+  correctos. La compilación con base `/cronicas-nube/` abre una partida de
+  Olimpo desde Jugar y carga 108 recursos sin errores, incluido marco, suelo
+  y panorama nuevos. Captura en `tools/captures/produccion/`.
+- **Siguiente:** preparar el borrador de revisión y vigilar sus comprobaciones.
+  Rama de retoma `codex/revision-final`. Vista local en
+  `http://127.0.0.1:4179/` y compilada en
+  `http://127.0.0.1:4241/cronicas-nube/`.
+- **En cola:** Olimpo integrado. Los chasis detallados de Orden, Sombra y
+  Vacío siguen pendientes de aprobación del propietario.
 
 ---
 
