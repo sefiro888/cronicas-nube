@@ -20,6 +20,7 @@ const partidaDuna = (): MatchState => {
       player: {
         ...base.players.player,
         mulliganTaken: true,
+        nexusHealth: 13,
         hand: [
           { cardId: 'oro-de-la-camara', instanceId: 'oro' },
           { cardId: 'crecida-del-rio', instanceId: 'crecida' },
@@ -54,8 +55,14 @@ test('la Ofrenda de Duna se puede pagar desde la mesa', async ({ page }) => {
   const ofrenda = page.getByRole('button', { name: /Ofrendar/ })
   await expect(ofrenda).toBeVisible()
   await expect(ofrenda).toHaveAttribute('aria-pressed', 'false')
+  await expect(page.getByText('Si pagas, tu Nexo pasa de 13 a 10 de Vida.')).toBeVisible()
   await ofrenda.click()
   await expect(ofrenda).toHaveAttribute('aria-pressed', 'true')
   await expect(ofrenda).toContainText('Ofrendarás')
   if (process.env.RUN_SHOTS) await page.screenshot({ path: 'e2e/__shots__/duna-ofrenda.png' })
+  await page.getByRole('button', { name: 'Resolver carta', exact: true }).click()
+  const cast = page.getByTestId('cast-spotlight')
+  await expect(cast).toContainText('Ofrenda · −3 Vida', { timeout: 15000 })
+  await expect(cast.locator('[data-faction-art="duna"][data-kind="spell"]').first()).toBeVisible()
+  await page.screenshot({ path: 'tools/captures/duelos-y-poderes/hechizo-duna.png' })
 })

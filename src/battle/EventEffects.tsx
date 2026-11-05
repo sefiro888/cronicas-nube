@@ -407,7 +407,7 @@ const powerFor = (amount?: number): number => Math.max(0, Math.min(1, ((amount ?
 const RARITY_POWER: Readonly<Record<string, number>> = { common: 0, uncommon: 0.15, rare: 0.4, mythic: 0.75 }
 const rarityPower = (cardId?: string): number => RARITY_POWER[cardId ? CARD_BY_ID[cardId]?.rarity ?? 'common' : 'common'] ?? 0
 
-export function EventEffects({ event, reducedMotion, impact }: EventEffectsProps) {
+function EventBody({ event, reducedMotion, impact }: EventEffectsProps) {
   const timing: TimedProps = { durationMs: event.durationMs, reducedMotion }
   const tone = toneOf(event.effectId, event.faction)
   const card = event.cardId ? CARD_BY_ID[event.cardId] : undefined
@@ -514,4 +514,26 @@ export function EventEffects({ event, reducedMotion, impact }: EventEffectsProps
     default:
       return null
   }
+}
+
+export function EventEffects(props: EventEffectsProps) {
+  const { event, impact, reducedMotion } = props
+  const faction = event.faction ?? (event.cardId ? CARD_BY_ID[event.cardId]?.faction : undefined)
+  const origin = event.from ? [boardX(event.from.x), boardZ(event.from.y)] as const
+    : event.actorId ? NEXUS_POSITION[`${event.actorId}-nexus`] : undefined
+  const positions = impact?.pieces.length ? impact.pieces.map(({ position }) => position) : event.to ? [event.to] : []
+  const unique = [...new Map(positions.map((position) => [`${position.x},${position.y}`, position])).values()]
+  const cast = Boolean(event.cast) && event.type === 'spell' && !reducedMotion
+  return <>
+    <EventBody {...props} />
+    {cast && faction && <>
+      {origin && <FactionSignature at={origin} faction={faction} mode="summon" durationMs={event.durationMs} />}
+      {unique.slice(0, 8).map(({ x, y }) => (
+        <FactionSignature key={`${x},${y}`} at={[boardX(x), boardZ(y)]} faction={faction} mode="hit" durationMs={event.durationMs} />
+      ))}
+      {event.targetId && NEXUS_POSITION[event.targetId] && (
+        <FactionSignature at={NEXUS_POSITION[event.targetId]!} faction={faction} mode="hit" durationMs={event.durationMs} />
+      )}
+    </>}
+  </>
 }

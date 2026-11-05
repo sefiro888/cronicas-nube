@@ -1222,3 +1222,4 @@
 @media (min-width: 761px) and (max-width: 1400px) { .topbar { grid-template-columns: minmax(105px, .75fr) minmax(125px, .7fr) minmax(300px, 1.25fr); padding-inline: 12px; gap: 10px; } .headerRight { gap: 8px; } .battleTools { padding-left: 8px; gap: 5px; } .enemyName strong { font-size: 13px; } }
 .dangerVignette[data-reduced-motion] { animation: none !important; }
 @media (prefers-reduced-motion: reduce) { .dangerVignette { animation: none !important; } }
+.factionHint, .hybrisNotice { margin: 6px 0; padding: 5px 8px; border-inline-start: 2px solid #d8ad58; background: #171810; color: #f6dfac; font-size: 12px; line-height: 1.35; }

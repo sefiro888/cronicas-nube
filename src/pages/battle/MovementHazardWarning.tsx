@@ -12,7 +12,7 @@ export function MovementHazardWarning({ hazards, focused }: { readonly hazards: 
   return <aside className={styles.movementHazardWarning} data-testid="movement-hazard-warning" data-fatal={current ? current.deaths > 0 || undefined : fatalCount > 0 || undefined} role="status" aria-live="polite">
     <strong>{title}</strong>
     {current ? <p>{current.losses.map((loss) => `${loss.name}: ${loss.losesFormation ? 'pierde Formación y ' : 'pierde apoyo y '}
-      ${loss.dies ? 'muere' : `pierde ${loss.amount} de Vida`}.`).join(' ')}</p> : <p>
+      pierde ${loss.amount} de Vida${loss.dies ? ' y cae' : ''}.`).join(' ')}</p> : <p>
       {fatalCount > 0 && `☠ ${fatalCount} destinos causan una muerte. `}
       Las losas marcadas muestran la Vida que se pierde al mover.
     </p>}

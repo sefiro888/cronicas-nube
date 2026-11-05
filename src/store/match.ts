@@ -433,6 +433,7 @@ export const useMatchStore = create<MatchStore>()(
     const { match: cleaned, events } = drainAnimations(match)
     set((current) => ({
       match: cleaned,
+      castImpacts: current.match ? withCastImpact(current.castImpacts, current.match, cleaned, events) : current.castImpacts,
       resolvedEffects: current.match ? [...current.resolvedEffects, ...resolvedEffectsFor(current.match, cleaned, events)].slice(-96) : current.resolvedEffects,
       message,
       history: message ? [...current.history.slice(-9), message] : current.history,
