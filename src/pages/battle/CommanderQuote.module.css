@@ -52,3 +52,12 @@
 @keyframes portraitTalk { from { transform: scale(1); } to { transform: scale(1.06) rotate(-2deg); } }
 @media (prefers-reduced-motion: reduce) { .quote, .quote img { animation: none; } }
 @media (max-width: 760px) { .quote { max-width: 86%; } .quote img { width: 44px; height: 44px; } }
+.quote[data-duel][data-side] { inset: 38px 0 auto; width: max-content; margin-inline: auto; max-width: min(390px, 44%); }
+.quote[data-duel] img { width: 32px; height: 32px; }
+.quote[data-duel] .bubble { padding: 4px 8px; border-radius: 5px; }
+.quote[data-duel] .bubble span { font-size: 12px; }
+@media (max-width: 760px) {
+  .quote[data-duel][data-side] { position: fixed; inset: auto 0 22%; max-width: 74vw; }
+  .quote[data-duel] img { display: none; }
+  .quote[data-duel] .bubble::before { display: none; }
+}

@@ -91,6 +91,7 @@ function NexusMonolith({ artUrl, faction, name, health, maxHealth, damage }: {
       <div className={styles.crystal}>
         <NexusReliquary className={styles.facets} integrity={ratio} />
         <span className={styles.core} />
+        {faction && <span className={styles.relicSeal}><FactionBattleArt faction={faction} kind="seal" /></span>}
         <div className={styles.portrait}>
           <svg className={styles.runes} viewBox="0 0 100 100" aria-hidden="true">
             <circle cx="50" cy="50" r="47" />
@@ -223,6 +224,7 @@ function Fighter({ side, role, me, commanderIds, nexusHealth, nexusMaxHealth, ph
         {hit && <span key={side.damage} className={styles.damage}>−{side.damage}</span>}
         {hit && !side.nexus && side.health && <span className={styles.lifeChange}>{card?.type === 'structure' ? 'Resistencia' : 'Vida'} {side.health.before} → {side.health.after}</span>}
         {role === 'attacker' && side.countered && <span key={`c${side.damage}`} className={styles.counterTag}>¡Contraataque!</span>}
+        {hit && side.nexus && side.health && <span className={styles.lifeChange}>Vida {side.health.before} → {nexusHealth[side.owner]}</span>}
         {side.excess !== undefined && <span className={styles.lifeChange}>Perforar · {side.excess} al Nexo</span>}
         {side.destroyed && <span className={styles.stamp} data-renacer={side.renacer !== undefined || undefined}>
           {side.renacer !== undefined ? `Renacer · a la mano +${side.renacer}/+${side.renacer}` : side.nexus ? 'Nexo derribado' : 'Destruida'}

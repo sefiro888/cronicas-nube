@@ -47,6 +47,8 @@ test('la Ofrenda de Duna se puede pagar desde la mesa', async ({ page }) => {
     }))
   }, [partidaDuna(), 2] as const)
 
+  const consoleErrors: string[] = []
+  page.on('console', (message) => { if (message.type() === 'error') consoleErrors.push(message.text()) })
   await page.goto('/battle')
   await expect(page.getByTestId('battle-board')).toBeVisible({ timeout: 25_000 })
 
@@ -65,4 +67,5 @@ test('la Ofrenda de Duna se puede pagar desde la mesa', async ({ page }) => {
   await expect(cast).toContainText('Ofrenda · −3 Vida', { timeout: 15000 })
   await expect(cast.locator('[data-faction-art="duna"][data-kind="spell"]').first()).toBeVisible()
   await page.screenshot({ path: 'tools/captures/duelos-y-poderes/hechizo-duna.png' })
+  expect(consoleErrors).toEqual([])
 })

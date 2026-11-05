@@ -854,3 +854,7 @@
 .crossing [data-kind='strike'] path { stroke-width: 2.3; }
 
 .tagRarity { grid-column: 2; color: color-mix(in srgb, var(--accent) 52%, #f9e2ad); font: 700 8px/1 var(--display); text-transform: uppercase; letter-spacing: .12em; }
+.relicSeal { position: absolute; z-index: 2; top: 11%; left: 50%; transform: translateX(-50%); width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--accent); background: #151e22; box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 74%, transparent); }
+.monolith[data-hit] .relicSeal { animation: relicShock 420ms ease-out both; }
+@keyframes relicShock { 24% { transform: translateX(-50%) scale(1.16); box-shadow: 0 0 19px var(--accent); } }
+@media (prefers-reduced-motion: reduce) { .monolith[data-hit] .relicSeal { animation: none; } }

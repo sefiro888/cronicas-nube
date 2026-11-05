@@ -1071,7 +1071,7 @@ export function BattlePage() {
           <span className={styles.exitLong}>← Abandonar batalla</span>
           <span className={styles.exitShort}>← Salir</span>
         </button>
-        <div className={styles.turn}>
+        <div className={styles.turn} data-testid="battle-turn">
           <strong>{match.activePlayer === ME ? 'Tu turno' : 'Turno rival'}</strong>
           <span>Turno {match.turn} · {PHASE_LABELS[match.phase] ?? match.phase}</span>
         </div>
@@ -1259,15 +1259,16 @@ export function BattlePage() {
           {/* El comandante habla: poder, golpe fuerte a su Nexo o victoria. */}
           {director.quote && !photoMode && COMMANDER_BY_ID[match.players[director.quote.owner].commanderId] && (
             <CommanderQuote
-              key={director.quote.key}
+              key={`frase-${director.quote.key}`}
               commander={COMMANDER_BY_ID[match.players[director.quote.owner].commanderId]!}
               text={director.quote.text}
+              duel={Boolean(director.exchange)}
               mine={director.quote.owner === ME}
             />
           )}
           {/* Respuesta: sello lateral con el tipo de reacción. */}
           {director.reaction && !director.exchange && !photoMode && (
-            <div key={director.reaction.key} className={styles.reaction} data-kind={director.reaction.kind} role="status">
+            <div key={`reaccion-${director.reaction.key}`} className={styles.reaction} data-kind={director.reaction.kind} role="status">
               <small>Respuesta</small>
               <strong>{director.reaction.title}</strong>
               <span>{director.reaction.detail}</span>
@@ -1275,7 +1276,7 @@ export function BattlePage() {
           )}
           {/* Reacción en cadena: crece y se calienta con cada muerte encadenada. */}
           {director.chain && !photoMode && (
-            <div key={director.chain.key} className={styles.chain} data-level={Math.min(director.chain.count, 5)} role="status">
+            <div key={`cadena-${director.chain.key}`} className={styles.chain} data-level={Math.min(director.chain.count, 5)} role="status">
               <span>¡Reacción en cadena!</span>
               <strong>×{director.chain.count}</strong>
             </div>
@@ -1294,7 +1295,7 @@ export function BattlePage() {
             />
           )}
           {(resolvedImpact || director.eventBanner) && !director.exchange && (
-            <div key={resolvedImpact?.id ?? director.eventBanner} className={styles.eventBanner} data-kind={resolvedImpact?.tone === 'damage' ? 'damage' : director.eventBannerKind} role="status">
+            <div key={`resultado-${resolvedImpact?.id ?? director.eventBanner}`} className={styles.eventBanner} data-kind={resolvedImpact?.tone === 'damage' ? 'damage' : director.eventBannerKind} role="status">
               {resolvedImpact ? `${resolvedImpact.source} → ${resolvedImpact.target} · ${resolvedImpact.text}` : director.eventBanner}
             </div>
           )}

@@ -114,3 +114,22 @@ test('Olimpo y Marea muestran el riesgo de cerrar turno y la fase pública', asy
   await expect(powers).toContainText('Hybris6')
   await expect(page.getByText('Hybris · perderías 3 de Vida al cerrar el turno')).toBeVisible()
 })
+test('el duelo contra el Nexo conserva su Vida de apertura y muestra su pérdida real', async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 768 })
+  const base = createMatch(deck('fimbul'), deck('duna'), 761)
+  const module = await openBattle(page, {
+    ...base, turn: 4, phase: 'main', activePlayer: 'player', terrain: [],
+    board: [piece('atacante', 'huscarle-del-rey', 'player', 0)],
+    players: {
+      player: { ...base.players.player, mulliganTaken: true },
+      ai: { ...base.players.ai, nexusHealth: 22, mulliganTaken: true },
+    },
+  }, 'fimbul', 'duna')
+  const result = await send(page, module, { type: 'attack-nexus', playerId: 'player', attackerId: 'atacante' })
+  expect(result.ok, result.message).toBe(true)
+  const nexus = page.getByTestId('duel-nexus')
+  await expect(nexus.getByLabel(/Vida del Nexo: 22 de /)).toBeVisible({ timeout: 15000 })
+  await expect(nexus.getByLabel(/Vida del Nexo: 18 de /)).toBeVisible({ timeout: 15000 })
+  await expect(nexus.locator('[data-faction-art="duna"]')).toBeVisible()
+  await page.screenshot({ path: 'tools/captures/duelos-y-poderes/duelo-nexo-1366.png' })
+})
