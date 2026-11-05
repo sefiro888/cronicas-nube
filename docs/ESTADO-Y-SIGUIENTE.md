@@ -1,5 +1,9 @@
 # Estado del proyecto y por dónde seguir
 
+## Cola de la siguiente etapa
+
+El propietario pidió incorporar los indicadores de facción al trabajo futuro y renovar la lista tras las 32 mejoras integradas. La [nueva cola de 100 mejoras](COLA-100-MEJORAS-SIGUIENTE-ETAPA.md) detalla las 19 facciones, el ritmo de batalla y los prototipos de mapas, IA y modos. La numeración de esa cola es independiente de la original.
+
 ## Encargo de las 32 mejoras seleccionadas — 5 de noviembre de 2026
 
 El propietario aprobó los cuatro marcos v2 y encargó los puntos
