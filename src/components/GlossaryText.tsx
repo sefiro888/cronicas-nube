@@ -165,7 +165,7 @@ export const CARD_GLOSSARY: readonly GlossaryEntry[] = [
     id: 'guardia',
     terms: ['Guardia'],
     label: 'Guardia',
-    definition: 'Protege la zona cercana y obliga al rival a atender esta unidad antes de avanzar.',
+    definition: 'Si una unidad enemiga está junto a uno o más Guardias, solo puede atacar a uno de ellos. Las unidades incorpóreas pueden ignorar esta restricción.',
   },
   {
     id: 'volador',
@@ -296,7 +296,6 @@ export function GlossaryText({
             tabIndex={0}
             aria-label={`${chunk}: ${entry.definition}`}
             aria-describedby={tooltipId}
-            title={`${entry.label}: ${entry.definition}`}
             key={`${index}-${chunk}`}
           >
             {chunk}

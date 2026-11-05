@@ -6,6 +6,7 @@ import { gridToWorldX, gridToWorldZ, NEXUS_WORLD } from './grid/gridCoordinates'
 import styles from './DamageNumbers.module.css'
 import { useTransientEntries } from './useTransientEntries'
 import { CRITICAL_DAMAGE, damageKind, type DamageKind } from './creatureFx'
+import { periodicEffect, protectionEffect } from './resolvedEffects'
 
 interface FloatingNumber {
   readonly id: string
@@ -18,6 +19,8 @@ interface FloatingNumber {
   /** Tipo de daño: cada uno con su color, icono y forma de subir. */
   readonly kind: DamageKind
   readonly critical: boolean
+  readonly caption?: string
+  readonly absorbed?: boolean
 }
 
 /**
@@ -76,15 +79,18 @@ export const DamageNumbers = memo(function DamageNumbers({ event, reducedMotion 
       ? (event.targetId ? NEXUS_WORLD[event.targetId] : undefined)
       : event.to && [gridToWorldX(event.to.x), gridToWorldZ(event.to.y)] as const
     if (!position) return
+    const protection = event.type === 'shield' ? protectionEffect(event) : undefined
     const entry: FloatingNumber = {
       id: `num-${nextId++}`,
       x: position[0],
       z: position[1],
       value,
-      color: event.type === 'shield' ? 'shield' : 'damage',
+      color: protection === 'vitality' ? 'heal' : protection ? 'shield' : 'damage',
       scale: scaleFor(value) * (value >= CRITICAL_DAMAGE ? 1.25 : 1),
       kind: event.type === 'shield' ? 'physical' : damageKind(event),
       critical: event.type !== 'shield' && value >= CRITICAL_DAMAGE,
+      absorbed: protection === 'absorb',
+      caption: protection === 'absorb' ? 'Bloqueado' : protection === 'grant' ? 'Escudo' : protection === 'vitality' ? 'Aura vital' : periodicEffect(event),
     }
     append(entry)
   }, [event, append])
@@ -95,8 +101,9 @@ export const DamageNumbers = memo(function DamageNumbers({ event, reducedMotion 
         <Html key={num.id} center position={[num.x, SPAWN_HEIGHT, num.z]} distanceFactor={8} zIndexRange={[16, 0]}>
           <div className={styles.number} data-color={num.color} data-kind={num.kind} data-critical={num.critical || undefined} data-reduced-motion={reducedMotion || undefined} style={{ '--num-scale': num.scale } as CSSProperties}>
             {num.critical && <span className={styles.critLabel}>¡Crítico!</span>}
+            {num.caption && <span className={styles.effectCaption}>{num.caption}</span>}
             {KIND_ICON[num.kind] && <span className={styles.kindIcon}>{KIND_ICON[num.kind]}</span>}
-            {num.color === 'shield' ? '+' : '−'}{num.value}
+            {num.absorbed ? '⛨ ' : num.color === 'damage' ? '−' : '+'}{num.value}
           </div>
         </Html>
       ))}

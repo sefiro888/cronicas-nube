@@ -1,3 +1,4 @@
+import { ScenarioAmbientLight, ScenarioHemisphereLight, ScenarioDirectionalLight } from './ScenarioLights'
 import { Sparkles } from '@react-three/drei'
 import { useMemo } from 'react'
 import { ExtrudeGeometry, Shape } from 'three'
@@ -171,12 +172,12 @@ export function DunaNecropolis({ quality, reducedMotion }: DunaProps) {
   return <>
 
 
-    <ambientLight intensity={0.25} color="#d0cbba" />
-    <hemisphereLight intensity={0.35} color="#c0d1df" groundColor="#b29a6e" />
-    <directionalLight position={[-6, 12, 5]} intensity={2.65} color="#fff0d2" castShadow={quality !== 'low'}
+    <ScenarioAmbientLight intensity={0.25} color="#d0cbba" />
+    <ScenarioHemisphereLight intensity={0.35} color="#c0d1df" groundColor="#b29a6e" />
+    <ScenarioDirectionalLight position={[-6, 12, 5]} intensity={2.65} color="#fff0d2" castShadow={quality !== 'low'}
       shadow-mapSize-width={quality === 'high' ? 2048 : 1024} shadow-mapSize-height={quality === 'high' ? 2048 : 1024}
       shadow-camera-left={-12} shadow-camera-right={12} shadow-camera-top={12} shadow-camera-bottom={-12} shadow-bias={-0.0006} />
-    <directionalLight position={[7, 6, -9]} intensity={0.55} color="#b4c7d5" />
+    <ScenarioDirectionalLight position={[7, 6, -9]} intensity={0.55} color="#b4c7d5" />
     <DistantVista image={`/assets/scenarios/duna-vista-v1${quality === 'low' ? '-low' : ''}.webp`} />
     <DesertGround quality={quality} />
     <Court quality={quality} />

@@ -92,7 +92,7 @@ export function MulliganDialog({ hand, selectedIds, onToggle, onConfirm, ownComm
           })}
         </div>
         <button ref={confirm} className={`${styles.confirmMulligan} ${presentation.confirm}`} onClick={onConfirm}>
-          {selectedIds.length > 0 ? `Cambiar ${selectedIds.length} ${selectedIds.length === 1 ? 'carta' : 'cartas'}` : 'Conservar las diez'}
+          {selectedIds.length > 0 ? `Cambiar ${selectedIds.length} ${selectedIds.length === 1 ? 'carta' : 'cartas'}` : hand.length === 10 ? 'Conservar las diez' : `Conservar las ${hand.length} cartas`}
         </button>
       </section>
     </div>

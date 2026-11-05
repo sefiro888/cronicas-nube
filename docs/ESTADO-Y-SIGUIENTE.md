@@ -1,5 +1,98 @@
 # Estado del proyecto y por dónde seguir
 
+## Encargo de las 32 mejoras seleccionadas — 5 de noviembre de 2026
+
+El propietario aprobó los cuatro marcos v2 y encargó los puntos
+1, 3, 4, 5, 11, 12, 13, 14, 17, 18, 21, 22, 23, 26, 28, 29, 30, 31, 33,
+38, 39, 43, 52, 61, 63, 67, 71, 72, 73, 74, 76 y 101 en una sola sesión de
+trabajo. Registro, pruebas y punto de retoma:
+`docs/TRABAJO-32-MEJORAS-2026-11-05.md`.
+
+Los marcos v2 están activos en HTML y ficha 3D. Los indicadores se anclan al
+pie de la pieza; las pruebas pulsan la geometría renderizada, no la placa.
+La crónica usa eventos resueltos y distingue protección y daño periódico.
+El nuevo Atlas permite probar y aplicar luz por escenario sin mutar una
+partida durante la vista previa. Se auditó la combinación real de 19 suelos,
+19 escenarios y dos cámaras a 1920 × 1080 y 1366 × 768 (38 casos correctos).
+
+Entradas locales: `/atlas`, `/adventures`, `/laboratory` y `/tower`. Aventuras
+tiene 19 crónicas de tres capítulos, tres guardianes de dos fases y series al
+mejor de tres. El laboratorio controla ambos bandos y no toca el guardado de
+partida normal. La Torre clásica sigue disponible junto a Caminos del umbral
+(9 pisos) y Expedición breve (5), con encuentros y reliquias funcionales.
+No hay automatización de continuación creada. No publicar ni fusionar main
+sin autorización del propietario.
+
+## Indicadores de las fichas — petición añadida el 5 de noviembre de 2026
+
+Añadido el punto 101 a `docs/COLA-100-MEJORAS-2026-11-05.md`, con prioridad P0.
+El propietario señaló que el nombre, ataque y Vida superpuestos tapan la carta
+(captura de Lobo Salvaje) y pidió un diseño mucho más definido y de fantasía.
+Propuesta: carta despejada, placa de nombre compacta junto al pedestal y dos
+medallones de estadísticas al pie, con detalles por facción y cifras legibles.
+Datos esenciales siempre visibles; ampliar detalles mediante ratón, teclado o
+toque. Revisar cámaras, fichas vecinas y móvil antes de dar por buena la solución.
+Solo anotado en la cola, sin cambios de interfaz aplicados en este bloque.
+
+## Nuevos diseños y cola de 100 propuestas — 5 de noviembre de 2026
+
+Rama `codex/propuestas-marcos-v2`, creada desde main con avance rápido al
+trabajo de `codex/revision-final`. Se terminaron cuatro propuestas nuevas para
+Olimpo, Orden, Sombra y Vacío con coste arriba a la izquierda y ventana grande.
+La superficie útil de ilustración medida es 30,9–31,3 % de la carta, comparable
+al 30,2 % del chasis anterior de Goblins. Se conserva detalle en bordes estrechos.
+Los cuatro WebP y la comparativa están en `docs/propuestas/marcos-v2/`.
+Maestros originales en `tools/art-inbox/propuestas-marcos-v2/` (solo local).
+Procedencia, prompts completos y mediciones en
+`docs/PROPUESTAS-MARCOS-V2-2026-11-05.md`.
+
+En esta fase eran propuestas para valorar. El propietario aprobó después las
+cuatro en el encargo de 32 mejoras descrito arriba; esa decisión sustituye al
+estado pendiente original.
+
+Después de terminar los cuatro diseños se elaboró
+`docs/COLA-100-MEJORAS-2026-11-05.md`: exactamente 100 propuestas, en diez áreas,
+con prioridades y bloques compatibles para trabajo paralelo. El usuario pidió
+esta batería para la cola futura; no significa que las cien estén implementadas
+ni que todos los cambios de reglas estén aprobados. Prototipar modos nuevos de
+forma separada y preservar la disponibilidad de todos los mazos.
+
+## Ajuste solicitado de proporciones — 5 de noviembre de 2026
+
+El propietario detectó en la apertura de sobres que los cuatro chasis nuevos
+(Olimpo, Orden, Sombra y Vacío) reservan demasiado espacio a los ornamentos.
+Quiere conservar su identidad y detalle con el protagonismo de ilustración de
+los chasis anteriores. La comparación de su captura es Goblins frente a Orden:
+la ventana de arte medida es 72 % × 42 % en Goblins y 64 % × 28,5 % en Orden.
+Orden ofrece aproximadamente un 40 % menos de superficie de ilustración.
+El tamaño exterior no explica el problema. Pendiente rediseñar las ventanas de
+los cuatro maestros y medir de nuevo nombre, coste, banda, reglas y estadísticas
+para HTML y tablero. No basta ampliar la ilustración sobre los adornos actuales.
+Este ajuste no se incluye en el bloque de Álbum y sobres.
+
+## Álbum y apertura de sobres — 5 de noviembre de 2026
+
+Rama de bloque `codex/album-y-sobres`, desde main y con avance rápido al
+trabajo acumulado en `codex/revision-final`. El Álbum incorpora cabecera
+ilustrada, sobre ceremonial original, estantes, filtro de cartas propias y
+páginas de 48 cartas. La apertura usa una cámara con la ilustración del Nexo,
+sello que se rasga, giro de cartas, luz y sonido según rareza, brillo de doradas,
+etiquetas de nuevas y resumen de resultados. Pulsar una carta revelada abre
+el inspector existente con ilustración completa y reglas legibles.
+
+Se mantienen las probabilidades y las recompensas del almacén de colección.
+El sobre se descuenta y sus cinco cartas se guardan antes de la animación.
+Cerrojos síncronos impiden consumo doble; los temporizadores se cancelan al
+cerrar. Esc también funciona durante el rasgado, con el foco fuera del botón
+desactivado. El fondo queda inerte y se restaura el foco al volver al Álbum.
+Respeta movimiento reducido del sistema y del juego, y la mezcla de audio.
+
+749 pruebas unitarias correctas y 5 omitidas. Compilación y lint correctos.
+Cinco pruebas específicas de navegador correctas: 1920 × 1080, 1366 × 768,
+390 × 844, teclado/cierre durante rasgado y paginación/filtro. Comprobación
+adicional de la compilación con base `/cronicas-nube/`: apertura normal y
+recursos sin errores. Capturas en `tools/captures/album/`.
+
 ## TRASPASO A CODEX — 4 de noviembre de 2026 (léelo primero)
 
 El propietario pasa el proyecto a Codex (también para generar imágenes).
@@ -63,6 +156,175 @@ página de Mazos y menú nuevos. 747 pruebas unitarias.
 **Pruebas en la nube**: sin GPU varias e2e fallan por tiempo igual que en
 `main` (lista en notas de abajo). Para capturas fiables: congelar reloj y
 animaciones (`e2e/battle-spectacle-shots.spec.ts`).
+
+---
+
+## Reserva de Esencia y espacios inferiores — 5 de noviembre de 2026
+
+El propietario pidió más presencia y detalle para la reserva y aprovechar los
+laterales de la mano. Rama del bloque `codex/reserva-fantasia`.
+
+- Medallón labrado con emblema de facción, anillo de carga y cifras mayores.
+  Marco original de metal y remaches generado con ImageGen integrado, WebP
+  `public/assets/interface/reserva-esencia-v1.webp`. Maestro y prompt registrados
+  en `docs/INTERFAZ-MUNDOS-2026-11-01.md`.
+- Fondo inferior más cálido, grabado de facción y resumen vivo de cartas listas,
+  piezas en mesa, mazo y descarte. El recuento LISTAS comparte la validación
+  real del motor con las cartas de la mano.
+- Las fuentes se reparten en una fila adaptable. Se comprobó la reserva completa
+  con doce fuentes y diez cartas, además del ejemplo de Goblins con ocho cartas
+  y dos fuentes agotadas. Capturas en `tools/captures/reserva-fantasia/`.
+- 749 unitarias correctas y 5 omitidas, compilación y lint correctos. Pasada
+  general de navegador 138 correctas y 85 sondas opcionales omitidas. Los seis
+  casos de mano, reserva y móvil se repitieron tras el acabado final y pasan.
+  Compilación con base `/cronicas-nube/` comprobada con el nuevo WebP cargado.
+
+## Sesión nocturna — 5 de noviembre de 2026 (Codex)
+
+Corte acordado a las 10:00, hora de Madrid. Solo `cronicas-nube`, en ramas
+locales por bloque. Conservar el punto de retoma al cerrar cada bloque.
+
+- **Coste y mano jugable, terminado en `codex/coste-y-mano`.** El motor
+  comparte el coste por copia con mano, inspector y despliegue. La señal
+  LISTA usa turno, pago, objetivo, despliegue y sacrificio. Las pruebas
+  cubren Renacer + Mandato y hechizos con Esencia sin objetivo. Pasaron 749
+  unitarias, compilación, lint y la prueba de mano en 1920, 1366 y 390 px.
+- **Escenarios exclusivos, terminados en `316cfed`.** Cada facción tiene
+  un mapa distinto. Se crearon siete panoramas originales con ImageGen y
+  arquitectura 3D propia. Maestros en `tools/art-inbox/panoramas-facciones/`.
+- **Suelos, terminados en `fb48d9d`.** El escenario determina el suelo
+  también en selección manual. Se incorporaron los PNG aprobados de Samsara
+  y Quinto Sol. Duna conserva su diseño. Pasó la revisión 38/38 de las 19
+  facciones a 1920 × 1080 en Automático y a 1366 × 768 con mapa manual.
+- **Nexo en duelo, implementado.** Relicario con pedestal, cristal facetado,
+  brazos y medallones laterales, emblema de facción y Vida accesible. Prueba
+  real de ataque y capturas a 1366 y 1920 px en `tools/captures/nexo-duelo*`.
+- **Interfaz de batalla, terminada en `codex/interfaz-batalla`.** Los
+  controles de cámara, ayuda y glosario están en el flujo de la cabecera y
+  separados de la Vida rival. La mano tiene atriles laterales de reserva y
+  contexto. La Esencia usa el emblema de cada facción dentro de cristales
+  facetados, con estados de gasto. En móvil queda encima del botón de turno.
+  Pasaron 13 e2e de interfaz y la comprobación adicional de reserva visible
+  y controles sin solapamientos a 1920, 1366 y 390 px. Compilación y lint verdes.
+- **Marco de Olimpo, terminado.** Original aprobado conservado en
+  `tools/art-inbox/cartas-faccion/marco-olimpo-aprobado.png`, WebP propio y
+  coordenadas medidas para los títulos, reglas y medallones. Pasaron las
+  dos vistas de batalla y la prueba de encaje del texto de la galería.
+- **Validación, 08:13 Madrid.** Unitarias 749 correctas y 5 omitidas,
+  compilación y lint correctos. Primera pasada global 113 e2e correctas,
+  85 omitidas y dos fallos de las propias pruebas. Corregidos el gesto móvil
+  que chocaba con la introducción de batalla y la consulta de una ayuda
+  oculta sin pasar el ratón. Ambas regresiones pasan al repetirlas. Ajustado
+  también el tamaño del emblema de Esencia para dejar libre la cifra.
+- **Pulido, 08:20 Madrid.** Orilla de roca bajo los pinos de Kalevala,
+  follaje por ramas, sillares biselados y columnas estriadas. Orden tiene una
+  vidriera original de águila, escudo y espada recortada en su arco. Las 14
+  vistas de los siete escenarios nuevos pasan, y las dos vistas de Orden
+  pasan de nuevo con la vidriera. Compilación y lint correctos. Dos pruebas
+  adicionales verifican que un comandante Fimbul en Duna o Samsara manuales
+  recibe las 64 losas de ese escenario, también con calidad baja.
+- **Validación global, 08:30 Madrid.** 117 e2e correctas, 85 sondas
+  opcionales omitidas y cero fallos. Regeneradas las 38 capturas de las 19
+  facciones con la interfaz actual, todas correctas.
+- **Coste del panel, 08:35 Madrid.** Detectado y corregido un segundo lugar
+  que mostraba el coste base en el panel de selección. Panel, mano,
+  inspector y cobro usan ya el mismo coste por copia. La guía avisa si falta
+  un objetivo o condición pese a tener Esencia, y «Resolver carta» respeta esa
+  disponibilidad. Pasan las tres resoluciones de coste y los cuatro casos
+  de objetivo de Marea. Unitarias 749/5, compilación y lint correctos.
+- **Detalle y calidad, 08:48 Madrid.** Tercios incorpora cañones con cureña
+  y ruedas, aparejo de sillares y banderas de aspa. Plaga tiene rocas de apoyo,
+  relieves de osario y hongos con pie y sombrero. Goblins tiene faroles de
+  jaula, cadenas y engranajes remendados. Vacío gana dovelas fracturadas y se
+  baja el portal para que no choque con la cabecera. El Sampo tiene corona
+  dentada de bronce y remaches. Las 38 vistas en calidad alta y las 38 en
+  calidad baja han pasado. El encuadre final de Vacío vuelve a pasar en las
+  dos resoluciones. El visor de capturas acepta `FACTION_SHOTS_QUALITY`.
+- **Juego real desde la mano, 08:57 Madrid.** El Dragón rebajado se selecciona,
+  inspecciona, despliega y paga cuatro Esencias exactas en las tres
+  resoluciones. Además pasan los 19 recorridos de fuente, sello LISTA,
+  selección de marco, despliegue y cobro de una unidad de cada facción.
+  Se reproducen con `RUN_FACTION_FLOW=1` y `e2e/faction-playability.spec.ts`.
+- **Validación de entrega, 09:09 Madrid.** Portales completos dentro del
+  encuadre. Pasada global final 136 e2e correctas, 85 opcionales omitidas,
+  cero fallos. Unitarias 749 correctas y 5 omitidas, compilación y lint
+  correctos. La compilación con base `/cronicas-nube/` abre una partida de
+  Olimpo desde Jugar y carga 108 recursos sin errores, incluido marco, suelo
+  y panorama nuevos. Captura en `tools/captures/produccion/`.
+- **Mano completa, 09:22 Madrid.** Las capturas de duelo mostraron diez cartas
+  invadiendo los atriles a 1366 px. El abanico usa ahora el ancho de su propio
+  carril y solapa solo cartas vecinas, con margen para rotar y levantar los
+  extremos. Dos pruebas nuevas comprueban los límites en reposo y al consultar
+  primera y última carta. Pasan a 1920 y 1366 px, junto con el gesto móvil y
+  los recorridos de coste. Borrador de revisión
+  [PR #2](https://github.com/sefiro888/cronicas-nube/pull/2).
+- **Centros pulsables, 09:32 Madrid.** Se adapta también el ancho de carta
+  cuando comprimir márgenes ocultaría su centro. La prueba consulta los
+  extremos por su centro y pasa junto al recorrido de empezar una partida,
+  jugar una fuente, arrastrar en móvil y desplegar con coste rebajado. Siete
+  casos correctos antes de repetir el gate completo.
+- **Cierre, 09:56 Madrid.** Los nueve puntos del encargo están implementados.
+  Hay 19 chasis, 19 suelos propios y 19 escenarios distintos. La última
+  pasada global dio 136 casos correctos y dos fallos del recuento de texturas
+  de Fimbul, que esperaba únicamente su carta aunque el Grifo de Orden rival
+  también tiene ahora dos caras enmarcadas. Ajustado el recuento a las piezas
+  de la prueba, ambos casos pasan completos. Quedan 138 casos verificados y
+  85 sondas opcionales omitidas en el gate. Unitarias 749/5, build y lint
+  correctos. Las seis vistas adicionales en alta y las seis en baja de los
+  tres nuevos marcos pasan. Ataque real al Nexo repetido en ambas resoluciones.
+  Las partidas compiladas de Olimpo, Orden, Sombra y Vacío cargan marco,
+  suelo y escenario con la base de Pages, sin errores de recursos o ejecución.
+- **Siguiente:** revisión visual del propietario en el borrador PR #2.
+  Rama de retoma `codex/revision-final`. Vista local en
+  `http://127.0.0.1:4179/` y compilada en
+  `http://127.0.0.1:4241/cronicas-nube/`.
+- **Últimos tres marcos, 09:36 Madrid.** El propietario aprobó explícitamente
+  las propuestas de Orden, Sombra y Vacío y se integraron sus WebP y ventanas
+  medidas. Se completan los 19 chasis. Los maestros aprobados se conservan en
+  `tools/art-inbox/cartas-faccion/marco-{order,shadow,void}-aprobado.png`.
+  Pasan sus seis vistas de batalla y el encaje de texto de toda la galería.
+  Rama del bloque `codex/marcos-orden-sombra-vacio`.
+
+---
+
+## Chasis y suelos de facción — 4 de noviembre de 2026 (Codex)
+
+- La rama local `codex/arte-de-facciones` incorpora la prueba de Fimbul y
+  extiende su composición a los 15 chasis entregados. Las coordenadas del
+  título, coste, ilustración, reglas y medallones se miden por plantilla en
+  `src/presentation/cardFrames.ts`. La carta HTML y la ficha de batalla
+  comparten esa configuración. Los originales se conservan en `tools/art-inbox/`.
+- Los 18 suelos propios disponibles se aplican en el escenario natal del
+  comandante local. Las facciones que comparten escenario conservan cada una
+  su suelo. Furia mantiene la roca, el brillo y el río ya adaptados en la
+  Caldera. Los grabados completos se reparten entre las 64 losas.
+- Pendientes de archivo original: chasis de Orden, Olimpo, Sombra y Vacío,
+  y suelo de Samsara. Los PNG etiquetados Samsara y Quinto Sol son idénticos.
+  El motivo de calendario solar se usa en Quinto Sol, pendiente de
+  confirmación. Samsara conserva la arenisca del ghat.
+- Capturas por facción en `tools/captures/facciones/`. Para reproducirlas,
+  ejecutar `npm run test:e2e -- e2e/faction-art-shots.spec.ts` con
+  `RUN_FACTION_SHOTS=1`.
+
+---
+
+## Prueba de carta y suelo de Fimbul — 4 de noviembre de 2026 (Codex)
+
+- Primera facción elegida por el propietario. Originales en
+  `tools/art-inbox/cartas-faccion/` y `tools/art-inbox/suelos-faccion/`.
+  El juego carga los WebP derivados `fimbul-hielo-v1.webp` y
+  `suelo-fimbul-v1.webp` en las carpetas públicas de marcos y terreno.
+- Referencia del chasis: Furia, commit `bbdf2c0` de la copia de consulta.
+  El recorte de la ventana de Fimbul se comparte entre la carta HTML y las
+  dos caras de la ficha 3D. Se reutiliza la ilustración de cada carta.
+- El grabado del fiordo se reparte entre las 64 losas. Las juntas físicas
+  separan las casillas y la veladura de la Caldera da contraste a los destinos.
+- Tras probar el Escudero del Thing, se centró el título, se ajustaron el
+  pergamino y el medallón de Vida y se corrigió el glosario en carta completa.
+  El inspector muestra las cifras actuales al abrir una ficha de Fimbul.
+- Revisión local a 1920 × 1080 y 1366 × 768 en
+  `tools/captures/fimbul/`. Pendiente de valoración antes de aplicar el
+  criterio a otra facción.
 
 ---
 

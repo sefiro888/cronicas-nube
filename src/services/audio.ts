@@ -1,3 +1,6 @@
+import type { FactionId } from '../game/types'
+import { factionVoices } from './factionTimbres'
+
 export type SoundCue =
   | 'draw'
   | 'resource'
@@ -402,13 +405,13 @@ const renderVoice = (active: Engine, voice: Voice, startAt: number, level: numbe
  * (general / efectos / silencio) vive en los buses del motor y se aplica en
  * caliente, así que cada punto de llamada solo dice QUÉ suena, no cuánto.
  */
-export function playSynthCue(cue: SoundCue): void {
+export function playSynthCue(cue: SoundCue, faction?: FactionId): void {
   if (mix.muted) return
   const active = getEngine()
   if (!active) return
   if (active.context.state === 'suspended') void active.context.resume()
   const startAt = active.context.currentTime + 0.005
-  for (const voice of voicesForCue(cue)) renderVoice(active, voice, startAt, 1)
+  for (const voice of factionVoices(voicesForCue(cue), faction)) renderVoice(active, voice, startAt, 1)
 }
 
 // ── Ambiente ─────────────────────────────────────────────────────────────────

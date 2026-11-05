@@ -26,6 +26,9 @@ export function HomePage() {
   const records = useRecords((state) => state.records)
   const packs = useCollection((state) => state.packs)
   const match = useMatchStore((state) => state.match)
+  const matchMode = useMatchStore((state) => state.mode)
+  const resumePath = matchMode === 'adventure' ? '/battle?adventure=1'
+    : match && 'towerPreparation' in match ? '/battle?tower=1' : '/battle'
   const setSelectedDeck = usePreferences((state) => state.setSelectedDeck)
   const resume = useMemo(() => resumableMatch(match), [match])
   const me = useMemo(() => summarizeForHome(records), [records])
@@ -46,7 +49,7 @@ export function HomePage() {
           <p className={styles.lead}>Los mundos convergen.<br />Tu voluntad decide qué permanece.</p>
           <p className={styles.heroDescription}>Canaliza la Esencia, despliega tus cartas sobre un tablero vivo y quiebra el Nexo de tu rival.</p>
           <div className={styles.buttons}>
-            {resume && <Link className={styles.primary} to="/battle">Continuar partida <span aria-hidden="true">↗</span></Link>}
+            {resume && <Link className={styles.primary} to={resumePath}>Continuar partida <span aria-hidden="true">↗</span></Link>}
             <Link className={resume ? styles.secondary : styles.primary} to="/play">{resume ? 'Nueva escaramuza' : 'Iniciar partida'} <span aria-hidden="true">↗</span></Link>
             <Link className={styles.secondary} to="/gallery">Explorar cartas</Link>
           </div>

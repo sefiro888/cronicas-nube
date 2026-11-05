@@ -1,0 +1,306 @@
+.page {
+  width: min(1250px, calc(100% - 40px));
+  margin: auto;
+  padding: 36px 0 70px;
+  color: #efe4cb;
+}
+.hero {
+  padding: 35px;
+  border: 1px solid #ba9c594d;
+  border-radius: 12px;
+  background:
+    linear-gradient(90deg, #061321f2, #10213380),
+    url('/assets/interface/nexo-convergencia-v1.webp') center/cover;
+}
+.eyebrow {
+  font: 700 10px var(--display);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #d1af6a;
+}
+.hero h1 {
+  font: 700 clamp(30px, 4vw, 48px) var(--display);
+  color: #f8dfab;
+  margin: 12px 0;
+}
+.hero p {
+  max-width: 600px;
+  line-height: 1.6;
+  color: #b8c9d2;
+}
+.labLink {
+  display: inline-block;
+  color: #a7ddf8;
+  text-decoration: none;
+  border-bottom: 1px solid #709cba66;
+  padding: 9px 0;
+}
+.active {
+  display: flex;
+  justify-content: space-between;
+  gap: 28px;
+  margin: 24px 0;
+  padding: 25px;
+  background: linear-gradient(130deg, #1e2e39, #10151f);
+  border: 1px solid #b79b5a7a;
+  border-radius: 10px;
+}
+.active h2 {
+  font: 700 24px var(--display);
+}
+.active p,
+.active blockquote {
+  line-height: 1.7;
+  color: #c9c1ad;
+}
+.active blockquote {
+  margin-left: 0;
+  color: #e7ca8d;
+  font-style: italic;
+}
+.runActions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  justify-content: center;
+  min-width: 210px;
+}
+.page button,
+.configuration select {
+  padding: 11px 17px;
+  border: 1px solid #ac91584d;
+  border-radius: 5px;
+  background: linear-gradient(#70572d, #382817);
+  color: #f6dfb2;
+  font: 600 13px var(--display);
+  cursor: pointer;
+}
+.page button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.page button:focus-visible,
+.page select:focus-visible,
+.page a:focus-visible {
+  outline: 2px solid #94d9ff;
+  outline-offset: 4px;
+}
+.page .secondary {
+  background: #111d2b;
+  color: #aebdca;
+}
+.tabs {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 28px 0 18px;
+}
+.tabs button {
+  background: #111e2d;
+  color: #bfc7c9;
+}
+.tabs button[aria-selected='true'] {
+  background: linear-gradient(#806332, #3d2c18);
+  color: #ffe1a3;
+  border-color: #ceab64;
+}
+.setup {
+  display: grid;
+  grid-template-columns: 230px 1fr;
+  border: 1px solid #b49a5d38;
+  background: #0d1725dd;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.identity {
+  position: relative;
+  min-height: 280px;
+  isolation: isolate;
+}
+.identity > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: -2;
+}
+.identity:after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(transparent, #06101cf2);
+  z-index: -1;
+}
+.identity > div {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  right: 20px;
+}
+.identity h2 {
+  font: 700 26px var(--display);
+  margin: 9px 0;
+}
+.identity p {
+  margin: 0;
+  color: #b6c7d0;
+}
+.configuration {
+  display: grid;
+  align-content: center;
+  gap: 16px;
+  padding: 28px;
+}
+.configuration label {
+  display: grid;
+  gap: 8px;
+  font: 600 12px var(--display);
+  color: #d0be99;
+}
+.configuration select {
+  background: #0a1320;
+  color: #ece1c6;
+  width: 100%;
+}
+.configuration p {
+  line-height: 1.65;
+  color: #b3c2cc;
+  margin: 0;
+}
+.configuration > button {
+  justify-self: start;
+}
+.configuration > small {
+  color: #a79e8a;
+}
+.rule {
+  padding: 12px;
+  border-left: 2px solid #a78ac1;
+  background: #8b69ac12;
+}
+.chapters {
+  list-style: none;
+  margin: 24px 0;
+  padding: 0;
+  display: grid;
+  gap: 16px;
+}
+.chapters li {
+  display: flex;
+  gap: 24px;
+  padding: 24px;
+  border: 1px solid #ba9d5c40;
+  border-radius: 8px;
+  background: #0e1a29e6;
+}
+.chapters li[data-locked] {
+  opacity: 0.6;
+}
+.chapterNumber {
+  font: 700 32px var(--display);
+  color: #d1b16e;
+  min-width: 45px;
+}
+.chapters h3 {
+  font: 700 23px var(--display);
+  margin: 0 0 12px;
+}
+.chapters p {
+  line-height: 1.7;
+  margin: 8px 0;
+  color: #b5c3ce;
+}
+.chapters .rival {
+  color: #d2b985;
+  font-size: 12px;
+  margin-bottom: 15px;
+}
+.notice {
+  font-size: 12px;
+  color: #98a7b3;
+  text-align: center;
+  margin: 28px 0;
+  line-height: 1.7;
+}
+.battlePanel {
+  position: absolute;
+  top: 96px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 35;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 7px 15px;
+  width: max-content;
+  max-width: min(85vw, 650px);
+  padding: 9px 18px;
+  background: #081320ed;
+  border: 1px solid #d0ab665e;
+  border-radius: 7px;
+  box-shadow: 0 4px 18px #0005;
+  color: #efd9af;
+  font-size: 11px;
+  pointer-events: auto;
+}
+.battlePanel strong {
+  font: 600 12px var(--display);
+}
+.battlePanel span {
+  color: #b8d4e2;
+}
+.battlePanel button {
+  border: 0;
+  background: transparent;
+  color: #ffe1a0;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 12px;
+}
+@media (max-width: 700px) {
+  .page {
+    width: calc(100% - 24px);
+    padding-top: 18px;
+  }
+  .hero {
+    padding: 24px;
+  }
+  .active {
+    flex-direction: column;
+    padding: 20px;
+    gap: 12px;
+  }
+  .runActions {
+    min-width: 0;
+  }
+  .setup {
+    grid-template-columns: 1fr;
+  }
+  .identity {
+    min-height: 210px;
+  }
+  .identity > img {
+    object-position: center 30%;
+  }
+  .configuration {
+    padding: 22px;
+  }
+  .chapters li {
+    padding: 18px;
+    gap: 14px;
+  }
+  .chapterNumber {
+    font-size: 24px;
+    min-width: 30px;
+  }
+  .battlePanel {
+    top: 87px;
+    font-size: 10px;
+    max-width: 90vw;
+    padding: 6px 9px;
+  }
+  .battlePanel strong {
+    font-size: 10px;
+  }
+}

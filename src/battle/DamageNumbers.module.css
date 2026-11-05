@@ -102,3 +102,4 @@
 @media (prefers-reduced-motion: reduce) {
   .number { animation: fadeOnly 1200ms ease-out forwards !important; }
 }
+.effectCaption { display: block; color: inherit; font: 800 .42em/1.2 system-ui, sans-serif; letter-spacing: .08em; text-transform: uppercase; -webkit-text-stroke: 0; }

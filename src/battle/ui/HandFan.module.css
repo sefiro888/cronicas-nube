@@ -63,12 +63,40 @@
   box-shadow: 0 0 0 1px #211925, 0 0 0 2px #b48aad, 0 0 7px #a474b233, 0 10px 24px #0009, inset 0 0 1.8rem #0008;
 }
 .fanCard[data-playable='true'] > .lift > [data-card-id] {
-  box-shadow: 0 0 0 1px #111a17, 0 0 0 2px #82bf9c, 0 0 8px #75d4a02b, 0 10px 24px #0009;
+  box-shadow: 0 0 0 1px #111a17, 0 0 0 2px #9df4c3, 0 0 14px #75d4a080, 0 10px 24px #0009;
+}
+.fanCard[data-playable='true'] > .lift > [data-card-id] > [class*='playableMark'] {
+  display: block;
+  top: 22%;
+  right: 10%;
+  font-size: clamp(8px, .6vw, 11px);
+  padding: .1em .42em;
 }
 .fanCard[data-selected='true'] > .lift > [data-card-id] {
   box-shadow: 0 0 0 1px #17130d, 0 0 0 2px #eed39b, 0 0 10px #d4ac613d, 0 16px 30px #000a;
 }
 .hand[data-reduced-motion] .fanCard, .hand[data-reduced-motion] .lift { transition: none; animation: none; }
+@media (min-width: 761px) {
+  .handViewport { container-type: inline-size; }
+  .hand {
+    /* Cuatro píxeles libres después del centro permiten seguir pulsando
+       cada carta. Comprimir solo los márgenes escondía esos centros. */
+    --fan-card-width: min(10.75rem,
+      calc(2 * (100cqw - 6rem - .25rem * (var(--fan-count) - 1)) / (var(--fan-count) + 1)));
+  }
+  .fanCard > .lift > [data-card-id] { --card-width: var(--fan-card-width); }
+  .fanCard { margin: 0; }
+  /* El margen negativo en ambos extremos hacía que diez cartas invadieran
+     los atriles. Solo se solapan vecinas y se reservan 3 rem por lado para
+     la rotación y el crecimiento al consultar la primera o la última. */
+  .fanCard + .fanCard {
+    margin-left: max(
+      calc(.25rem - var(--fan-card-width) / 2),
+      min(calc(var(--fan-overlap) * 2),
+        calc((100cqw - 6rem - var(--fan-card-width)) / max(1, calc(var(--fan-count) - 1)) - var(--fan-card-width)))
+    );
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .fanCard, .lift { transition: none; animation: none; }
 }
@@ -161,3 +189,6 @@
     border-radius: 50%;
   }
 }
+/* La mano llena conserva los títulos de los extremos: una curvatura fuerte los hundía bajo el carril. */
+.hand[data-full-hand] .fanCard { transform: rotate(var(--fan-rotation)) translateY(calc(var(--fan-lift) + 4px)); }
+@media (max-width: 760px) { .hand[data-full-hand] .fanCard { transform: translateY(4px); } }

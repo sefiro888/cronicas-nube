@@ -1,3 +1,4 @@
+import { ScenarioAmbientLight, ScenarioHemisphereLight, ScenarioDirectionalLight } from './ScenarioLights'
 import { Sparkles, Stars } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { useEffect, useRef } from 'react'
@@ -166,12 +167,12 @@ export function RunicSanctuary({ quality, reducedMotion, event }: SanctuaryProps
   return <>
 
 
-    <ambientLight intensity={0.32} color="#9ba9b6" />
-    <hemisphereLight intensity={0.36} color="#b1c2cd" groundColor="#344841" />
-    <directionalLight position={[-9, 11, 7]} intensity={2.05} color="#d0dce5" castShadow={quality !== 'low'}
+    <ScenarioAmbientLight intensity={0.32} color="#9ba9b6" />
+    <ScenarioHemisphereLight intensity={0.36} color="#b1c2cd" groundColor="#344841" />
+    <ScenarioDirectionalLight position={[-9, 11, 7]} intensity={2.05} color="#d0dce5" castShadow={quality !== 'low'}
       shadow-mapSize-width={quality === 'high' ? 2048 : 1024} shadow-mapSize-height={quality === 'high' ? 2048 : 1024}
       shadow-camera-left={-12} shadow-camera-right={12} shadow-camera-top={12} shadow-camera-bottom={-12} shadow-bias={-0.0006} />
-    <directionalLight position={[6, 5, -9]} intensity={0.6} color="#829bba" />
+    <ScenarioDirectionalLight position={[6, 5, -9]} intensity={0.6} color="#829bba" />
     <Stars radius={60} depth={20} count={quality === 'high' ? 450 : quality === 'medium' ? 240 : 80}
       factor={1.1} saturation={0.1} fade speed={0} />
     <DistantVista image={`/assets/scenarios/sanctuary-vista-v1${quality === 'low' ? '-low' : ''}.webp`} />

@@ -8,7 +8,7 @@ import { isChallenge, isFurious } from './fimbul';
 import { attackSinksDefender, gainRuno, returnSunkenUnits, runoAttackBonus, runoFromSpell, sinkUnit } from './kalevala';
 import { grantPetardazoAll, sparkEffects, startSpark, type SparkFace } from './goblins';
 import { continuousHealthBonus, dischargeLine, formationActive, formationAttackBonus, hasDischarge, hasFormation } from './tercios';
-import { payMana, restoreMana } from './mana';
+import { payMana, planManaPayment, restoreMana } from './mana';
 import { COVER_REDUCTION, generateTerrain, givesCover, isBlocked } from './terrain';
 import { ELEMENTS } from './types';
 import type { ManaCost } from './types';
@@ -1982,35 +1982,83 @@ export const validSpellTargets = (
  * Coste efectivo de una carta tras aplicar descuentos activos:
  * Archivo Viviente (hechizos) y la pasiva de Kaela (unidades).
  */
-export const effectiveCost = (
+const effectiveCostWithReasons = (state: MatchState, playerId: PlayerId, card: CardDefinition) => {
+  let generic = card.cost.generic;
+  const reasons: string[] = [];
+  const discountBy = (amount: number, reason: string) => {
+    const next = Math.max(0, generic - amount);
+    if (next !== generic) reasons.push(reason);
+    generic = next;
+  };
+  for (const piece of state.board) {
+    if (piece.owner !== playerId || generic === 0) continue;
+    const source = CARD_BY_ID[piece.cardId];
+    const discount = source?.effects.find((effect) => effect.kind === 'passive' && (
+      card.type === 'instant' && (effect.id === 'spell-generic-discount' || effect.id === 'instant-cost-discount') ||
+      card.type === 'unit' && card.subtype === 'Autómata' && effect.id === 'automata-cost-discount'
+    ));
+    if (discount?.kind === 'passive' && source) discountBy(discount.value ?? 1, source.name);
+  }
+  if (card.type === 'unit' && state.players[playerId].unitDiscountPending) discountBy(1, 'Descuento de unidad preparado');
+  return { cost: { generic, colored: card.cost.colored }, reasons };
+};
+
+export const effectiveCost = (state: MatchState, playerId: PlayerId, card: CardDefinition): ManaCost =>
+  effectiveCostWithReasons(state, playerId, card).cost;
+
+const handCardPayment = (
   state: MatchState,
   playerId: PlayerId,
   card: CardDefinition,
-): ManaCost => {
-  let generic = card.cost.generic;
-  if (card.type === 'instant') {
-    for (const piece of state.board) {
-      if (piece.owner !== playerId) continue;
-      const discount = CARD_BY_ID[piece.cardId]?.effects.find(
-        (effect) => effect.kind === 'passive' && (effect.id === 'spell-generic-discount' || effect.id === 'instant-cost-discount'),
-      );
-      if (discount?.kind === 'passive') generic = Math.max(0, generic - (discount.value ?? 1));
-    }
-  }
-  // Forja — la Fundición abarata a los autómatas mientras siga en pie.
-  if (card.type === 'unit' && card.subtype === 'Autómata') {
-    for (const piece of state.board) {
-      if (piece.owner !== playerId) continue;
-      const discount = CARD_BY_ID[piece.cardId]?.effects.find(
-        (effect) => effect.kind === 'passive' && effect.id === 'automata-cost-discount',
-      );
-      if (discount?.kind === 'passive') generic = Math.max(0, generic - (discount.value ?? 1));
-    }
-  }
-  if (card.type === 'unit' && state.players[playerId].unitDiscountPending) {
-    generic = Math.max(0, generic - 1);
-  }
-  return { generic, colored: card.cost.colored };
+  instance: CardInstance,
+) => {
+  // Samsara — Pira del Ghat: una copia que ha vuelto por Renacer puede traer
+  // consigo un descuento de coste genérico para este despliegue.
+  const player = state.players[playerId];
+  const { cost: baseCost, reasons } = effectiveCostWithReasons(state, playerId, card);
+  const renacerDiscount = Math.min(baseCost.generic, instance.costDiscount ?? 0);
+  // Xiwangmu (Jade): mientras tengas el Mandato, la primera carta de cada turno cuesta 1 menos.
+  const xiwangmuDiscount =
+    player.commanderId === 'xiwangmu-la-reina-madre'
+    && state.mandate === playerId
+    && !player.firstCardDiscountUsedThisTurn
+      ? Math.min(baseCost.generic - renacerDiscount, 1)
+      : 0;
+  const totalDiscount = renacerDiscount + xiwangmuDiscount;
+  if (renacerDiscount > 0) reasons.push('Renacer · Pira del Ghat');
+  if (xiwangmuDiscount > 0) reasons.push('Xiwangmu · Mandato Celestial');
+  return { cost: { ...baseCost, generic: baseCost.generic - totalDiscount }, xiwangmuDiscount, reasons };
+};
+
+// La mano y el cobro consultan los descuentos de la misma copia.
+export const handCardCost = (state: MatchState, playerId: PlayerId, card: CardDefinition, instance: CardInstance): ManaCost =>
+  handCardPayment(state, playerId, card, instance).cost;
+
+export const canPlayHandCard = (
+  state: MatchState,
+  playerId: PlayerId,
+  card: CardDefinition,
+  instance: CardInstance,
+): boolean => handCardBlockReason(state, playerId, card, instance) === undefined;
+
+/** Comparte el mismo orden de validación que la señal de carta jugable. */
+export const handCardBlockReason = (state: MatchState, playerId: PlayerId, card: CardDefinition, instance: CardInstance): string | undefined => {
+  if (state.pendingSpark) return 'Resuelve la Chispa antes de continuar.';
+  const turnError = validateTurn(state, playerId);
+  if (turnError) return turnError.error?.message ?? 'Esta fase no permite jugar cartas.';
+  const player = state.players[playerId];
+  if (card.type === 'mana') return player.resourcePlayedThisTurn ? 'Ya has jugado una fuente este turno.' : undefined;
+  if (!planManaPayment(player.resources, handCardCost(state, playerId, card, instance)).payable) return 'Falta Esencia disponible del tipo requerido.';
+  if (card.effects.some((effect) => effect.kind === 'sacrifice') && !hasSacrificeAvailable(state, playerId)) return 'Necesitas una unidad propia que sacrificar.';
+  if ((card.type === 'unit' || card.type === 'structure') && getValidDeploymentPositions(state, playerId).length === 0) return 'No hay casillas de despliegue disponibles.';
+  if (card.type === 'instant' && spellNeedsPiece(card) && validSpellTargets(state, playerId, card).length === 0) return 'No hay un objetivo válido para este hechizo.';
+  return undefined;
+};
+
+/** Las causas solo se enseñan si cambian realmente el precio de esta copia. */
+export const handCardCostDetails = (state: MatchState, playerId: PlayerId, card: CardDefinition, instance: CardInstance) => {
+  const payment = handCardPayment(state, playerId, card, instance);
+  return { cost: payment.cost, baseCost: card.cost, reasons: payment.reasons };
 };
 
 export const playCard = (
@@ -2056,19 +2104,7 @@ export const playCard = (
     return fail(state, 'target-required', 'Necesitas una unidad propia que sacrificar para jugar esta carta.');
   }
 
-  // Samsara — Pira del Ghat: una copia que ha vuelto por Renacer puede traer
-  // consigo un descuento de coste genérico para este despliegue.
-  const baseCost = effectiveCost(state, playerId, card);
-  const renacerDiscount = Math.min(baseCost.generic, instance.costDiscount ?? 0);
-  // Xiwangmu (Jade): mientras tengas el Mandato, la primera carta de cada turno cuesta 1 menos.
-  const xiwangmuDiscount =
-    player.commanderId === 'xiwangmu-la-reina-madre'
-    && state.mandate === playerId
-    && !player.firstCardDiscountUsedThisTurn
-      ? Math.min(baseCost.generic - renacerDiscount, 1)
-      : 0;
-  const totalDiscount = renacerDiscount + xiwangmuDiscount;
-  const cost = totalDiscount > 0 ? { ...baseCost, generic: baseCost.generic - totalDiscount } : baseCost;
+  const { cost, xiwangmuDiscount } = handCardPayment(state, playerId, card, instance);
   const payment = payMana(player.resources, cost);
   if (!payment.plan.payable) return fail(state, 'insufficient-mana', 'No hay Esencia disponible suficiente.');
   if (card.effects.some((effect) => effect.kind === 'spark') && sparkFace === undefined) {

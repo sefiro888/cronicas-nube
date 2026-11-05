@@ -232,9 +232,9 @@
 /* ── Carril de la mano ────────────────────────────────────────────────────── */
 .handBar { height: 210px; position: absolute; z-index: 25; left: 0; right: 0; bottom: 0; border-top: 1px solid var(--line); background: linear-gradient(rgba(12,14,21,.94), #080a10); box-shadow: 0 -16px 45px rgba(0,0,0,.4); transition: height .32s ease; }
 /* La mano (primer div: raíz de HandFan) se desliza al recogerse. */
-.handBar > div:first-of-type { transition: transform .32s cubic-bezier(.25,.8,.35,1); }
+.handBar > [data-testid='hand-scroll-rail'] { transition: transform .32s cubic-bezier(.25,.8,.35,1); }
 .handBar[data-tucked] { height: 56px; }
-.handBar[data-tucked] > div:first-of-type { transform: translateY(72%); pointer-events: none; }
+.handBar[data-tucked] > [data-testid='hand-scroll-rail'] { transform: translateY(72%); pointer-events: none; }
 .handToggle {
   position: absolute; z-index: 42; top: -15px; left: 50%; transform: translateX(-50%);
   padding: 4px 16px; cursor: pointer;
@@ -918,7 +918,7 @@
 .handToggle:disabled { color: #b8ad95; cursor: default; }
 .battle[data-hand-collapsed] .arena { bottom: 56px; }
 .handToggle, .endTurn, .commanderPower { -webkit-tap-highlight-color: transparent; }
-.battle[data-motion='reduced'] .handBar, .battle[data-motion='reduced'] .handBar > div:first-of-type { transition: none; }
+.battle[data-motion='reduced'] .handBar, .battle[data-motion='reduced'] .handBar > [data-testid='hand-scroll-rail'] { transition: none; }
 
 @media (min-width: 1600px) and (min-height: 821px) {
   .boardFrame { --scene-bleed: 240px; inset-inline: 240px; }
@@ -1101,3 +1101,124 @@
   to { box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.6), 0 0 44px rgba(255, 150, 60, 1); transform: translateX(-50%) scale(1.05); }
 }
 @media (prefers-reduced-motion: reduce) { .finishButton { animation: none; } }
+
+
+/* Datos y controles comparten el flujo: el nombre largo del rival no puede
+   crecer por debajo de la cámara ni de su propio indicador de Vida. */
+.topbar {
+  grid-template-columns: minmax(140px, 1fr) minmax(150px, .75fr) minmax(410px, 1fr);
+  backdrop-filter: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--battle-accent) 55%, #50432e);
+  background: radial-gradient(ellipse at 50% -100%, color-mix(in srgb, var(--battle-accent) 24%, transparent), transparent 70%), linear-gradient(#26231e, #101317 70%);
+}
+.headerRight { display: flex; justify-content: flex-end; align-items: center; gap: 14px; min-width: 0; }
+.enemySummary { flex: 1 1 auto; min-width: 0; margin: 0; padding: 3px 0; gap: 8px; }
+.enemyStats { flex: 1; min-width: 0; }
+.enemyName { max-width: 100%; min-width: 0; }
+.enemyName strong { overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.battleTools { display: flex; flex: 0 0 auto; gap: 7px; border-left: 1px solid #bca67352; padding-left: 12px; }
+.battleTools button { position: static; margin: 0; width: 32px; height: 32px; background: radial-gradient(circle at 38% 20%, #66543b, #191a1b 80%); box-shadow: inset 0 0 0 2px #0d1016, 0 2px 5px #0008; }
+.exit { border-color: #bca67355; background: linear-gradient(115deg, #4c3d292b, #16171a); color: #dac9a3; }
+.turn strong { color: color-mix(in srgb, var(--battle-accent) 48%, #ffe8b5); text-shadow: 0 2px 6px #000; }
+
+/* Los huecos del abanico se convierten en atriles informativos. Los datos
+   quedan a los lados y el carril de cartas conserva su área desplazable. */
+.handBar {
+  display: grid;
+  grid-template-columns: minmax(180px, 13%) minmax(0, 1fr) minmax(180px, 13%);
+  gap: 16px;
+  padding: 0 20px;
+  border-top-color: color-mix(in srgb, var(--battle-accent) 55%, #625236);
+  background:
+    repeating-linear-gradient(0deg, #f2dba908 0 1px, transparent 1px 4px),
+    radial-gradient(ellipse at 0 100%, color-mix(in srgb, var(--battle-accent) 24%, #6e583f), transparent 46%),
+    radial-gradient(ellipse at 100% 100%, color-mix(in srgb, var(--battle-accent) 20%, #5b4d38), transparent 46%),
+    linear-gradient(180deg, #333439, #1a2029 72%);
+}
+.handLedger, .handContext { padding: 12px 2px 8px; align-self: start; min-width: 0; }
+.handLedger { position: relative; isolation: isolate; }
+.ledgerWatermark { position: absolute; z-index: -1; pointer-events: none; top: 6px; right: 0; width: 100%; aspect-ratio: 1; opacity: .09; }
+.ledgerWatermark > svg { width: 100%; height: 100%; }
+.ledgerWatermark > span { position: absolute; left: 30%; top: 30%; width: 40%; height: 40%; }
+.ledgerTitle { display: block; font: 700 9px/1.3 var(--display); letter-spacing: .18em; color: #dec896; text-transform: uppercase; margin-bottom: 7px; }
+.handLedger .essencePill {
+  position: relative; left: auto; bottom: auto; transform: none; margin: 0;
+  display: grid; grid-template-columns: auto minmax(0, 1fr); max-width: 100%; padding: 8px; gap: 5px 8px;
+  border-radius: 14px 3px 14px 3px; border-color: #b99c61;
+  background:
+    radial-gradient(ellipse at 15% 30%, color-mix(in srgb, var(--battle-accent) 14%, transparent), transparent 75%),
+    url('/assets/interface/reserva-esencia-v1.webp') center / 100% 100% no-repeat,
+    radial-gradient(ellipse at 15% 30%, color-mix(in srgb, var(--battle-accent) 28%, #1b2026), transparent 75%),
+    linear-gradient(135deg, #54452f, #191d21 18%, #0b1018 72%, #4d3a23);
+  box-shadow: inset 0 0 0 2px #141314, inset 0 0 0 3px #d6b76b47, 0 5px 14px #0008;
+}
+.essenceSigil {
+  position: relative; width: clamp(52px, 4vw, 72px); height: clamp(52px, 4vw, 72px);
+  display: grid; place-items: center; border: 0; border-radius: 50%; background: #0b1119; color: var(--battle-accent);
+  filter: drop-shadow(0 0 7px color-mix(in srgb, var(--battle-accent) 35%, transparent));
+}
+.essenceSigil > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.essenceSigil::after {
+  content: ''; position: absolute; inset: 13%; border-radius: 50%;
+  background: conic-gradient(from -90deg, var(--battle-accent) var(--essence-charge), #f3deb118 0);
+  mask-image: radial-gradient(circle, transparent 62%, #000 65% 80%, transparent 83%);
+  filter: drop-shadow(0 0 3px var(--battle-accent));
+}
+.essenceSigil > span { position: relative; z-index: 1; width: 48%; height: 48%; }
+.reserveReadout { min-width: 0; }
+.reserveReadout > small { display: block; color: #d9c399; font: 600 8px/1.3 system-ui, sans-serif; text-transform: uppercase; letter-spacing: .08em; }
+.reserveReadout .essenceCount { display: block; font-size: clamp(21px, 1.6vw, 30px); line-height: 1.25; color: #fff0cd; text-shadow: 0 2px 3px #000; white-space: nowrap; }
+.reserveReadout > span { display: block; color: #b6d9c5; font-size: 9px; line-height: 1.3; }
+.essencePill[data-empty] .reserveReadout > span { color: #b6a68c; }
+.essencePips { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(var(--reserve-source-count), minmax(0, 1fr)); gap: 3px; max-width: 100%; }
+.essencePips > span {
+  display: grid; place-items: center; justify-self: center; width: min(100%, 24px); height: 22px;
+  clip-path: polygon(50% 0, 95% 20%, 86% 84%, 50% 100%, 14% 84%, 5% 20%);
+  background: radial-gradient(circle at 35% 20%, #fff8, color-mix(in srgb, currentColor 75%, #142132) 40%, #10111b);
+  box-shadow: none; color: var(--resource-color); opacity: 1;
+}
+.essencePips > span > span { width: min(11px, 100%); height: 13px; background: none; clip-path: none; box-shadow: none; color: inherit; }
+.essencePips > span[data-exhausted='true'] { filter: grayscale(.9) brightness(.8); opacity: .72; }
+.essenceChannel { grid-column: 1 / -1; display: block; height: 4px; border: 1px solid #b99c614f; background: #050a11; }
+.essenceChannel i { display: block; height: 100%; width: var(--essence-charge); background: linear-gradient(90deg, #fff1ac, var(--battle-accent)); box-shadow: 0 0 6px var(--battle-accent); }
+.sourceStatus { display: block; margin-top: 7px; padding: 4px 7px; border-left: 2px solid var(--battle-accent); background: linear-gradient(90deg, #a1ce9c16, transparent); color: #b9dfc0; font-size: 9px; line-height: 1.4; }
+.sourceStatus[data-used] { color: #9d988d; border-left-color: #655f50; }
+.handContext { padding: 12px 10px 8px; border-inline: 1px solid #b79d6040; background: radial-gradient(ellipse at 50% 0, #d7b96c15, transparent 85%); }
+.handContext > strong { display: block; color: #f2e3c1; font: 600 clamp(14px, 1.1vw, 21px)/1.2 var(--display); }
+.handContext p { font-size: 10px; line-height: 1.4; color: #c9c0ab; margin: 5px 0 0; }
+.handFacts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; margin: 8px 0 0; }
+.handFacts > div { display: flex; align-items: baseline; justify-content: space-between; gap: 4px; padding: 3px 5px; border-bottom: 1px solid #b99c613d; background: #080c1459; }
+.handFacts dt { font-size: 8px; color: #b5a88e; text-transform: uppercase; letter-spacing: .05em; }
+.handFacts dd { margin: 0; font: 700 17px/1.2 var(--display); color: #f5e2b9; }
+.handFacts [data-ready] dd { color: #a8edbf; text-shadow: 0 0 7px #65d99663; }
+.handBar[data-tucked] .ledgerTitle, .handBar[data-tucked] .sourceStatus, .handBar[data-tucked] .handContext { display: none; }
+.handBar[data-tucked] .handLedger { padding: 5px 0; }
+.handBar[data-tucked] .essenceSigil { width: 25px; height: 25px; }
+.handBar[data-tucked] .essencePips { display: none; }
+.handBar[data-tucked] .reserveReadout > small, .handBar[data-tucked] .reserveReadout > span,
+.handBar[data-tucked] .essenceChannel, .handBar[data-tucked] .ledgerWatermark { display: none; }
+.handBar[data-tucked] .essencePill { padding: 3px 8px; }
+.handBar[data-tucked] .reserveReadout .essenceCount { font-size: 18px; }
+@media (max-width: 760px), (max-height: 500px) {
+  .topbar { grid-template-columns: auto 1fr auto; }
+  .headerRight { gap: 0; }
+  .enemySummary { flex: 0 0 auto; padding-right: 0; }
+  .enemyName { display: none; }
+  .battleTools { display: contents; }
+  .battleTools button { position: fixed; top: auto; bottom: 206px; width: 40px; height: 40px; }
+  .handBar { grid-template-columns: minmax(0, 1fr); padding: 0; gap: 0; }
+  .handLedger { position: fixed; z-index: 5; left: 8px; top: auto; bottom: 206px; padding: 0; max-width: 45vw; }
+  .handLedger .essencePill { padding: 4px 7px; gap: 6px; }
+  .handLedger .essenceSigil { width: 26px; height: 26px; }
+  .handLedger .essencePips, .handLedger .ledgerTitle, .handLedger .sourceStatus, .handContext { display: none; }
+  .handLedger .reserveReadout > small, .handLedger .reserveReadout > span, .handLedger .essenceChannel { display: none; }
+  .handLedger .ledgerWatermark { display: none; }
+  .handLedger .reserveReadout .essenceCount { font-size: 17px; }
+  .handBar[data-tucked] .handLedger { padding: 0; top: auto; bottom: 206px; }
+}
+.costContext { display: block; margin: 6px 0; font-size: 11px; color: #b9d9e8; line-height: 1.45; }
+.dangerVignette[data-warning-style='subtle'] { animation: none; opacity: .3; box-shadow: inset 0 0 55px #b02e2055; background: none; }
+.dangerVignette[data-warning-style='pulse'] { animation: dangerPulse 3.2s ease-in-out infinite alternate; }
+@media (min-width: 761px) and (max-width: 1400px) { .topbar { grid-template-columns: minmax(105px, .75fr) minmax(125px, .7fr) minmax(300px, 1.25fr); padding-inline: 12px; gap: 10px; } .headerRight { gap: 8px; } .battleTools { padding-left: 8px; gap: 5px; } .enemyName strong { font-size: 13px; } }
+.dangerVignette[data-reduced-motion] { animation: none !important; }
+@media (prefers-reduced-motion: reduce) { .dangerVignette { animation: none !important; } }

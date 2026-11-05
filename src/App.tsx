@@ -13,6 +13,9 @@ const MultiplayerPage = lazy(() => import('./pages/MultiplayerPage').then((modul
 const PlayPage = lazy(() => import('./pages/PlayPage').then((module) => ({ default: module.PlayPage })))
 const TowerPage = lazy(() => import('./pages/TowerPage').then((module) => ({ default: module.TowerPage })))
 const SettingsPage = lazy(() => import('./pages/SettingsPage').then((module) => ({ default: module.SettingsPage })))
+const ScenarioAtlasPage = lazy(() => import('./pages/ScenarioAtlasPage').then((module) => ({ default: module.ScenarioAtlasPage })))
+const AdventurePage = lazy(() => import('./pages/AdventurePage').then((module) => ({ default: module.AdventurePage })))
+const LaboratoryPage = lazy(() => import('./pages/LaboratoryPage').then((module) => ({ default: module.LaboratoryPage })))
 
 export function App() {
   // Un montaje sin errores confirma que los fragmentos de esta sesión
@@ -33,6 +36,9 @@ export function App() {
             <Route path="decks" element={<DecksPage />} />
             <Route path="album" element={<AlbumPage />} />
             <Route path="tower" element={<TowerPage />} />
+            <Route path="atlas" element={<ScenarioAtlasPage />} />
+            <Route path="adventures" element={<AdventurePage />} />
+            <Route path="laboratory" element={<LaboratoryPage />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route path="battle" element={<BattlePage />} />
           </Route>

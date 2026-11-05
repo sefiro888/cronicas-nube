@@ -14,9 +14,8 @@ describe('escenario según la facción', () => {
   })
 
   it('«auto» le da a cada facción un escenario, y a Furia y Duna el suyo', () => {
-    for (const faction of FACTION_IDS) {
-      expect(resolveScenario('auto', faction), faction).not.toBe('auto')
-    }
+    const maps = FACTION_IDS.map((faction) => resolveScenario('auto', faction))
+    expect(new Set(maps).size).toBe(FACTION_IDS.length)
     expect(resolveScenario('auto', 'fury')).toBe('caldera')
     expect(resolveScenario('auto', 'duna')).toBe('duna')
   })

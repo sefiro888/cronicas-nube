@@ -615,3 +615,104 @@
 @media (prefers-reduced-motion: reduce) {
   .card .artImage, .card .artwork::before, .card .foil { animation: none !important; }
 }
+
+/* El chasis ya contiene sus materiales y ornamentos: añadir encima las cajas
+   antiguas tapaba el pergamino y duplicaba los engastes de coste y estadísticas. */
+.card[data-frame] {
+  display: block; aspect-ratio: 2 / 3; padding: 0; border: 0; border-radius: 5%;
+  background: #0d1a25; box-shadow: 0 .6rem 1.7rem #0007; container-type: inline-size;
+}
+.factionFrame { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.card[data-frame]::before, .card[data-frame]::after,
+.card[data-frame] .frameFiligree, .card[data-frame] .factionSeal { display: none; }
+.card[data-frame] .header {
+  position: absolute; left: var(--frame-title-x); top: var(--frame-title-y); width: var(--frame-title-width);
+  height: 6.2%; padding: 0 5cqw; transform: translate(-50%, -50%);
+  display: grid; grid-template-columns: minmax(0, 1fr); align-items: center;
+}
+.card[data-frame] .name {
+  font-size: 4.4cqw; line-height: 1.04; text-align: center; letter-spacing: 0; white-space: normal;
+  text-overflow: clip; overflow: visible; text-wrap: balance;
+  -webkit-text-fill-color: var(--frame-title-ink, transparent);
+}
+.card[data-frame] .unique { position: absolute; left: 0; font-size: 3.4cqw; }
+.card[data-frame] .header > :last-child { position: absolute; right: 0; font-size: 3.5cqw; }
+.card[data-frame] .cost {
+  top: var(--frame-cost-y); left: var(--frame-cost-x); width: 11.2%; height: 6.4%;
+  transform: translate(-50%, -50%); display: flex; flex-direction: column;
+  justify-content: center; gap: 0; filter: drop-shadow(0 1px 3px #000); line-height: 1;
+}
+.frameCostTotal { font: 700 7.3cqw/.92 var(--display, Georgia, serif); color: var(--frame-cost-ink, #fff8e8); text-shadow: 0 0 6px #7da3c86b; }
+.frameCostDetail { font: 700 2.25cqw/1.4 system-ui, sans-serif; color: #ffe4bc; margin-top: 1cqw; white-space: nowrap; }
+.card[data-frame] .artwork {
+  position: absolute; left: var(--frame-art-x); top: var(--frame-art-y); width: var(--frame-art-width); height: var(--frame-art-height);
+  clip-path: var(--frame-window); border: 0; border-radius: 0; box-shadow: none; background: #0e1014;
+}
+.card[data-frame] .artImage { object-position: center 35%; }
+.card[data-frame] .artVignette { box-shadow: inset 0 0 2.5cqw #0005; }
+.card[data-frame] .typeLine {
+  position: absolute; top: var(--frame-type-y); left: var(--frame-type-x); width: var(--frame-type-width);
+  height: 4.5%; padding: 0; transform: translate(-50%, -50%);
+  background: none; border: 0; box-shadow: none; font-size: 3.1cqw; color: var(--frame-type-ink, #fff0cf);
+  min-height: 0; gap: 1cqw; text-shadow: 0 1px 2px #100c095c;
+}
+.card[data-frame] .typeLine > span:first-child { text-align: center; }
+.card[data-frame] .microStat { font-size: 2.1cqw; color: var(--frame-type-ink, #ffe1ae); }
+.card[data-frame] .textBox {
+  position: absolute; top: var(--frame-rules-y); left: var(--frame-rules-x); width: var(--frame-rules-width);
+  height: var(--frame-rules-height); padding: 0;
+  border: 0; border-radius: 0; background: none; box-shadow: none; color: #2c1b0e; --glossary-ink: #21160e; --glossary-ink-weight: 68%;
+}
+.card[data-frame] .rules {
+  display: block; overflow: visible; font-size: var(--frame-rule-size); line-height: 1.28; font-weight: 600;
+  -webkit-line-clamp: unset; text-wrap: pretty;
+}
+.card[data-frame] .flavor { display: none; }
+.card[data-frame].inspect:not([data-frame-dense]) .flavor { display: block; font-size: 2.7cqw; line-height: 1.2; margin-top: 1.35cqw; }
+.card[data-frame] .footer, .card[data-frame] .stats { position: absolute; inset: 0; margin: 0; display: block; padding: 0; pointer-events: none; }
+.card[data-frame] .collection {
+  position: absolute; bottom: 3.8%; left: 28%; max-width: 44%; width: 44%; text-align: center;
+  font-size: 1.9cqw; color: #f2c28f; text-shadow: 0 1px 3px #000;
+}
+.card[data-frame] .stat {
+  position: absolute; width: 14%; height: 10%; transform: translate(-50%, -50%); min-width: 0; padding: 0;
+  display: flex; flex-direction: column-reverse; gap: .7cqw; background: none; clip-path: none;
+  filter: none; color: var(--frame-stat-ink, #fff2d7);
+}
+.card[data-frame] .stat::before { display: none; }
+.card[data-frame] .attack { left: var(--frame-attack-x); top: var(--frame-attack-y); }
+.card[data-frame] .health, .card[data-frame] .resistance { left: var(--frame-health-x); top: var(--frame-health-y); }
+.card[data-frame] .stat strong { font-size: 8.5cqw; line-height: .9; }
+.card[data-frame] .stat small { font-size: 2.1cqw; letter-spacing: .08em; color: inherit; }
+.card[data-frame] .statuses { top: 18%; right: 15%; font-size: 3cqw; }
+.card[data-frame] .selectionMark { bottom: 18%; font-size: 2.3cqw; }
+.card[data-frame] .playableMark { top: 14%; right: 9%; font-size: 2cqw; }
+.card[data-frame].thumbnail .textBox { display: block; }
+.card[data-frame].thumbnail .rules { font-size: 3.5cqw; }
+.card[data-frame].interactive:focus-visible { outline: 2px solid #fff1b8; outline-offset: 4px; }
+.card[data-frame] { animation: none; }
+
+.costParts { display: contents; }
+.frameCostDetail { display: flex; gap: .6cqw; justify-content: center; margin-top: .35cqw; }
+.frameCostDetail > span {
+  width: auto; height: auto; min-width: 0; padding: 0 .5cqw; font-size: 2.2cqw; line-height: 1.2;
+}
+
+/* Los términos comparten el pergamino como ancla para que la definición
+   quede dentro del ancho de la carta incluso junto a su borde izquierdo. */
+.card[data-frame].inspect .textBox { overflow: visible; z-index: 9; }
+.card[data-frame].inspect [role='term'] { position: static; }
+.card[data-frame].inspect [role='tooltip'] {
+  bottom: calc(100% + .45rem);
+  width: 100%;
+  max-width: none;
+  font-size: clamp(.72rem, 3.5cqw, .9rem);
+  transition: none;
+}
+.card[data-frame].inspect [role='tooltip']::after { display: none; }
+.healthMaximum { font: 600 .36em/1 sans-serif; font-style: normal; margin-left: .08em; opacity: .86; }
+.card[data-frame] .textBox { overflow: hidden; }
+.card[data-frame] .rules { overflow-wrap: anywhere; }
+.card[data-frame].inspect .textBox { overflow: visible; }
+.card[data-frame].inspect[data-frame-dense] .rules { line-height: 1.18; }
+.card[data-frame] .cost[data-modified] .frameCostTotal { color: #b2edff; text-shadow: 0 0 7px #43c8ff99; }

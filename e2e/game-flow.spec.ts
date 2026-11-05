@@ -36,7 +36,8 @@ test('recorre la galería y comienza una partida contra la IA', async ({ page })
 
   await page.getByRole('button', { name: /Sabueso de Brasa\. Unidad/ }).click()
   await expect(page.getByRole('dialog', { name: 'Sabueso de Brasa' })).toBeVisible()
-  await expect(page.getByRole('tooltip', { name: /Impulso/ }).first()).toBeAttached()
+  await page.getByRole('dialog', { name: 'Sabueso de Brasa' }).getByRole('term').filter({ hasText: /^Impulso/ }).hover()
+  await expect(page.getByRole('tooltip').filter({ hasText: 'Impulso' }).first()).toBeVisible()
   await page.getByRole('button', { name: 'Cerrar inspección' }).click()
 
   await page.getByRole('link', { name: 'Jugar' }).click()

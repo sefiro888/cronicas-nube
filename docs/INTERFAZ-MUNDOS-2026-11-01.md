@@ -1,5 +1,36 @@
 # Escenas de interfaz — 1 de noviembre de 2026
 
+## Sobre del Nexo — 5 de noviembre de 2026
+
+Arte original generado con ImageGen integrado, sin referencias externas.
+Maestro: `tools/art-inbox/interface-2026-11/sobre-nexo-v1.png`.
+WebP de 768 × 1152: `public/assets/interface/sobre-nexo-v1.webp`.
+Se utiliza como sobre y reverso ceremonial. Los rótulos son HTML; las rarezas,
+las cartas nuevas y las doradas proceden del resultado real de colección.
+La cámara utiliza la ilustración original existente `nexo-convergencia-v1.webp`.
+
+Prompt completo:
+
+```text
+Original premium fantasy collectible card game asset for Crónicas del Nexo. A single vertical sealed ceremonial card packet, front orthographic flat view, fills the entire portrait 2:3 canvas edge to edge. No surroundings, no text, no letters, no typography, no logos. Extraordinary intricate tactile craftsmanship: midnight teal-blue embossed leather, worn antique gold interlaced filigree and silver leaf engravings around all edges, sculptural corner clasps, tiny rivets, layered narrow golden borders, small ruby and turquoise settings. Dominant central hexagonal faceted luminous blue crystal set in an elaborate gold astrolabe medallion with radiating engraved celestial paths, tiny planets and carved wings. A horizontal wax-and-metal seal at the upper sixth suggests a tearable packet seam. Bottom fifth subdued dark blue leather for live HTML label overlay, minimal ornament there. Rich cool deep indigo shadows with warm amber bevel highlights, blue light glows from the crystal, cinematic hand-painted physical object rendering with extremely crisp dense detail. Symmetrical iconic clear silhouette, elegant artifact from a high fantasy world, not sci-fi or cartoon, no humans, no franchise imitation. Outer corners slightly rounded, all canvas opaque.
+```
+
+## Reserva de Esencia — 5 de noviembre de 2026
+
+Marco original generado con ImageGen integrado para el contador de reserva.
+WebP de 768 × 512 en `public/assets/interface/reserva-esencia-v1.webp` y maestro
+en `tools/art-inbox/interface-2026-11/reserva-esencia-v1.png`. La imagen aporta
+metal labrado y remaches. Emblema, carga, cifras, estado y fuentes siguen siendo
+elementos vivos de interfaz y usan los datos reales de la partida.
+
+Prompt completo
+
+```text
+Use case: game-asset. A single original premium fantasy game HUD panel BACKGROUND, landscape 3:2 rectangular, filling the canvas, front orthographic view, physically believable illustrated metal craftsmanship, very high detail. It will hold a resource counter in Crónicas del Nexo. A dark charcoal iron and aged bronze reliquary plate, a slender richly worked rim around ALL FOUR SIDES with tiny engraved interlaced motifs, layered hammered gold and silver edges, subtle scratches, minute rivets, four sculpted corner clasps, tiny inset amber stones, restrained hand-engraved star ornaments. Fantastical ceremonial craftsmanship, sophisticated realistic painterly rendering matching richly detailed collectible card frames. Strong readable warm highlights on bevels, cool blue charcoal shadows in the inner plate. IMPORTANT functional layout: edge ornament must occupy ONLY the outermost 6 percent of width and height, leaving the central 88 percent completely unobstructed, very dark smooth matte steel, almost black, with extremely faint hand-worked grain. No central symbols, medallions, sockets, circles or compartments. Software will draw a faction emblem and numbers above this image. No letters, words, numbers, ticks, resource gems, bars, glyphs, buttons, labels, UI mockup or display contents. No surrounding table or environment, no perspective, no stone platform, no art outside the panel, no franchise or artist imitation. No readable text or watermark. Elegant substantial forged object, refined intricate edgework, never a flat vector outline.
+```
+
+---
+
 Seis ilustraciones originales generadas con la herramienta integrada ImageGen
 para el rediseño autorizado de portada, navegación y Torre del Nexo. Las tres
 referencias de la portada y de la Torre son ilustraciones del propio proyecto:

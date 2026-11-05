@@ -1,9 +1,8 @@
 import {
   CARD_BY_ID,
-  effectiveCost,
+  canPlayHandCard,
   getValidAttacks,
   getValidMoves,
-  planManaPayment,
   type MatchState,
   type PlayerId,
 } from '../../game'
@@ -65,10 +64,10 @@ export const pendingTurnActions = (
     if (!card) continue
     if (card.type === 'mana') {
       // La fuente del turno es la más dolorosa de olvidar: no se recupera.
-      if (!player.resourcePlayedThisTurn) sourceUnplayed = true
+      if (canPlayHandCard(match, me, card, instance)) sourceUnplayed = true
       continue
     }
-    if (planManaPayment(player.resources, effectiveCost(match, me, card)).payable) playableCards += 1
+    if (canPlayHandCard(match, me, card, instance)) playableCards += 1
   }
 
   return {

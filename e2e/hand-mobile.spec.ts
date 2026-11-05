@@ -27,7 +27,10 @@ test('deslizar la mano de diez cartas en móvil no juega ni arrastra una fuente'
   await page.getByRole('button', { name: /Saltar guía/i }).click({ timeout: 2000 }).catch(() => {})
   const rail = page.getByTestId('hand-scroll-rail')
   await expect(rail).toBeVisible()
-  const source = page.locator('[class*="fanCard"] > [data-card-id="fuente-furia"]').nth(2)
+  const intro = page.getByTestId('battle-intro')
+  if (await intro.isVisible()) await intro.click()
+  await expect(intro).toBeHidden()
+  const source = page.locator('[class*="fanCard"] [data-card-id="fuente-furia"]').nth(2)
   const box = (await source.boundingBox())!
   const x = box.x + 15, y = 784
   const cdp = await page.context().newCDPSession(page)

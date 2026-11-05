@@ -1,4 +1,4 @@
-import type { CardDefinition } from '../../game'
+import type { CardDefinition, ManaCost } from '../../game'
 import { formatManaCost } from '../../components'
 import { withBase } from '../../utils/assets'
 import { FACTION_LABELS, RARITY_LABELS, TYPE_LABELS } from '../../utils/cardLabels'
@@ -8,6 +8,8 @@ import styles from '../BattlePage.module.css'
 interface SelectionPanelProps {
   /** Carta o ficha que se está mostrando: consultada, seleccionada de la mano o del tablero. */
   card?: CardDefinition
+  /** Coste de la copia seleccionada, con los descuentos de esta partida. */
+  cost?: ManaCost
   /** Encabezado del panel: cambia según de dónde venga la carta mostrada. */
   heading: string
   /** Línea de ATQ/VID/ALC/MOV, ya compuesta por el llamante. */
@@ -31,7 +33,7 @@ interface SelectionPanelProps {
 }
 
 /** Panel lateral derecho: detalle de la carta o unidad activa y la guía de acción. */
-export function SelectionPanel({ card, heading, stats, hint, canCast, onCast, offering }: SelectionPanelProps) {
+export function SelectionPanel({ card, cost, heading, stats, hint, canCast, onCast, offering }: SelectionPanelProps) {
   return (
     <section className={`${styles.panelSection} ${styles.context}`} data-empty={!card || undefined}>
       <span className={styles.panelLabel}>{heading}</span>
@@ -44,7 +46,7 @@ export function SelectionPanel({ card, heading, stats, hint, canCast, onCast, of
           <p className={styles.contextType}>
             {FACTION_LABELS[card.faction]} · {TYPE_LABELS[card.type]}{card.subtype ? ` — ${card.subtype}` : ''} · {RARITY_LABELS[card.rarity]}
           </p>
-          <p className={styles.contextCost}>Coste: {formatManaCost(card.cost)}</p>
+          <p className={styles.contextCost}>Coste: {formatManaCost(cost ?? card.cost)}</p>
           {stats && <p className={styles.contextStats}>{stats.split(' · ').map((part) => <span key={part}>{part}</span>)}</p>}
           <p className={styles.contextRules}>{card.rules}</p>
           {card.keywords.length > 0 && (

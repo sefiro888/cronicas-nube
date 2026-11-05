@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test'
 import type { RootState } from '@react-three/fiber'
-import type { Color } from 'three'
+import type { Color, Mesh, MeshStandardMaterial, Object3D } from 'three'
 
 /** Usar el módulo optimizado que cargó la página evita consultar otro mapa
  * de raíces tras una recarga de Vite. Registrar la espera antes de goto. */
@@ -40,6 +40,29 @@ export async function cameraSnapshot(page: Page, moduleUrl: string) {
         geometries: state.gl.info.memory.geometries, textures: state.gl.info.memory.textures },
     }
   }, moduleUrl)
+}
+
+/** Proyecta la cara real: una placa de información puede cambiar de sitio sin mover la ficha. */
+export async function pieceScreenSpot(page: Page, moduleUrl: string, pieceId: string) {
+  return page.evaluate(async ({ url, pieceId }) => {
+    const module = await import(url) as {
+      _roots: ReadonlyMap<HTMLCanvasElement, { store: { getState: () => RootState } }>
+    }
+    const canvas = document.querySelector<HTMLCanvasElement>('[data-testid="battle-board"] canvas')!
+    const state = module._roots.get(canvas)?.store.getState()
+    if (!state) throw new Error('El tablero no está listo para proyectar la ficha.')
+    const found: { group?: Object3D; face?: Object3D } = {}
+    state.scene.traverse((object) => { if (object.userData.pieceId === pieceId) found.group = object })
+    found.group?.traverse((object) => {
+      const image: unknown = (object as Mesh<Mesh['geometry'], MeshStandardMaterial>).material?.map?.image
+      if (!found.face && image instanceof HTMLCanvasElement && image.width === 512 && image.height === 768) found.face = object
+    })
+    if (!found.face) throw new Error(`No se encontró la cara renderizada de ${pieceId}.`)
+    state.camera.updateMatrixWorld()
+    const point = found.face.getWorldPosition(found.face.position.clone()).project(state.camera)
+    const rect = canvas.getBoundingClientRect()
+    return { x: rect.left + (point.x + 1) * rect.width / 2, y: rect.top + (1 - point.y) * rect.height / 2 }
+  }, { url: moduleUrl, pieceId })
 }
 
 /** Las sondas artísticas necesitan vistas repetibles. Los gestos reales ya

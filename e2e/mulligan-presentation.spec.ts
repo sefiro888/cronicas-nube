@@ -57,7 +57,7 @@ for (const [width, height, reducedMotion] of [[1920, 1080, false], [1366, 768, f
     await expect(page.locator('[class*="fanCard"]')).toHaveCount(10)
     if (width < 760) {
       const rail = page.getByTestId('hand-scroll-rail')
-      const handCards = page.locator('[class*="fanCard"] > [data-card-id]')
+      const handCards = page.locator('[class*="fanCard"] [data-card-id]')
       for (const index of [0, 9, 0]) {
         await handCards.nth(index).focus()
         const box = (await handCards.nth(index).boundingBox())!

@@ -1,10 +1,14 @@
+import { factionForScenario } from './scenarioForFaction'
+import { isFactionStage } from './scenarios/factionStages'
+import { cardFrameFor } from '../presentation/cardFrames'
+import { useCardFaceTexture } from './useCardFaceTexture'
 import { Html, OrbitControls, Sparkles, useCursor, useTexture } from '@react-three/drei'
 import { Canvas, type ThreeElements, type ThreeEvent, useFrame, useThree } from '@react-three/fiber'
 import { lazy, memo, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { AdditiveBlending, DoubleSide, MathUtils, PerspectiveCamera as ThreePerspectiveCamera, Plane, Raycaster, SRGBColorSpace, Vector2, Vector3 } from 'three'
 import type { Group, Mesh, MeshBasicMaterial, MeshStandardMaterial, Object3D, PointLight, Texture } from 'three'
 import { BOARD_CELL_COUNT, BOARD_SIZE, CARD_BY_ID, COMMANDER_BY_ID } from '../game'
-import type { AnimationEvent, BoardPiece, MatchState, PlayerId, Position } from '../game'
+import type { AnimationEvent, BoardPiece, FactionId, MatchState, PlayerId, Position } from '../game'
 import { runoAttackBonus } from '../game/kalevala'
 import { formationAttackBonus } from '../game/tercios'
 import type { MovementHazard } from '../game/movementHazard'
@@ -56,12 +60,14 @@ import { LavaRiver } from './LavaRiver'
 import { MaterialEnvironment } from './MaterialEnvironment'
 import { arrivalMotion } from './arrivalMotion'
 import { FACTION_BY_ID } from '../game/factions'
+import { scenarioMaterialForFloor } from './scenarioEnvironments'
 import { NexusRupture } from './NexusRupture'
 import { useVisualTimers } from './useVisualTimers'
 import { battleStrain, BattleClimateProvider } from './scenarios/BattleClimate'
 import { ScenarioAtmosphere } from './scenarios/ScenarioAtmosphere'
 import { NexusFocus } from './NexusFocus'
 
+const FactionStage = lazy(() => import('./scenarios/FactionStage'))
 const AetherCitadel = lazy(() =>
   import('./scenarios/AetherCitadel').then((m) => ({ default: m.AetherCitadel })),
 )
@@ -100,6 +106,7 @@ const BestiaryRavine = lazy(() =>
 )
 
 interface Board3DProps {
+  nexusMaxHealth?: Readonly<Record<PlayerId, number>>
   state: MatchState
   /** Bando de la partida que controla este navegador: decide qué Nexo queda cerca de la cámara. */
   localPlayerId: PlayerId
@@ -328,6 +335,13 @@ const TERRAIN_STYLE: Readonly<Record<Exclude<ScenarioId, 'auto'>, BoardTileStyle
   'wheel-ghat': 'sandstone',
   'solar-court': 'stone',
   'bestiary-ravine': 'forest',
+  'bastion-alba': 'stone',
+  'acropolis-olimpo': 'stone',
+  'baluarte-tercios': 'sand',
+  'umbral-vacio': 'moss',
+  'cripta-plaga': 'moss',
+  'desguace-goblin': 'forge',
+  'lago-kalevala': 'forest',
 }
 
 /**
@@ -341,11 +355,11 @@ const tileVariantFor = (position: Position): number =>
 
 const photographicTileVariants = new WeakMap<Texture, readonly Texture[]>()
 const NATURAL_TILE_MAPS = {
+  ice: '/assets/terrain/hielo-fiordo-v1.webp',
   stone: '/assets/terrain/marmol-ciudadela-v1.webp',
   // Roca de lava creada por el propietario (Gemini), recortada de una imagen
   // suya sin el río; el río va aparte en la costura central (LavaRiver).
   basalt: '/assets/terrain/lava-caldera-roca-v1.webp',
-  ice: '/assets/terrain/hielo-fiordo-v1.webp',
   moss: '/assets/terrain/granito-santuario-v1.webp',
   sand: '/assets/terrain/arenisca-duna-v1.webp',
   forest: '/assets/terrain/suelo-bosque-v1.webp',
@@ -376,6 +390,67 @@ const tileVariantsOf = (source: Texture): readonly Texture[] => {
     photographicTileVariants.set(source, cached)
   }
   return cached
+}
+
+const FACTION_FLOORS: Partial<Record<FactionId, string>> = {
+  arcane: 'suelo-arcane-v1.webp',
+  bestiario: 'suelo-bestiario-v1.webp',
+  duna: 'suelo-duna-v1.webp',
+  fimbul: 'suelo-fimbul-v1.webp',
+  forja: 'suelo-forja-v1.webp',
+  goblins: 'suelo-goblins-v1.webp',
+  jade: 'suelo-jade-v1.webp',
+  kalevala: 'suelo-kalevala-v1.webp',
+  marea: 'suelo-marea-v1.webp',
+  nature: 'suelo-nature-v1.webp',
+  olimpo: 'suelo-olimpo-v1.webp',
+  order: 'suelo-order-v1.webp',
+  plaga: 'suelo-plaga-v1.webp',
+  samsara: 'suelo-samsara-v2.webp',
+  sol: 'suelo-sol-v2.webp',
+  shadow: 'suelo-shadow-v1.webp',
+  tercios: 'suelo-tercios-v1.webp',
+  void: 'suelo-void-v1.webp',
+}
+
+const DARK_FACTION_FLOORS = new Set([
+  FACTION_FLOORS.forja, FACTION_FLOORS.goblins, FACTION_FLOORS.marea,
+  FACTION_FLOORS.plaga, FACTION_FLOORS.shadow,
+])
+
+const factionTileMaps = new WeakMap<Texture, readonly Texture[]>()
+
+// Cada losa muestra su fragmento de la talla completa. Las juntas siguen
+// perteneciendo a la geometría del tablero y separan también los resaltados.
+function FactionTileMaterial({ floor, position, material }: { floor: string; position: Position; material: ThreeElements['meshStandardMaterial'] }) {
+  const source = useTexture(withBase(`/assets/terrain/${floor}`))
+  // El maestro de Samsara incluye agua y escalones fuera del pavimento.
+  // Recortarlos en UV mantiene el PNG y centra el mandala sobre las losas.
+  const inset = floor === FACTION_FLOORS.samsara ? .13 : 0
+  const span = (1 - 2 * inset) / BOARD_SIZE
+  let maps = factionTileMaps.get(source)
+  if (!maps) {
+    maps = Array.from({ length: BOARD_CELL_COUNT }, (_, index) => {
+      const map = source.clone()
+      const { x, y } = CELL_POSITIONS[index]!
+      map.colorSpace = SRGBColorSpace
+      map.anisotropy = 4
+      map.repeat.set(span, span)
+      map.offset.set(inset + x * span, 1 - inset - (y + 1) * span)
+      map.needsUpdate = true
+      return map
+    })
+    factionTileMaps.set(source, maps)
+  }
+  const map = maps[position.y * BOARD_SIZE + position.x]
+  const profile = scenarioMaterialForFloor(floor)
+  const relief = { roughness: profile.roughness, metalness: profile.metalness, envMapIntensity: profile.environment, bumpMap: map, bumpScale: profile.bumpScale }
+  // Un poco de luz del propio mapa recupera el grabado en los suelos oscuros.
+  // En casillas con aviso, el color de juego tiene prioridad sobre el dibujo.
+  if (material.emissiveIntensity === 0 && DARK_FACTION_FLOORS.has(floor)) {
+    return <meshStandardMaterial key="relief" {...material} {...relief} map={map} emissiveMap={map} emissive="#ffffff" emissiveIntensity={0.26} />
+  }
+  return <meshStandardMaterial key="markers" {...material} {...relief} map={map} emissiveMap={null} />
 }
 
 /** Mapa de brillo de las grietas de lava de la Caldera (mismos recortes que la roca). */
@@ -425,7 +500,7 @@ function useDeferredDecor(): boolean {
   return ready
 }
 
-const BoardCell = memo(function BoardCell({ position, valid, hazard, occupied, scorched, rubble, cover, terrainStyle, organicForest, own, deployRow, threatened, intent, colorblindMode, reducedMotion, onCell, onHover }: { position: Position; valid: boolean; hazard?: MovementHazard; occupied: boolean; scorched: boolean; rubble: boolean; cover: boolean; terrainStyle: BoardTileStyle; organicForest: boolean; own: boolean; deployRow: boolean; threatened: boolean; intent: 'move' | 'deploy'; colorblindMode?: boolean; reducedMotion: boolean; onCell: (position: Position) => void; onHover?: (position?: Position) => void }) {
+const BoardCell = memo(function BoardCell({ position, valid, hazard, occupied, scorched, rubble, cover, terrainStyle, floor, organicForest, own, deployRow, threatened, intent, colorblindMode, reducedMotion, onCell, onHover }: { position: Position; valid: boolean; hazard?: MovementHazard; occupied: boolean; scorched: boolean; rubble: boolean; cover: boolean; terrainStyle: BoardTileStyle; floor?: string; organicForest: boolean; own: boolean; deployRow: boolean; threatened: boolean; intent: 'move' | 'deploy'; colorblindMode?: boolean; reducedMotion: boolean; onCell: (position: Position) => void; onHover?: (position?: Position) => void }) {
   const [hovered, setHovered] = useState(false)
   useCursor(hovered && valid)
   const onClick = () => onCell(position)
@@ -483,9 +558,9 @@ const BoardCell = memo(function BoardCell({ position, valid, hazard, occupied, s
       {/* La normal se genera aparte: el color claro de una veta no debe
           convertirse en un relieve falso. El resplandor conserva el dibujo. */}
       <Suspense fallback={<meshStandardMaterial {...material} />}>
-        <DetailedTileMaterial terrainStyle={terrainStyle === 'forest' && !organicForest ? 'bestiary' : terrainStyle} variant={((Math.imul(position.x + 1, 73856093) ^ Math.imul(position.y + 1, 19349663)) >>> 0) % 24} material={material} />
+        {floor ? <FactionTileMaterial floor={floor} position={position} material={material} /> : <DetailedTileMaterial terrainStyle={terrainStyle === 'forest' && !organicForest ? 'bestiary' : terrainStyle} variant={((Math.imul(position.x + 1, 73856093) ^ Math.imul(position.y + 1, 19349663)) >>> 0) % 24} material={material} />}
       </Suspense>
-      {(terrainStyle === 'basalt' || terrainStyle === 'forest') && valid && !hazard && <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, height / 2 + 0.003, 0]} raycast={() => null}>
+      {(terrainStyle === 'basalt' || terrainStyle === 'forest' || floor) && valid && !hazard && <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, height / 2 + 0.003, 0]} raycast={() => null}>
         <planeGeometry args={[TILE_SIZE * 0.94, TILE_SIZE * 0.94]} />
         {/* El azul desaparecía al multiplicarse por superficies oscuras.
             La veladura conserva el material y distingue el destino. */}
@@ -743,7 +818,9 @@ const preferredPiece = (event: ThreeEvent<MouseEvent | PointerEvent>): string | 
 const BoardCard = memo(function BoardCard({ deploying = false, piece, runo, formationBonus, selected, targetable, ready, active, mine, crowded, stackSafe, onPiece, onInspect, onHover, previewLines, reducedMotion, impulse, impact, arrival, waiting }: { deploying?: boolean; piece: BoardPiece; runo: number; formationBonus: number; selected: boolean; targetable: boolean; ready: boolean; active: boolean; mine: boolean; crowded: boolean; stackSafe: boolean; onPiece: (pieceId: string) => void; onInspect?: (cardId: string, pieceId?: string) => void; onHover?: (pieceId?: string) => void; previewLines?: readonly PreviewVerdict[]; reducedMotion: boolean; impulse?: Impulse; impact?: AnimationEvent; arrival?: AnimationEvent; waiting: boolean }) {
   const card = CARD_BY_ID[piece.cardId]
   const displayedAttack = Math.max(0, (card?.attack ?? 0) + piece.attackModifier + (card?.type === 'unit' ? runoAttackBonus(runo) : 0) + formationBonus)
-  const texture = useTexture(withBase(card?.art.webp ?? '/assets/cards/art/fuente-furia.webp'))
+  const factionFrame = cardFrameFor(card?.faction)
+  const texture = useCardFaceTexture(card, card?.art.webp ?? '/assets/cards/art/fuente-furia.webp',
+    card?.type === 'unit' ? displayedAttack : undefined, piece.currentHealth)
   const group = useRef<Group>(null)
   const presentation = useRef<Group>(null)
   const arrivalGroup = useRef<Group>(null)
@@ -1057,7 +1134,7 @@ const BoardCard = memo(function BoardCard({ deploying = false, piece, runo, form
           { key: 'back', y: -0.038, spin: Math.PI },
         ].map(({ key, y, spin }) => (
           <mesh key={key} position={[0, y, 0]} rotation={[-Math.PI / 2, spin, 0]}>
-            <planeGeometry args={[0.73, 0.9]} />
+            <planeGeometry args={[factionFrame ? 0.60 : 0.73, 0.9]} />
             <meshStandardMaterial
               map={texture}
               emissiveMap={texture}
@@ -1119,16 +1196,16 @@ const BoardCard = memo(function BoardCard({ deploying = false, piece, runo, form
           A la altura del borde superior del standee (2×CARD_STAND_RISE), no de la
           carta tumbada de antes: si no, el nombre y las estadísticas quedan
           flotando muy por encima de la carta en vez de justo sobre ella. */}
-      <Html center position={[0, CARD_STAND_RISE * 2 + 0.05, 0]} distanceFactor={8.6} zIndexRange={[14, 0]} className={styles.cardLabel}>
+      <Html position={[0, 0.045, 0]} style={{ transform: 'translate(-50%, 5px)' }} distanceFactor={8.6} zIndexRange={[14, 0]} className={styles.cardLabel}>
         {/* Contenedor propio para el marcador de «elegida»: `<Html>` de drei no
             propaga los data-* al div que crea, así que el atributo tiene que
             vivir aquí dentro para que el CSS pueda usarlo. */}
-        <div ref={label} style={{ visibility: !reducedMotion && (waiting || arrival) ? 'hidden' : undefined }} className={styles.labelInner} data-selected={selected || hovered || targetable || undefined} data-crowded={crowded || undefined} data-compact={crowded && !selected && !hovered && !targetable || undefined} data-wide={stackSafe && (piece.currentHealth >= 10 || displayedAttack >= 10) || undefined}>
+        <div ref={label} style={{ visibility: !reducedMotion && (waiting || arrival) ? 'hidden' : undefined, '--piece-accent': FACTION_BY_ID[card.faction].accentColor } as CSSProperties} className={styles.labelInner} data-faction={card.faction} data-selected={selected || hovered || targetable || undefined} data-crowded={crowded || undefined} data-compact={crowded && !selected && !hovered && !targetable || undefined} data-wide={stackSafe && (piece.currentHealth >= 10 || displayedAttack >= 10) || undefined}>
         <div className={styles.cardName} data-mine={mine || undefined} data-frozen={frozen || undefined} data-spent={spent || undefined}>{card.name}</div>
         <div className={styles.cardStats} data-unique={card.unique || undefined}>
           {card.unique && <span className={styles.uniqueMark} role="img" aria-label="Carta única">◆</span>}
           {card.attack !== undefined && <span className={styles.attackStat} aria-label={`Ataque ${displayedAttack}`}><GameIcon name="attack" /> {displayedAttack}</span>}
-          <span className={damaged ? styles.damagedStat : styles.healthStat} aria-label={`Vida ${piece.currentHealth}`}><GameIcon name="health" /> {piece.currentHealth}</span>
+          <span className={damaged ? styles.damagedStat : styles.healthStat} aria-label={`Vida ${piece.currentHealth} de ${maxHealth}`} title={`Vida actual ${piece.currentHealth} / máxima ${maxHealth} · impresa ${card.health ?? card.resistance ?? 1}`}><GameIcon name={card.type === 'structure' ? 'shield' : 'health'} /> {piece.currentHealth}<small className={styles.maximumHealth}>/{maxHealth}</small></span>
         </div>
         {/* Estados: solo aparecen cuando los hay, en su propia fila para que no
             empujen a las estadísticas. «Aturdida» faltaba desde que se añadió
@@ -1358,6 +1435,11 @@ function Nexus({
           data-collapsed={collapse ? true : undefined} data-reduced-motion={reducedMotion || collapse?.settled || undefined}
           style={collapse ? { '--rupture-duration': `${collapse.durationMs}ms` } as CSSProperties : undefined}>
           <img src={withBase(commanderArt)} alt="" />
+          {damage > .2 && <svg className={styles.nexusPortraitFractures} viewBox="0 0 100 100" aria-hidden="true">
+            <path d="M54 2 46 25 55 41 47 57" />
+            {damage > .45 && <path d="M46 25 28 34 16 53M55 41 72 45 87 63" />}
+            {damage > .7 && <path d="M47 57 39 73 51 98M47 57 64 76 60 94M28 34 14 22" />}
+          </svg>}
         </div>
       </Html>
       <Html center position={[0, 1.28, 0]} distanceFactor={7} zIndexRange={[14, 0]} className={styles.nexusLabel}>
@@ -1758,6 +1840,8 @@ function Scene(props: Board3DProps) {
   }, [props.state.board, props.localPlayerId])
   const ownDeployRow = props.localPlayerId === 'player' ? BOARD_SIZE - 1 : 0
   const terrainStyle = TERRAIN_STYLE[props.scenario as Exclude<ScenarioId, 'auto'>] ?? 'stone'
+  const faction = factionForScenario(props.scenario)
+  const floor = faction ? FACTION_FLOORS[faction] : undefined
 
   /**
    * Quién se mueve en el golpe que está sonando ahora: el atacante embiste
@@ -1789,7 +1873,9 @@ function Scene(props: Board3DProps) {
       ])}>
       <group name="scenario-stage">
       <Suspense fallback={<LoadingStage />}>
-        {props.scenario === 'aether-citadel' ? (
+        {isFactionStage(props.scenario) ? (
+          <FactionStage scenario={props.scenario} quality={props.quality} reducedMotion={props.reducedMotion} />
+        ) : props.scenario === 'aether-citadel' ? (
           <AetherCitadel quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} />
         ) : props.scenario === 'caldera' ? (
           <CalderaScenario quality={props.quality} reducedMotion={props.reducedMotion} event={props.activeEvent} />
@@ -1836,6 +1922,7 @@ function Scene(props: Board3DProps) {
             rubble={rubbleSet.has(key)}
             cover={coverSet.has(key)}
             terrainStyle={terrainStyle}
+            floor={floor}
             organicForest={props.scenario === 'grove'}
             own={isOwnHalf(position.y, props.localPlayerId)}
             deployRow={position.y === ownDeployRow}
@@ -1896,7 +1983,7 @@ function Scene(props: Board3DProps) {
         playerId="player"
         mine={props.localPlayerId === 'player'}
         health={props.state.players.player.nexusHealth}
-        maxHealth={COMMANDER_BY_ID[props.state.players.player.commanderId]?.nexusHealth ?? 35}
+        maxHealth={props.nexusMaxHealth?.player ?? COMMANDER_BY_ID[props.state.players.player.commanderId]?.nexusHealth ?? 35}
         targetable={props.validTargets.includes('player-nexus')}
         onClick={() => props.onNexus('player')}
         onHover={props.onHoverNexus}
@@ -1912,7 +1999,7 @@ function Scene(props: Board3DProps) {
         playerId="ai"
         mine={props.localPlayerId === 'ai'}
         health={props.state.players.ai.nexusHealth}
-        maxHealth={COMMANDER_BY_ID[props.state.players.ai.commanderId]?.nexusHealth ?? 35}
+        maxHealth={props.nexusMaxHealth?.ai ?? COMMANDER_BY_ID[props.state.players.ai.commanderId]?.nexusHealth ?? 35}
         targetable={props.validTargets.includes('ai-nexus')}
         onClick={() => props.onNexus('ai')}
         onHover={props.onHoverNexus}

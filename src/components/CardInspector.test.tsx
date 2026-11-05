@@ -15,7 +15,7 @@ describe('CardInspector', () => {
 
     expect(screen.getByRole('dialog', { name: source.name })).toBeInTheDocument();
     expect(screen.getAllByRole('term', { name: /Impulso:/i }).length).toBeGreaterThan(0);
-    expect(screen.getAllByRole('tooltip').some((tooltip) => tooltip.textContent?.includes('mismo turno'))).toBe(true);
+    expect(screen.getAllByRole('tooltip', { hidden: true }).some((tooltip) => tooltip.textContent?.includes('mismo turno'))).toBe(true);
   });
 
   it('closes with Escape and the close button', async () => {

@@ -6,6 +6,7 @@ import type { Mesh } from 'three'
 import { panoramaBandGeometry, panoramaBandMask } from './panoramaBandGeometry'
 import { centerPanoramaAtCamera } from './panoramaPosition'
 import { withBase } from '../../../utils/assets'
+import { useScenarioLight } from '../../../store/scenarioMood'
 
 /** Cinturón panorámico con orientación mundial. La banda sigue solo la
  * traslación de cámara, como un cielo infinito; nunca su giro. Un plano
@@ -14,6 +15,7 @@ export function DistantVista({ image }: {
   readonly image: string
 }) {
   const dome = useRef<Mesh>(null)
+  const { mood } = useScenarioLight()
   const loaded = useTexture(withBase(image))
   const texture = useMemo(() => {
     const color = loaded.clone()
@@ -33,6 +35,6 @@ export function DistantVista({ image }: {
   })
   return <mesh ref={dome} name="scenario-distant-vista" renderOrder={-20}>
     <primitive object={panoramaBandGeometry()} attach="geometry" />
-    <meshBasicMaterial map={texture} alphaMap={panoramaBandMask()} side={BackSide} transparent depthWrite={false} fog={false} toneMapped={false} />
+    <meshBasicMaterial map={texture} color={mood === 'moonlight' ? '#819dbd' : mood === 'dusk' ? '#c9b6c9' : mood === 'dawn' ? '#fff4e4' : '#ffffff'} alphaMap={panoramaBandMask()} side={BackSide} transparent depthWrite={false} fog={false} toneMapped={false} />
   </mesh>
 }

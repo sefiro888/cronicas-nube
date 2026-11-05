@@ -107,6 +107,7 @@ const partidaPoblada = (): MatchState => {
 
 test('las chapas de las unidades no se pisan en móvil', async ({ page }) => {
   test.setTimeout(120_000)
+  const fixture = partidaPoblada()
   await page.addInitScript((match) => {
     localStorage.setItem('cronicas-nexo-match', JSON.stringify({
       state: { match, history: [], matchLog: [], healthHistory: [], startedAtMs: Date.now(), elapsedSeconds: 0 },
@@ -116,10 +117,11 @@ test('las chapas de las unidades no se pisan en móvil', async ({ page }) => {
     localStorage.setItem('cronicas-nexo-preferences', JSON.stringify({
       state: { muted: true, confirmEndTurn: false }, version: 7,
     }))
-  }, partidaPoblada())
+  }, fixture)
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/battle')
   await expect(page.getByTestId('battle-board')).toBeVisible({ timeout: 25_000 })
+  await expect(page.locator('[class*="cardLabel"]')).toHaveCount(fixture.board.length, { timeout: 25000 })
   await page.waitForTimeout(3000)
 
   const solapes = await page.evaluate(() => {
@@ -138,15 +140,15 @@ test('las chapas de las unidades no se pisan en móvil', async ({ page }) => {
   })
   expect(solapes, 'chapas de unidad superpuestas en móvil').toEqual([])
 
-  // En reposo no se enseña ningún nombre; al elegir una unidad, sí el suyo.
+  // El rediseño conserva nombre y estadísticas en reposo y sigue seleccionable por teclado.
   const nombresVisibles = () => page.evaluate(() => Array.from(document.querySelectorAll('[class*="cardName"]'))
     .filter((el) => (el as HTMLElement).offsetParent !== null).length)
-  expect(await nombresVisibles()).toBe(0)
+  expect(await nombresVisibles()).toBe(await page.locator('[class*="cardLabel"]').count())
   await page.keyboard.press('ArrowUp')
   await page.waitForTimeout(300)
   await page.keyboard.press('Enter')
   await page.waitForTimeout(600)
-  expect(await nombresVisibles()).toBeGreaterThan(0)
+  await expect(page.locator('[class*="labelInner"][data-selected] [class*="cardName"]').first()).toBeVisible()
 })
 
 /**

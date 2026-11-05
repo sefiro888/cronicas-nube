@@ -1,3 +1,4 @@
+import { ScenarioAmbientLight, ScenarioHemisphereLight, ScenarioDirectionalLight } from './ScenarioLights'
 import { Sparkles } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
@@ -53,16 +54,16 @@ function DawnAtmosphere({ quality, reducedMotion, turn }: { readonly quality: Gr
       <sphereGeometry args={[105, 64, 32]} />
       <meshBasicMaterial map={citadelSkyTexture()} side={BackSide} fog={false} toneMapped={false} />
     </mesh>
-    <ambientLight intensity={0.25} color="#bcc6dc" />
-    <hemisphereLight intensity={0.38} color="#b9d0ed" groundColor="#59554c" />
+    <ScenarioAmbientLight intensity={0.25} color="#bcc6dc" />
+    <ScenarioHemisphereLight intensity={0.38} color="#b9d0ed" groundColor="#59554c" />
     {/* Clave desde la cámara: el mármol conserva relieve en la fachada. La
         antigua clave trasera y el punto de intensidad 14 borraban sus vetas. */}
-    <directionalLight ref={sun} position={[-8, 11, 7]} color="#ffdcab" intensity={2.6}
+    <ScenarioDirectionalLight ref={sun} position={[-8, 11, 7]} color="#ffdcab" intensity={2.6}
       castShadow={quality !== 'low'} shadow-mapSize-width={quality === 'high' ? 2048 : 1024}
       shadow-mapSize-height={quality === 'high' ? 2048 : 1024}
       shadow-camera-left={-13} shadow-camera-right={13} shadow-camera-top={13} shadow-camera-bottom={-13}
       shadow-camera-near={0.5} shadow-camera-far={45} shadow-normalBias={0.015} shadow-bias={-0.0006} />
-    <directionalLight position={[8, 6, -9]} color="#91afd9" intensity={0.72} />
+    <ScenarioDirectionalLight position={[8, 6, -9]} color="#91afd9" intensity={0.72} />
   </>
 }
 

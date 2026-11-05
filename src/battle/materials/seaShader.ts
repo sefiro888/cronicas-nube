@@ -4,6 +4,8 @@ export const seaFragmentShader = /* glsl */`
   uniform sampler2D uRipples;
   uniform sampler2D uReflection;
   uniform vec3 uColor;
+  uniform vec3 uLightColor;
+  uniform vec3 uLightDirection;
   uniform float uHasReflection;
   uniform float uTime;
   uniform float uRadius;
@@ -41,9 +43,9 @@ export const seaFragmentShader = /* glsl */`
       reflected += texture2D(uReflection, clamp(uv + vec2(-0.0015, 0.001), 0.001, 0.999)).rgb * 0.25;
       color = mix(color, reflected, fresnel);
     }
-    vec3 sun = normalize(vec3(-0.7, 0.63, 0.36));
+    vec3 sun = normalize(uLightDirection);
     float glint = pow(max(dot(reflect(-sun, normal), view), 0.0), 95.0);
-    color += vec3(0.65, 0.47, 0.26) * glint * 0.32;
+    color += uLightColor * glint * 0.28;
     float crest = smoothstep(0.92, 1.0, sin(a + fine.x * 0.8))
       * smoothstep(0.63, 0.85, noise(p * 4.5 + uTime * vec2(0.03, -0.05)))
       * smoothstep(0.3, 0.72, noise(p * 26.0 + vec2(uTime * 0.06, 0.0)));

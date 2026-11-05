@@ -9,6 +9,7 @@ export type GraphicsQuality = 'low' | 'medium' | 'high'
  * siga siendo una sola lista.
  */
 export type ScenarioId = 'auto' | 'aether-citadel' | 'sanctuary' | 'caldera' | 'duna' | 'fimbul' | 'grove' | 'shore' | 'foundry' | 'jade-court' | 'wheel-ghat' | 'solar-court' | 'bestiary-ravine'
+  | 'bastion-alba' | 'acropolis-olimpo' | 'baluarte-tercios' | 'umbral-vacio' | 'cripta-plaga' | 'desguace-goblin' | 'lago-kalevala'
 export type AiDifficulty = 'easy' | 'normal' | 'hard'
 
 export interface PreferencesState {
@@ -17,6 +18,7 @@ export interface PreferencesState {
   effectsVolume: number
   muted: boolean
   reducedMotion: boolean
+  nexusWarning: 'off' | 'subtle' | 'pulse'
   aiDelayMs: number
   aiDifficulty: AiDifficulty
   selectedDeckId: string
@@ -65,6 +67,7 @@ export interface PreferencesState {
   setVolume: (channel: 'masterVolume' | 'musicVolume' | 'effectsVolume', value: number) => void
   setMuted: (muted: boolean) => void
   setReducedMotion: (reduced: boolean) => void
+  setNexusWarning: (value: 'off' | 'subtle' | 'pulse') => void
   setAiDelay: (delay: number) => void
   setAiDifficulty: (difficulty: AiDifficulty) => void
   setSelectedDeck: (deckId: string) => void
@@ -86,6 +89,7 @@ const defaults = {
   effectsVolume: 0.7,
   muted: false,
   reducedMotion: false,
+  nexusWarning: 'subtle' as const,
   aiDelayMs: 520,
   aiDifficulty: 'normal' as AiDifficulty,
   selectedDeckId: 'furia-caldera',
@@ -107,6 +111,7 @@ export const usePreferences = create<PreferencesState>()(
       setVolume: (channel, value) => set({ [channel]: Math.max(0, Math.min(1, value)) }),
       setMuted: (muted) => set({ muted }),
       setReducedMotion: (reducedMotion) => set({ reducedMotion }),
+      setNexusWarning: (nexusWarning) => set({ nexusWarning }),
       setAiDelay: (aiDelayMs) => set({ aiDelayMs }),
       setAiDifficulty: (aiDifficulty) => set({ aiDifficulty }),
       setSelectedDeck: (selectedDeckId) => set({ selectedDeckId }),
