@@ -145,6 +145,11 @@ locales por bloque. Conservar el punto de retoma al cerrar cada bloque.
   primera y última carta. Pasan a 1920 y 1366 px, junto con el gesto móvil y
   los recorridos de coste. Borrador de revisión
   [PR #2](https://github.com/sefiro888/cronicas-nube/pull/2).
+- **Centros pulsables, 09:32 Madrid.** Se adapta también el ancho de carta
+  cuando comprimir márgenes ocultaría su centro. La prueba consulta los
+  extremos por su centro y pasa junto al recorrido de empezar una partida,
+  jugar una fuente, arrastrar en móvil y desplegar con coste rebajado. Siete
+  casos correctos antes de repetir el gate completo.
 - **Siguiente:** validación global tras ajustar el abanico y comprobaciones
   remotas del borrador. Rama de retoma `codex/revision-final`. Vista local en
   `http://127.0.0.1:4179/` y compilada en

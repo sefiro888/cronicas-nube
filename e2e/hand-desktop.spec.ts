@@ -32,7 +32,7 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
     }
     await page.mouse.move(8, 8)
     await check()
-    await cards.first().hover({ position: { x: 25, y: 40 } })
+    await cards.first().hover()
     await check()
     await cards.last().hover()
     await check()
