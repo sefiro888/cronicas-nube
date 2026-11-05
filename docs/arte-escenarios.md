@@ -299,3 +299,27 @@ al aplicar la atmósfera a Scene y se volvió a comprobar en la regresión de Fi
 ```text
 Use case: stylized-concept. Asset type: original wide panoramic matte painting for Necrópolis de Duna, the Tribunal de Arena in Crónicas del Nexo, a mature fantasy tactical card game. A spectacular immense living imperial funerary precinct in a luminous desert at oppressive midday, invented architecture drawing on ancient Egyptian stonecraft rather than reproducing a real site. View from high above looking DOWN approximately 37 degrees. Monumental battered sandstone pylons, long processional causeways, distant papyrus-column hypostyle halls, alabaster courts, pyramidal tombs far in the heat haze, tiny restrained weathered beaten-gold caps, lapis-blue and ritual turquoise painted bands, pale linen banners. Solemn divine administration of the dead, an intact ordered realm, no adventurers or tomb robbers, no abandoned haunted ruins. Believable carved stone courses and deeply inset relief friezes with abstract non-readable motifs. Composition: panoramic landscape, strongest architecture concentrated in upper third and outer thirds; central and lower half spacious sunlit ochre sand and scattered ancient paving traces with fine wind ripples, leaving room for a separate tactical board in front. NO foreground platform, arena, chessboard, table, cards, UI or people. No visible horizon or sky: an elevated downward-looking landscape, not a postcard frontal elevation. Short decisive noon shadows, warm sandstone highlights without clipping, cool blue-grey light in deep shade, nuanced color, restrained heat haze separating at least four distance planes. Majestic painterly realism with refined cinematic detail, compatible with sophisticated mature fantasy card illustrations. Not a yellow flat fog wash. No neon magic or glowing gold everywhere. Original design only, no franchise, no artist imitation, no reference images. No readable text, no logos, no watermarks, no borders. Avoid childish cartoon style, toy-like low-poly pyramids, smooth plastic columns, simplistic block sphinxes, orange lava, night lighting, floating islands, oversaturated teal/orange grading, foreground clutter.
 ```
+
+
+## Siete escenarios exclusivos — 5 de noviembre de 2026
+
+Generados con ImageGen integrado, sin imágenes, artistas o marcas de terceros.
+La dirección común pidió panoramas anchos de fantasía con paisaje y arquitectura
+distantes, profundidad atmosférica, sin interfaz, tablero, letras ni personajes.
+La geometría cercana y la iluminación se construyen por separado en
+`src/battle/scenarios/FactionStage.tsx`.
+
+| Archivo base | Dirección específica |
+| --- | --- |
+| `bastion-alba-vista-v1` | Catedral fortificada de caliza y latón, vidrieras ámbar, estatuas protectoras, amanecer y sombras frías. |
+| `acropolis-olimpo-vista-v1` | Acrópolis de mármol pentélico, bronce, colinas del Egeo, luz rasante de tarde y mar turquesa. |
+| `baluarte-tercios-vista-v1` | Fortaleza de bastiones sobre llanura castellana, taludes, campamento, piedra ocre y alba fría. |
+| `umbral-vacio-vista-v1` | Ruinas de basalto suspendidas, elipses desalineadas, abismo violeta y fragmentos bajo relámpagos magenta. |
+| `cripta-plaga-vista-v1` | Osario inundado, arcos rotos, hongos, raíces, verdín y niebla verde bajo luna fría. |
+| `desguace-goblin-vista-v1` | Barranco de chatarra, grúas torcidas, raíles, rampas remendadas, linternas lima y chispas. |
+| `lago-kalevala-vista-v1` | Lago finés al crepúsculo, pinos, niebla azul, piedra sagrada y santuario remoto del Sampo. |
+
+Maestros PNG de 1536 × 1024 en `tools/art-inbox/panoramas-facciones/`, con
+el nombre de cada escenario. WebP de calidad 88 y variantes `-low` de
+768 × 512 y calidad 79 en `public/assets/scenarios/`. Las capturas de
+partida están en `tools/captures/facciones/`.

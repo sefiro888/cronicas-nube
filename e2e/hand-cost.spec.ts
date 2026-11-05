@@ -6,7 +6,7 @@ for (const [width, height] of [[1920, 1080], [1366, 768], [390, 844]] as const) 
     const base = createMatch(STARTER_DECKS[0]!, STARTER_DECKS[1]!, 42)
     const match: MatchState = {
       ...base, activePlayer: 'player', phase: 'main', turn: 5, terrain: [], board: [],
-      players: { ...base.players, player: {
+      players: { ...base.players, ai: { ...base.players.ai, commanderId: 'farnesio-duque-de-parma' }, player: {
         ...base.players.player, mulliganTaken: true, resourcePlayedThisTurn: false,
         hand: [
           { instanceId: 'dragón', cardId: 'dragon-caldera', costDiscount: 3 },

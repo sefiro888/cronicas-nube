@@ -32,7 +32,7 @@ las publicaciones del 31 de octubre recogidas en ese registro.
 | Diseños de cartas, sin contar comandantes | **517** |
 | Comandantes | **25** |
 | Mazos iniciales | **19**, de 50 cartas cada uno |
-| Escenarios 3D | **12** |
+| Escenarios 3D | **19**, uno por facción |
 | Pisos de la Torre del Nexo | **19**, derivados del catálogo de mazos |
 
 El catálogo comprende 90 cartas de NEX-01, 24 de NEX-02 y 31 por cada set de
@@ -152,25 +152,32 @@ La selección es automática según facción o manual en Jugar y Ajustes.
 
 | Escenario | Facciones en modo automático |
 | --- | --- |
-| Aether Citadel | Arcano, Orden, Olimpo, Tercios |
-| Santuario de las Runas | Sombra, Vacío |
+| Aether Citadel | Arcano |
+| Santuario de las Runas | Sombra |
 | Fragua de la Caldera | Furia |
-| Necrópolis de Duna | Duna, Plaga |
+| Necrópolis de Duna | Duna |
 | Fiordo de Fimbul | Fimbul |
-| Claro del Bosque | Naturaleza, Kalevala |
+| Claro del Bosque | Naturaleza |
 | Rompiente de Nerith | Marea |
-| Patio del Gremio | Forja, Goblins |
+| Patio del Gremio | Forja |
 | Corte de Jade | Jade |
 | Escalinata de la Rueda | Samsara |
 | Patio del Quinto Sol | Quinto Sol |
 | Garganta del Bestiario | Bestiario |
+| Bastión del Alba | Orden |
+| Acrópolis de Olimpo | Olimpo |
+| Baluarte de los Tercios | Tercios |
+| Umbral de la Fractura | Vacío |
+| Cripta de la Plaga | Plaga |
+| Desguace de los Goblins | Goblins |
+| Lago del Sampo | Kalevala |
 
 El render actual combina geometría y materiales procedurales, panoramas
 originales y recursos optimizados. La antigua descripción de una Ciudadela
 basada únicamente en un GLB de Blender ya no describe el sistema actual.
 Hay sombras de contacto, marcos físicos, estados sobre piezas, invocaciones,
 ataques e impactos, deterioro y caída del Nexo, mejoras de inspección e interfaz
-y renovación de los doce escenarios. Algunos entornos tienen reflejo planar
+y diecinueve escenarios con suelos propios. Algunos entornos tienen reflejo planar
 según calidad; el render bajo demanda reduce trabajo con movimiento reducido
 o tras paneles opacos.
 

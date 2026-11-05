@@ -97,7 +97,14 @@ locales por bloque. Conservar el punto de retoma al cerrar cada bloque.
   `tools/art-inbox/cartas-faccion/marco-olimpo-aprobado.png`, WebP propio y
   coordenadas medidas para los títulos, reglas y medallones. Pasaron las
   dos vistas de batalla y la prueba de encaje del texto de la galería.
-- **Siguiente:** validación global y repaso de regresiones.
+- **Validación, 08:13 Madrid.** Unitarias 749 correctas y 5 omitidas,
+  compilación y lint correctos. Primera pasada global 113 e2e correctas,
+  85 omitidas y dos fallos de las propias pruebas. Corregidos el gesto móvil
+  que chocaba con la introducción de batalla y la consulta de una ayuda
+  oculta sin pasar el ratón. Ambas regresiones pasan al repetirlas. Ajustado
+  también el tamaño del emblema de Esencia para dejar libre la cifra.
+- **Siguiente:** asentar la orilla de Kalevala, afinar arquitectura y repetir
+  capturas y validación global. Rama de retoma `codex/validacion-nocturna`.
 - **En cola:** marco de Olimpo elegido. Los otros tres chasis generados
   siguen como propuestas pendientes de valoración.
 
