@@ -59,6 +59,15 @@ for (const [width, height] of [[1920, 1080], [1366, 768], [390, 844]] as const) 
       const endBounds = (await page.getByRole('button', { name: 'Finalizar turno', exact: true }).boundingBox())!
       expect(ledgerBounds.y + ledgerBounds.height).toBeLessThanOrEqual(endBounds.y)
     }
+    await ash.click()
+    await expect(page.locator('[class*="actionHint"]')).toHaveText('Esta carta no tiene una jugada válida ahora mismo.')
+    await dragon.click()
+    await expect(page.locator('[class*="contextCost"]')).toHaveText('Coste: 2 Furia y 2 genérico')
+    await dragon.click({ button: 'right' })
+    const inspector = page.getByRole('dialog', { name: 'Dragón de la Caldera', exact: true })
+    await expect(inspector).toBeVisible()
+    await expect(inspector.locator('dl')).toContainText('2 Furia y 2 genérico')
+    await page.keyboard.press('Escape')
     if (process.env.RUN_SHOTS) await page.screenshot({ path: `tools/captures/coste-y-mano/${width}x${height}.png` })
   })
 }

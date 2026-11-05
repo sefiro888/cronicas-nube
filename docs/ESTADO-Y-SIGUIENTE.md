@@ -110,8 +110,17 @@ locales por bloque. Conservar el punto de retoma al cerrar cada bloque.
   pasan de nuevo con la vidriera. Compilación y lint correctos. Dos pruebas
   adicionales verifican que un comandante Fimbul en Duna o Samsara manuales
   recibe las 64 losas de ese escenario, también con calidad baja.
-- **Siguiente:** repetición global y capturas definitivas de las 19 facciones.
-  Rama de retoma `codex/pulido-escenarios`.
+- **Validación global, 08:30 Madrid.** 117 e2e correctas, 85 sondas
+  opcionales omitidas y cero fallos. Regeneradas las 38 capturas de las 19
+  facciones con la interfaz actual, todas correctas.
+- **Coste del panel, 08:35 Madrid.** Detectado y corregido un segundo lugar
+  que mostraba el coste base en el panel de selección. Panel, mano,
+  inspector y cobro usan ya el mismo coste por copia. La guía avisa si falta
+  un objetivo o condición pese a tener Esencia, y «Resolver carta» respeta esa
+  disponibilidad. Pasan las tres resoluciones de coste y los cuatro casos
+  de objetivo de Marea. Unitarias 749/5, compilación y lint correctos.
+- **Siguiente:** repaso del acabado de los escenarios nuevos y cierre de
+  validación. Rama de retoma `codex/coste-panel`.
 - **En cola:** marco de Olimpo elegido. Los otros tres chasis generados
   siguen como propuestas pendientes de valoración.
 

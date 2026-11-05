@@ -429,8 +429,12 @@ export function BattlePage() {
   }, [match, selectedPiece, selectedCard, ME, moves])
   const mana = summarizeMana(player?.resources ?? [])
   const rivalMana = summarizeMana(rival?.resources ?? [])
-  const payment = match && selectedCard && selectedInstance
-    ? planManaPayment(player?.resources ?? [], handCardCost(match, ME, selectedCard, selectedInstance))
+  const selectedCost = match && selectedCard && selectedInstance
+    ? handCardCost(match, ME, selectedCard, selectedInstance) : undefined
+  const selectedPlayable = match && selectedCard && selectedInstance
+    ? canPlayHandCard(match, ME, selectedCard, selectedInstance) : undefined
+  const payment = selectedCost
+    ? planManaPayment(player?.resources ?? [], selectedCost)
     : undefined
   /**
    * Duna — Ofrenda: si el jugador ha decidido pagar Vida por el efecto
@@ -973,6 +977,7 @@ export function BattlePage() {
     viewingForeign,
     selectedCard,
     canPaySelectedCard: payment?.payable !== false,
+    canPlaySelectedCard: selectedPlayable,
     selectedPiece,
     moveCount: moves.length,
     canAttackPiece: attacks.pieceIds.length > 0,
@@ -1328,10 +1333,11 @@ export function BattlePage() {
         <aside className={styles.rightPanel} data-context-empty={!activeInfo || undefined}>
           <SelectionPanel
             card={activeInfo}
+            cost={viewedBoardCard ? undefined : selectedCost}
             heading={viewedBoardCard ? (viewingForeign ? 'Ficha rival' : 'Consulta') : activeInfo ? 'Selección' : 'Contexto'}
             stats={contextStats}
             hint={actionHint}
-            canCast={canCastDirectly && payment?.payable === true}
+            canCast={canCastDirectly && selectedPlayable === true}
             onCast={playSelectedWithoutTarget}
             offering={offeringBase === undefined ? undefined : {
               cost: offeringToll,
@@ -1427,7 +1433,8 @@ export function BattlePage() {
           <span className={styles.ledgerTitle}>{selectedCard ? 'Carta elegida' : 'Tu mano'}</span>
           <strong>{selectedCard?.name ?? `${player.hand.length} cartas`}</strong>
           <p>{selectedCard && payment
-            ? payment.payable ? 'Esencia preparada. Elige dónde jugarla.' : 'Te falta Esencia para esta carta.'
+            ? !payment.payable ? 'Te falta Esencia para esta carta.'
+              : selectedPlayable ? 'Esencia preparada para esta jugada.' : 'Esta carta aún necesita cumplir una condición de juego.'
             : match.activePlayer === ME ? 'Las cartas con halo y sello LISTA se pueden jugar.' : 'El rival está jugando su turno.'}</p>
         </section>
         <div className={styles.hints} aria-hidden="true">
