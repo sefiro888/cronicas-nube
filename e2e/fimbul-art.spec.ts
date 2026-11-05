@@ -58,7 +58,7 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
       })
       return { tiles: floor.size, faces, valid }
     }, url)
-    await expect.poll(boardState).toMatchObject({ tiles: 64, faces: 2 })
+    await expect.poll(boardState).toMatchObject({ tiles: 64, faces: match.board.length * 2 })
     const box = (await label.boundingBox())!
     await page.mouse.click(box.x + box.width / 2, box.y + box.height + 26)
     await expect.poll(async () => (await boardState()).valid).toBeGreaterThan(0)

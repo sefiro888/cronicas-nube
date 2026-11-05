@@ -150,8 +150,19 @@ locales por bloque. Conservar el punto de retoma al cerrar cada bloque.
   extremos por su centro y pasa junto al recorrido de empezar una partida,
   jugar una fuente, arrastrar en móvil y desplegar con coste rebajado. Siete
   casos correctos antes de repetir el gate completo.
-- **Siguiente:** validación global tras ajustar el abanico y comprobaciones
-  remotas del borrador. Rama de retoma `codex/revision-final`. Vista local en
+- **Cierre, 09:56 Madrid.** Los nueve puntos del encargo están implementados.
+  Hay 19 chasis, 19 suelos propios y 19 escenarios distintos. La última
+  pasada global dio 136 casos correctos y dos fallos del recuento de texturas
+  de Fimbul, que esperaba únicamente su carta aunque el Grifo de Orden rival
+  también tiene ahora dos caras enmarcadas. Ajustado el recuento a las piezas
+  de la prueba, ambos casos pasan completos. Quedan 138 casos verificados y
+  85 sondas opcionales omitidas en el gate. Unitarias 749/5, build y lint
+  correctos. Las seis vistas adicionales en alta y las seis en baja de los
+  tres nuevos marcos pasan. Ataque real al Nexo repetido en ambas resoluciones.
+  Las partidas compiladas de Olimpo, Orden, Sombra y Vacío cargan marco,
+  suelo y escenario con la base de Pages, sin errores de recursos o ejecución.
+- **Siguiente:** revisión visual del propietario en el borrador PR #2.
+  Rama de retoma `codex/revision-final`. Vista local en
   `http://127.0.0.1:4179/` y compilada en
   `http://127.0.0.1:4241/cronicas-nube/`.
 - **Últimos tres marcos, 09:36 Madrid.** El propietario aprobó explícitamente
