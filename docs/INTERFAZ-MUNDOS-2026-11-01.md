@@ -1,5 +1,20 @@
 # Escenas de interfaz — 1 de noviembre de 2026
 
+## Sobre del Nexo — 5 de noviembre de 2026
+
+Arte original generado con ImageGen integrado, sin referencias externas.
+Maestro: `tools/art-inbox/interface-2026-11/sobre-nexo-v1.png`.
+WebP de 768 × 1152: `public/assets/interface/sobre-nexo-v1.webp`.
+Se utiliza como sobre y reverso ceremonial. Los rótulos son HTML; las rarezas,
+las cartas nuevas y las doradas proceden del resultado real de colección.
+La cámara utiliza la ilustración original existente `nexo-convergencia-v1.webp`.
+
+Prompt completo:
+
+```text
+Original premium fantasy collectible card game asset for Crónicas del Nexo. A single vertical sealed ceremonial card packet, front orthographic flat view, fills the entire portrait 2:3 canvas edge to edge. No surroundings, no text, no letters, no typography, no logos. Extraordinary intricate tactile craftsmanship: midnight teal-blue embossed leather, worn antique gold interlaced filigree and silver leaf engravings around all edges, sculptural corner clasps, tiny rivets, layered narrow golden borders, small ruby and turquoise settings. Dominant central hexagonal faceted luminous blue crystal set in an elaborate gold astrolabe medallion with radiating engraved celestial paths, tiny planets and carved wings. A horizontal wax-and-metal seal at the upper sixth suggests a tearable packet seam. Bottom fifth subdued dark blue leather for live HTML label overlay, minimal ornament there. Rich cool deep indigo shadows with warm amber bevel highlights, blue light glows from the crystal, cinematic hand-painted physical object rendering with extremely crisp dense detail. Symmetrical iconic clear silhouette, elegant artifact from a high fantasy world, not sci-fi or cartoon, no humans, no franchise imitation. Outer corners slightly rounded, all canvas opaque.
+```
+
 ## Reserva de Esencia — 5 de noviembre de 2026
 
 Marco original generado con ImageGen integrado para el contador de reserva.

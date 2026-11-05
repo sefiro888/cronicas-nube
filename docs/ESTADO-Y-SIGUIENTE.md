@@ -1,5 +1,41 @@
 # Estado del proyecto y por dónde seguir
 
+## Ajuste solicitado de proporciones — 5 de noviembre de 2026
+
+El propietario detectó en la apertura de sobres que los cuatro chasis nuevos
+(Olimpo, Orden, Sombra y Vacío) reservan demasiado espacio a los ornamentos.
+Quiere conservar su identidad y detalle con el protagonismo de ilustración de
+los chasis anteriores. La comparación de su captura es Goblins frente a Orden:
+la ventana de arte medida es 72 % × 42 % en Goblins y 64 % × 28,5 % en Orden.
+Orden ofrece aproximadamente un 40 % menos de superficie de ilustración.
+El tamaño exterior no explica el problema. Pendiente rediseñar las ventanas de
+los cuatro maestros y medir de nuevo nombre, coste, banda, reglas y estadísticas
+para HTML y tablero. No basta ampliar la ilustración sobre los adornos actuales.
+Este ajuste no se incluye en el bloque de Álbum y sobres.
+
+## Álbum y apertura de sobres — 5 de noviembre de 2026
+
+Rama de bloque `codex/album-y-sobres`, desde main y con avance rápido al
+trabajo acumulado en `codex/revision-final`. El Álbum incorpora cabecera
+ilustrada, sobre ceremonial original, estantes, filtro de cartas propias y
+páginas de 48 cartas. La apertura usa una cámara con la ilustración del Nexo,
+sello que se rasga, giro de cartas, luz y sonido según rareza, brillo de doradas,
+etiquetas de nuevas y resumen de resultados. Pulsar una carta revelada abre
+el inspector existente con ilustración completa y reglas legibles.
+
+Se mantienen las probabilidades y las recompensas del almacén de colección.
+El sobre se descuenta y sus cinco cartas se guardan antes de la animación.
+Cerrojos síncronos impiden consumo doble; los temporizadores se cancelan al
+cerrar. Esc también funciona durante el rasgado, con el foco fuera del botón
+desactivado. El fondo queda inerte y se restaura el foco al volver al Álbum.
+Respeta movimiento reducido del sistema y del juego, y la mezcla de audio.
+
+749 pruebas unitarias correctas y 5 omitidas. Compilación y lint correctos.
+Cinco pruebas específicas de navegador correctas: 1920 × 1080, 1366 × 768,
+390 × 844, teclado/cierre durante rasgado y paginación/filtro. Comprobación
+adicional de la compilación con base `/cronicas-nube/`: apertura normal y
+recursos sin errores. Capturas en `tools/captures/album/`.
+
 ## TRASPASO A CODEX — 4 de noviembre de 2026 (léelo primero)
 
 El propietario pasa el proyecto a Codex (también para generar imágenes).
