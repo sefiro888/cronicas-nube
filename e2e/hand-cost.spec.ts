@@ -69,5 +69,18 @@ for (const [width, height] of [[1920, 1080], [1366, 768], [390, 844]] as const) 
     await expect(inspector.locator('dl')).toContainText('2 Furia y 2 genérico')
     await page.keyboard.press('Escape')
     if (process.env.RUN_SHOTS) await page.screenshot({ path: `tools/captures/coste-y-mano/${width}x${height}.png` })
+    await dragon.click()
+    await page.keyboard.press('ArrowDown')
+    await page.keyboard.press('Enter')
+    await expect.poll(() => page.evaluate(() => {
+      const saved = JSON.parse(localStorage.getItem('cronicas-nexo-match')!) as { state: { match: MatchState } }
+      const player = saved.state.match.players.player
+      return {
+        deployed: saved.state.match.board.some(({ cardId }) => cardId === 'dragon-caldera'),
+        spent: player.resources.filter(({ exhausted }) => exhausted).length,
+      }
+    })).toEqual({ deployed: true, spent: 4 })
+    await expect(dragon).toHaveCount(0)
+    await expect(reserve).toContainText('0 / 4')
   })
 }

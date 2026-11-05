@@ -127,8 +127,13 @@ locales por bloque. Conservar el punto de retoma al cerrar cada bloque.
   dentada de bronce y remaches. Las 38 vistas en calidad alta y las 38 en
   calidad baja han pasado. El encuadre final de Vacío vuelve a pasar en las
   dos resoluciones. El visor de capturas acepta `FACTION_SHOTS_QUALITY`.
-- **Siguiente:** comprobar una carta rebajada jugada desde la mano hasta
-  el cobro real y cerrar validación. Rama de retoma `codex/detalle-escenarios`.
+- **Juego real desde la mano, 08:57 Madrid.** El Dragón rebajado se selecciona,
+  inspecciona, despliega y paga cuatro Esencias exactas en las tres
+  resoluciones. Además pasan los 19 recorridos de fuente, sello LISTA,
+  selección de marco, despliegue y cobro de una unidad de cada facción.
+  Se reproducen con `RUN_FACTION_FLOW=1` y `e2e/faction-playability.spec.ts`.
+- **Siguiente:** encuadre definitivo de los portales y validación de entrega.
+  Rama de retoma `codex/partida-coste-real`.
 - **En cola:** marco de Olimpo elegido. Los otros tres chasis generados
   siguen como propuestas pendientes de valoración.
 
