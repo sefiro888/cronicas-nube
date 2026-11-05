@@ -187,7 +187,7 @@ const attackScene = async (page: Page, name: string, attacker: CardDefinition, d
   }
   await seed(page, match, STARTER_DECKS[0]!.id)
   await frozenClock(page)
-  await page.setViewportSize({ width: 1366, height: 768 })
+  await page.setViewportSize({ width: Number(process.env.SHOTS_WIDTH ?? 1366), height: Number(process.env.SHOTS_HEIGHT ?? 768) })
   await page.goto('/battle')
   await runUntil(page, async () => (await page.getByTestId('battle-board').count()) > 0, 500, 80)
   await page.clock.runFor(2500)

@@ -76,13 +76,19 @@ locales por bloque. Conservar el punto de retoma al cerrar cada bloque.
   LISTA usa turno, pago, objetivo, despliegue y sacrificio. Las pruebas
   cubren Renacer + Mandato y hechizos con Esencia sin objetivo. Pasaron 749
   unitarias, compilación, lint y la prueba de mano en 1920, 1366 y 390 px.
-- **Siguiente:** siete escenarios exclusivos (Orden, Olimpo, Tercios, Vacío,
-  Plaga, Goblins, Kalevala). Después comprobar los 19 suelos en Automático
-  y en selección manual. Los PNG aprobados de Samsara y Quinto Sol están
-  en `tools/art-inbox/suelos-faccion/`. Duna conserva su suelo.
-- **En cola:** marco de Olimpo elegido, tres propuestas de marco pendientes
-  de valoración (Orden, Sombra, Vacío), figura del Nexo en duelo, barra
-  superior, zona inferior y símbolos de Esencia por facción.
+- **Escenarios exclusivos, terminados en `316cfed`.** Cada facción tiene
+  un mapa distinto. Se crearon siete panoramas originales con ImageGen y
+  arquitectura 3D propia. Maestros en `tools/art-inbox/panoramas-facciones/`.
+- **Suelos, terminados en `fb48d9d`.** El escenario determina el suelo
+  también en selección manual. Se incorporaron los PNG aprobados de Samsara
+  y Quinto Sol. Duna conserva su diseño. Pasó la revisión 38/38 de las 19
+  facciones a 1920 × 1080 en Automático y a 1366 × 768 con mapa manual.
+- **Nexo en duelo, implementado.** Relicario con pedestal, cristal facetado,
+  brazos y medallones laterales, emblema de facción y Vida accesible. Prueba
+  real de ataque y capturas a 1366 y 1920 px en `tools/captures/nexo-duelo*`.
+- **Siguiente:** barra superior, zona inferior y Esencia por facción.
+- **En cola:** marco de Olimpo elegido. Los otros tres chasis generados
+  siguen como propuestas pendientes de valoración.
 
 ---
 

@@ -571,33 +571,17 @@
   justify-items: center;
   align-content: start;
   width: 100%;
-  aspect-ratio: 10 / 15;
-  padding-top: 17%;
-  clip-path: polygon(50% 0, 92% 16%, 100% 62%, 74% 100%, 26% 100%, 0 62%, 8% 16%);
-  background:
-    linear-gradient(160deg, rgba(255, 255, 255, 0.22), transparent 30%),
-    linear-gradient(200deg, transparent 55%, rgba(255, 255, 255, 0.12) 70%, transparent 80%),
-    radial-gradient(ellipse at 50% 42%, color-mix(in srgb, var(--accent) 70%, #fff) 0, color-mix(in srgb, var(--accent) 45%, #0b0f1a) 34%, #070a12 78%);
-  filter: drop-shadow(0 0 18px var(--accent)) drop-shadow(0 18px 30px rgba(0, 0, 0, 0.7));
-  animation: crystalFloat 3.2s ease-in-out infinite alternate;
+  aspect-ratio: 240 / 302;
+  padding-top: 34%;
+  isolation: isolate;
+  filter: drop-shadow(0 4px 6px #080712) drop-shadow(0 0 12px color-mix(in srgb, var(--accent) 47%, transparent));
 }
-/* Facetas: líneas de corte del cristal, que es lo que lo hace leerse como
-   piedra tallada y no como una placa. */
-.facets {
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(118deg, transparent 49.4%, rgba(255, 255, 255, 0.35) 50%, transparent 50.6%),
-    linear-gradient(62deg, transparent 49.4%, rgba(255, 255, 255, 0.25) 50%, transparent 50.6%),
-    linear-gradient(180deg, transparent 61.5%, rgba(255, 255, 255, 0.22) 62%, transparent 62.5%);
-  mix-blend-mode: screen;
-  pointer-events: none;
-}
+.facets { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .core {
   position: absolute;
-  top: 36%;
+  top: 40%;
   left: 50%;
-  width: 70%;
+  width: 59%;
   aspect-ratio: 1;
   border-radius: 50%;
   background: radial-gradient(circle, rgba(255, 255, 255, 0.9), color-mix(in srgb, var(--accent) 60%, transparent) 30%, transparent 68%);
@@ -609,11 +593,11 @@
   position: relative;
   display: grid;
   place-items: center;
-  width: 64%;
+  width: 43%;
   aspect-ratio: 1;
 }
 .portrait img {
-  width: 82%;
+  width: 79%;
   aspect-ratio: 1;
   border-radius: 50%;
   object-fit: cover;
@@ -629,20 +613,28 @@
   animation: runeSpin 9s linear infinite;
 }
 .nexusTitle {
-  position: relative;
-  margin-top: 6%;
+  position: absolute;
+  top: 76.8%;
+  display: flex;
+  align-items: center;
+  gap: .3em;
   color: #fff6dc;
-  font: 900 clamp(18px, 1.7vw, 24px) var(--display);
-  letter-spacing: 0.3em;
+  font: 900 clamp(11px, 1.12vw, 18px) var(--display);
+  letter-spacing: .13em;
   text-transform: uppercase;
-  text-shadow: 0 0 14px var(--accent), 0 2px 6px rgba(0, 0, 0, 0.9);
+  text-shadow: 0 2px 6px #09070a;
 }
 .nexusName {
-  position: relative;
-  color: color-mix(in srgb, var(--accent) 40%, #f4e8c8);
-  font: 700 12px var(--display);
-  letter-spacing: 0.12em;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
+  position: absolute;
+  top: 86.8%;
+  max-width: 78%;
+  color: #fff0cc;
+  font: 700 clamp(8px, .75vw, 12px) var(--display);
+  text-align: center;
+  text-shadow: 0 2px 4px #09070a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .orbit {
   position: absolute;
@@ -678,10 +670,10 @@
 .monolith[data-wear='2'] .nexusCracks path:not([data-wear='3']),
 .monolith[data-wear='3'] .nexusCracks path { display: inline; }
 
-.monolith[data-critical] .crystal { animation: crystalFloat 3.2s ease-in-out infinite alternate, criticalFlicker 0.9s steps(2) infinite; }
+.monolith[data-critical] .crystal { animation: criticalFlicker 0.9s steps(2) infinite; }
 .monolith[data-critical] .core { background: radial-gradient(circle, #fff, rgba(255, 60, 40, 0.8) 30%, transparent 68%); }
 .monolith[data-critical] .monolithAura { background: radial-gradient(circle, rgba(255, 50, 30, 0.5) 0, transparent 60%); }
-.monolith[data-hit] .crystal { animation: crystalHit 620ms cubic-bezier(.36, .07, .19, .97), crystalFloat 3.2s ease-in-out 620ms infinite alternate; }
+.monolith[data-hit] .crystal { animation: crystalHit 620ms cubic-bezier(.36, .07, .19, .97); }
 
 /* Esquirlas que salen del cristal con cada golpe. */
 .crystalBurst {
@@ -743,7 +735,6 @@
 
 @keyframes auraTurn { to { transform: translate(-50%, -50%) rotate(360deg); } }
 @keyframes auraBreath { from { opacity: 0.6; } to { opacity: 1; } }
-@keyframes crystalFloat { from { transform: translateY(0); } to { transform: translateY(-6px); } }
 @keyframes corePulse { from { opacity: 0.7; transform: translate(-50%, -50%) scale(0.92); } to { opacity: 1; transform: translate(-50%, -50%) scale(1.06); } }
 @keyframes runeSpin { to { transform: rotate(360deg); } }
 @keyframes orbit {

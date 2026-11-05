@@ -1,10 +1,11 @@
 import { useEffect, type CSSProperties } from 'react'
-import { Card, RARITY_LABELS } from '../../components'
+import { Card, FactionSigil, RARITY_LABELS } from '../../components'
 import { KeywordGlyph, keywordIdentity, keywordStyle } from '../../components/keywordIdentity'
-import { CARD_BY_ID, COMMANDER_BY_ID, FACTION_BY_ID, type PlayerId } from '../../game'
+import { CARD_BY_ID, COMMANDER_BY_ID, FACTION_BY_ID, type FactionId, type PlayerId } from '../../game'
 import { inspectionStatuses } from '../../battle/inspectionStatuses'
 import { combatTraits, type CombatExchange, type CombatSide } from '../../battle/presentation'
 import { withBase } from '../../utils/assets'
+import { NexusReliquary } from './NexusReliquary'
 import styles from './CombatDuel.module.css'
 
 interface CombatDuelProps {
@@ -71,8 +72,9 @@ const ORBIT = Array.from({ length: 7 }, (_, index) => ({ angle: index * (360 / 7
  * el golpe; el cristal se agrieta según la Vida perdida y por debajo de un
  * cuarto late en rojo.
  */
-function NexusMonolith({ artUrl, name, health, maxHealth, damage }: {
+function NexusMonolith({ artUrl, faction, name, health, maxHealth, damage }: {
   artUrl?: string
+  faction?: FactionId
   name?: string
   health: number
   maxHealth?: number
@@ -83,7 +85,7 @@ function NexusMonolith({ artUrl, name, health, maxHealth, damage }: {
   const ratio = Math.max(0, Math.min(1, health / max))
   const wear = ratio > 0.75 ? 0 : ratio > 0.5 ? 1 : ratio > 0.25 ? 2 : 3
   return (
-    <div className={styles.monolith} data-wear={wear} data-critical={ratio <= 0.25 || undefined} data-hit={damage > 0 || undefined}>
+    <div className={styles.monolith} data-testid="duel-nexus" data-wear={wear} data-critical={ratio <= 0.25 || undefined} data-hit={damage > 0 || undefined}>
       <span className={styles.monolithAura} />
       <span className={styles.orbit} aria-hidden="true">
         {ORBIT.map((shard, index) => (
@@ -91,7 +93,7 @@ function NexusMonolith({ artUrl, name, health, maxHealth, damage }: {
         ))}
       </span>
       <div className={styles.crystal}>
-        <span className={styles.facets} />
+        <NexusReliquary className={styles.facets} />
         <span className={styles.core} />
         <div className={styles.portrait}>
           <svg className={styles.runes} viewBox="0 0 100 100" aria-hidden="true">
@@ -105,7 +107,7 @@ function NexusMonolith({ artUrl, name, health, maxHealth, damage }: {
           <path d="M44 40 L26 52 L22 74 M54 56 L74 64 L80 88" data-wear="2" />
           <path d="M46 78 L40 104 L52 126 M46 78 L64 100 L60 140 M26 52 L14 40" data-wear="3" />
         </svg>
-        <strong className={styles.nexusTitle}>Nexo</strong>
+        <strong className={styles.nexusTitle}>{faction && <FactionSigil faction={faction} decorative size="small" />}Nexo</strong>
         <small className={styles.nexusName}>{name}</small>
       </div>
       {damage > 0 && (
@@ -113,7 +115,7 @@ function NexusMonolith({ artUrl, name, health, maxHealth, damage }: {
           {Array.from({ length: 12 }, (_, index) => <i key={index} style={{ '--a': `${index * 30 + 8}deg` } as CSSProperties} />)}
         </span>
       )}
-      <div className={styles.lifeBar}>
+      <div className={styles.lifeBar} aria-label={`Vida del Nexo: ${health} de ${max}`}>
         <span className={styles.lifeFill} style={{ '--ratio': ratio } as CSSProperties} />
         {damage > 0 && <span key={`loss${damage}`} className={styles.lifeLoss} style={{ '--from': Math.min(1, (health + damage) / max), '--ratio': ratio } as CSSProperties} />}
         <span key={health} className={styles.lifeValue}>{health}<small>/{max}</small></span>
@@ -172,6 +174,7 @@ function Fighter({ side, role, me, commanderIds, nexusHealth, phase, holding, fo
           : (
             <NexusMonolith
               artUrl={commander ? withBase(commander.art.webp) : undefined}
+              faction={commander?.faction}
               name={commander?.name}
               health={nexusHealth[side.owner]}
               maxHealth={commander?.nexusHealth}
