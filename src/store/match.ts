@@ -16,6 +16,8 @@ import {
   type SpellTarget,
 } from '../game'
 import { castImpact, type CastImpact } from '../battle/castImpact'
+import { resolveAdventureAction } from './adventure'
+import { resolvedEffectsFor, type ResolvedEffect } from '../battle/resolvedEffects'
 
 /**
  * Entrada compacta del registro de partida (para el botón "Descargar
@@ -84,6 +86,8 @@ const compactAction = (state: MatchState, action: GameAction): Pick<MatchLogEntr
 }
 
 interface MatchStore {
+  mode: 'skirmish' | 'adventure'
+  resolvedEffects: readonly ResolvedEffect[]
   match?: MatchState
   selectedHandId?: string
   selectedPieceId?: string
@@ -132,7 +136,7 @@ interface MatchStore {
    */
   startMatch: (playerDeckId: string, seed?: number, opponentDeckId?: string, setup?: MatchSetup) => void
   /** Arranca la partida a partir de un MatchState ya construido (multijugador: lo crea el anfitrión y lo recibe el invitado). */
-  startFromMatch: (match: MatchState) => void
+  startFromMatch: (match: MatchState, mode?: 'skirmish' | 'adventure') => void
   dispatch: (action: GameAction) => boolean
   replaceMatch: (match: MatchState, message?: string) => void
   advanceEvent: () => void
@@ -240,6 +244,8 @@ const actionDescription = (state: MatchState, action: GameAction, events: readon
 }
 
 const initialState = {
+  mode: 'skirmish' as 'skirmish' | 'adventure',
+  resolvedEffects: [] as readonly ResolvedEffect[],
   history: [] as readonly string[],
   matchLog: [] as readonly MatchLogEntry[],
   healthHistory: [] as readonly HealthSnapshot[],
@@ -369,11 +375,12 @@ export const useMatchStore = create<MatchStore>()(
       startedAtMs: Date.now(),
     })
   },
-  startFromMatch: (match) => {
+  startFromMatch: (match, mode = 'skirmish') => {
     const cleaned = clearAnimationQueue(match)
     set({
       ...initialState,
       match: cleaned,
+      mode,
       history: ['La escaramuza comienza. Robas diez cartas.'],
       healthHistory: [healthSnapshot(cleaned)],
       selectedHandId: undefined,
@@ -402,13 +409,15 @@ export const useMatchStore = create<MatchStore>()(
       return false
     }
     const logEntry: MatchLogEntry = { turn: match.turn, by: action.playerId, type: action.type, ...compactAction(match, action), ok: true }
-    const { match: cleaned, events } = drainAnimations(result.state)
+    const resolved = get().mode === 'adventure' ? resolveAdventureAction(match, result.state) : result.state
+    const { match: cleaned, events } = drainAnimations(resolved)
     const description = actionDescription(match, action, events)
     set((current) => ({
       match: cleaned,
       message: undefined,
       history: [...current.history.slice(-9), description],
       matchLog: [...current.matchLog, logEntry],
+      resolvedEffects: [...current.resolvedEffects, ...resolvedEffectsFor(match, cleaned, events)].slice(-96),
       healthHistory: [...current.healthHistory, healthSnapshot(cleaned)],
       bestPlay: action.playerId
         ? updateBestPlay(current.bestPlay, events, match.turn, action.playerId, logEntry.card)
@@ -424,6 +433,7 @@ export const useMatchStore = create<MatchStore>()(
     const { match: cleaned, events } = drainAnimations(match)
     set((current) => ({
       match: cleaned,
+      resolvedEffects: current.match ? [...current.resolvedEffects, ...resolvedEffectsFor(current.match, cleaned, events)].slice(-96) : current.resolvedEffects,
       message,
       history: message ? [...current.history.slice(-9), message] : current.history,
       healthHistory: [...current.healthHistory, healthSnapshot(cleaned)],
@@ -477,6 +487,8 @@ export const useMatchStore = create<MatchStore>()(
       // Solo el estado necesario para retomar la partida: nunca la cola de
       // animaciones ni la selección en curso, que no tienen sentido tras recargar.
       partialize: (state) => ({
+        mode: state.mode,
+        resolvedEffects: state.resolvedEffects,
         match: state.match,
         history: state.history,
         matchLog: state.matchLog,

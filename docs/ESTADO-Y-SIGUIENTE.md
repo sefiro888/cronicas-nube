@@ -1,5 +1,28 @@
 # Estado del proyecto y por dónde seguir
 
+## Encargo de las 32 mejoras seleccionadas — 5 de noviembre de 2026
+
+El propietario aprobó los cuatro marcos v2 y encargó los puntos
+1, 3, 4, 5, 11, 12, 13, 14, 17, 18, 21, 22, 23, 26, 28, 29, 30, 31, 33,
+38, 39, 43, 52, 61, 63, 67, 71, 72, 73, 74, 76 y 101 en una sola sesión de
+trabajo. Registro, pruebas y punto de retoma:
+`docs/TRABAJO-32-MEJORAS-2026-11-05.md`.
+
+Los marcos v2 están activos en HTML y ficha 3D. Los indicadores se anclan al
+pie de la pieza; las pruebas pulsan la geometría renderizada, no la placa.
+La crónica usa eventos resueltos y distingue protección y daño periódico.
+El nuevo Atlas permite probar y aplicar luz por escenario sin mutar una
+partida durante la vista previa. Se auditó la combinación real de 19 suelos,
+19 escenarios y dos cámaras a 1920 × 1080 y 1366 × 768 (38 casos correctos).
+
+Entradas locales: `/atlas`, `/adventures`, `/laboratory` y `/tower`. Aventuras
+tiene 19 crónicas de tres capítulos, tres guardianes de dos fases y series al
+mejor de tres. El laboratorio controla ambos bandos y no toca el guardado de
+partida normal. La Torre clásica sigue disponible junto a Caminos del umbral
+(9 pisos) y Expedición breve (5), con encuentros y reliquias funcionales.
+No hay automatización de continuación creada. No publicar ni fusionar main
+sin autorización del propietario.
+
 ## Indicadores de las fichas — petición añadida el 5 de noviembre de 2026
 
 Añadido el punto 101 a `docs/COLA-100-MEJORAS-2026-11-05.md`, con prioridad P0.
@@ -23,9 +46,9 @@ Maestros originales en `tools/art-inbox/propuestas-marcos-v2/` (solo local).
 Procedencia, prompts completos y mediciones en
 `docs/PROPUESTAS-MARCOS-V2-2026-11-05.md`.
 
-**Son propuestas pendientes de valoración, no están integradas.** El propietario
-pidió verlas primero. Tras elegirlas, medir todos los rótulos, integrar HTML y
-3D y revisar cartas reales en batalla; no copiar sin más las medidas anteriores.
+En esta fase eran propuestas para valorar. El propietario aprobó después las
+cuatro en el encargo de 32 mejoras descrito arriba; esa decisión sustituye al
+estado pendiente original.
 
 Después de terminar los cuatro diseños se elaboró
 `docs/COLA-100-MEJORAS-2026-11-05.md`: exactamente 100 propuestas, en diez áreas,

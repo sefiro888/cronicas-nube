@@ -1,3 +1,4 @@
+import { ScenarioAmbientLight, ScenarioHemisphereLight, ScenarioDirectionalLight } from './ScenarioLights'
 import { Sparkles } from '@react-three/drei'
 import type { AnimationEvent } from '../../game'
 import type { GraphicsQuality } from '../../store/preferences'
@@ -27,14 +28,14 @@ const MIST: readonly PlumeVent[] = [
  * sin conos luminosos sólidos ni musgo como rectángulos flotantes. */
 export function VerdantGrove({ quality, reducedMotion }: GroveProps) {
   return <>
-    <ambientLight intensity={0.27} color="#abb7a1" />
-    <hemisphereLight intensity={0.4} color="#d7e2cf" groundColor="#625b45" />
-    <directionalLight position={[-7, 13, 5]} intensity={quality === 'low' ? 1.95 : 1.4} color="#fff0cc"
+    <ScenarioAmbientLight intensity={0.27} color="#abb7a1" />
+    <ScenarioHemisphereLight intensity={0.4} color="#d7e2cf" groundColor="#625b45" />
+    <ScenarioDirectionalLight position={[-7, 13, 5]} intensity={quality === 'low' ? 1.95 : 1.4} color="#fff0cc"
       castShadow={quality !== 'low'} shadow-mapSize-width={quality === 'high' ? 2048 : 1024}
       shadow-mapSize-height={quality === 'high' ? 2048 : 1024}
       shadow-camera-left={-12} shadow-camera-right={12} shadow-camera-top={12} shadow-camera-bottom={-12}
       shadow-bias={-0.0006} />
-    <directionalLight position={[8, 7, -8]} intensity={0.5} color="#a6bcc0" />
+    <ScenarioDirectionalLight position={[8, 7, -8]} intensity={0.5} color="#a6bcc0" />
     <FilteredSunlight quality={quality} />
     <DistantVista image={`/assets/scenarios/grove-vista-v1${quality === 'low' ? '-low' : ''}.webp`} />
     <ForestGround quality={quality} />

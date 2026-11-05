@@ -4,6 +4,7 @@ import { Color, DataTexture, LinearFilter, Matrix4, NoColorSpace, PerspectiveCam
 import type { BufferGeometry, Mesh } from 'three'
 import type { GraphicsQuality } from '../../store/preferences'
 import { usePageVisibility } from '../usePageVisibility'
+import { useScenarioLight } from '../../store/scenarioMood'
 import { iceField } from './iceField'
 import { frozenIceFragmentShader } from './frozenIceShader'
 import { seaFragmentShader, seaVertexShader } from './seaShader'
@@ -51,6 +52,8 @@ const fragmentShader = /* glsl */`
   uniform sampler2D uRipples;
   uniform sampler2D uReflection;
   uniform vec3 uColor;
+  uniform vec3 uLightColor;
+  uniform vec3 uLightDirection;
   uniform float uHasReflection;
   uniform float uTime;
   uniform float uRadius;
@@ -73,9 +76,9 @@ const fragmentShader = /* glsl */`
       vec3 reflected = texture2D(uReflection, clamp(uv, 0.001, 0.999)).rgb;
       color = mix(color, reflected, fresnel);
     }
-    vec3 moon = normalize(vec3(-0.35, 0.65, -0.68));
+    vec3 moon = normalize(uLightDirection);
     float glint = pow(max(dot(reflect(-moon, normal), view), 0.0), 70.0);
-    color += vec3(0.35, 0.46, 0.59) * glint * 0.35;
+    color += uLightColor * glint * 0.24;
     float alpha = 1.0 - smoothstep(uRadius * 0.73, uRadius, length(vWorld.xz));
     gl_FragColor = vec4(color, alpha);
     #include <tonemapping_fragment>
@@ -98,13 +101,14 @@ export function ReflectiveWater({ quality, reducedMotion, level = -0.72, radius 
   readonly ocean?: boolean
   readonly geometry?: BufferGeometry
 }) {
+  const { mood } = useScenarioLight()
   const water = useRef<Mesh>(null)
   const surface = useRef<ShaderMaterial>(null)
   const visible = usePageVisibility()
   const lastCapture = useRef(-Infinity)
   const target = useMemo(() => quality === 'low' ? undefined : new WebGLRenderTarget(quality === 'high' ? 512 : 256, quality === 'high' ? 512 : 256), [quality])
   const seaGeometry = useMemo(() => ocean ? new PlaneGeometry(radius * 2, radius * 2,
-    quality === 'low' ? 64 : 128, quality === 'low' ? 64 : 128) : undefined, [ocean, radius, quality])
+    quality === 'low' ? 48 : 128, quality === 'low' ? 48 : 128) : undefined, [ocean, radius, quality])
   useEffect(() => () => seaGeometry?.dispose(), [seaGeometry])
   const reflection = useMemo(() => ({
     camera: new PerspectiveCamera(), plane: new Plane(), clip: new Vector4(), q: new Vector4(),
@@ -116,9 +120,11 @@ export function ReflectiveWater({ quality, reducedMotion, level = -0.72, radius 
       uRipples: { value: rippleField() }, uReflection: { value: target?.texture ?? null },
       uIce: { value: frozen ? iceField() : null },
       uReflectionMatrix: { value: reflection.matrix }, uHasReflection: { value: target ? 1 : 0 },
+      uLightColor: { value: new Color(mood === 'moonlight' ? '#9ebede' : mood === 'dusk' ? '#d1a2b5' : '#d9c3a0') },
+      uLightDirection: { value: new Vector3(...(mood === 'moonlight' ? [-.35, .75, -.4] as const : [-.7, .63, .36] as const)) },
       uTime: { value: 0 }, uRadius: { value: radius }, uColor: { value: new Color(color) },
     }, vertexShader: ocean ? seaVertexShader : vertexShader, fragmentShader: frozen ? frozenIceFragmentShader : ocean ? seaFragmentShader : fragmentShader, fog: true, transparent: true, depthWrite: false,
-  }), [target, reflection, radius, color, frozen, ocean])
+  }), [target, reflection, radius, color, frozen, ocean, mood])
   useEffect(() => () => material.dispose(), [material])
   useEffect(() => () => target?.dispose(), [target])
   useFrame(({ camera, gl, scene, clock }) => {
@@ -126,7 +132,7 @@ export function ReflectiveWater({ quality, reducedMotion, level = -0.72, radius 
     surface.current.uniforms.uTime!.value = reducedMotion || frozen ? 0 : clock.elapsedTime
     if (!target || !(camera instanceof PerspectiveCamera) || camera.position.y <= level) return
     const now = performance.now()
-    if (!reducedMotion && now - lastCapture.current < (quality === 'high' ? 1000 / 24 : 1000 / 12)) return
+    if (!reducedMotion && now - lastCapture.current < (quality === 'high' ? 1000 / 18 : 1000 / 10)) return
     lastCapture.current = now
     const state = reflectionState.current
     const mirror = state.camera

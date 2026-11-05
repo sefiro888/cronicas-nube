@@ -27,7 +27,7 @@ export interface CardStatusEffect {
 
 export type CardStatus = CardStatusId | CardStatusEffect;
 
-export type CardStatValues = Readonly<Pick<CardDefinition, 'attack' | 'health' | 'resistance'>>;
+export type CardStatValues = Readonly<Pick<CardDefinition, 'attack' | 'health' | 'resistance'>> & { readonly maxHealth?: number };
 
 export interface CardProps {
   readonly cost?: ManaCost;
@@ -143,7 +143,7 @@ export function formatManaCost(cost: ManaCost): string {
   return parts.length > 0 ? parts.join(' y ') : 'sin coste';
 }
 
-function ManaCostBadge({ cost, affordable, framed }: { readonly cost: ManaCost; readonly affordable?: boolean; readonly framed?: boolean }) {
+function ManaCostBadge({ cost, baseCost, affordable, framed }: { readonly cost: ManaCost; readonly baseCost?: ManaCost; readonly affordable?: boolean; readonly framed?: boolean }) {
   const colored = FACTION_ORDER.flatMap((faction) => {
     const amount = cost.colored[faction];
     return amount ? [{ faction, amount }] : [];
@@ -153,9 +153,10 @@ function ManaCostBadge({ cost, affordable, framed }: { readonly cost: ManaCost; 
   return (
     <div
       className={styles.cost}
+      data-modified={baseCost && formatManaCost(baseCost) !== formatManaCost(cost) || undefined}
       data-affordable={affordable === undefined ? undefined : String(affordable)}
       aria-label={`Coste: ${formatManaCost(cost)}${affordable === false ? '. No tienes Esencia suficiente.' : ''}`}
-      title={`Coste: ${formatManaCost(cost)}`}
+      title={`Coste efectivo: ${formatManaCost(cost)}${baseCost && formatManaCost(baseCost) !== formatManaCost(cost) ? `. Impreso: ${formatManaCost(baseCost)}. Consulta los modificadores en la inspección.` : ''}`}
     >
       {framed && <strong className={styles.frameCostTotal}>{total}</strong>}
       <span className={framed ? styles.frameCostDetail : styles.costParts}>
@@ -188,12 +189,12 @@ function CardStats({ card, values }: { readonly card: CardDefinition; readonly v
       )}
       {health !== undefined && (
         <span className={`${styles.stat} ${styles.health}`} title={`Vida ${health}`}>
-          <small>VID</small><strong>{health}</strong>
+          <small>VID</small><strong>{health}{values?.maxHealth !== undefined && <em className={styles.healthMaximum}>/{values.maxHealth}</em>}</strong>
         </span>
       )}
       {resistance !== undefined && (
         <span className={`${styles.stat} ${styles.resistance}`} title={`Resistencia ${resistance}`}>
-          <small>RES</small><strong>{resistance}</strong>
+          <small>RES</small><strong>{resistance}{values?.maxHealth !== undefined && <em className={styles.healthMaximum}>/{values.maxHealth}</em>}</strong>
         </span>
       )}
     </div>
@@ -328,7 +329,7 @@ export function Card({
       {frame && <img className={styles.factionFrame} src={withBase(frame.asset)} alt="" aria-hidden="true" draggable={false} />}
       <span className={styles.frameFiligree} aria-hidden="true" />
       <span className={styles.foil} aria-hidden="true" />
-      <ManaCostBadge cost={cost} affordable={affordable} framed={Boolean(frame)} />
+      <ManaCostBadge cost={cost} baseCost={card.cost} affordable={affordable} framed={Boolean(frame)} />
       <div className={styles.header}>
         <h3 className={styles.name}>{card.name}</h3>
         {card.unique && <span className={styles.unique} title="Carta única" aria-label="Carta única">✦</span>}

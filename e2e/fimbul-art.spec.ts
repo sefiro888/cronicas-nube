@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { CARD_BY_ID, STARTER_DECKS, createMatch } from '../src/game'
-import { fiberModuleUrl } from './helpers/cameraSnapshot'
+import { fiberModuleUrl, pieceScreenSpot } from './helpers/cameraSnapshot'
 import type { RootState } from '@react-three/fiber'
 import type { Mesh, MeshStandardMaterial } from 'three'
 
@@ -59,8 +59,8 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
       return { tiles: floor.size, faces, valid }
     }, url)
     await expect.poll(boardState).toMatchObject({ tiles: 64, faces: match.board.length * 2 })
-    const box = (await label.boundingBox())!
-    await page.mouse.click(box.x + box.width / 2, box.y + box.height + 26)
+    const spot = await pieceScreenSpot(page, url, 'fimbul-review')
+    await page.mouse.click(spot.x, spot.y)
     await expect.poll(async () => (await boardState()).valid).toBeGreaterThan(0)
     await page.mouse.move(8, 8)
     await page.screenshot({ path: `tools/captures/fimbul/batalla-${width}x${height}.png` })
@@ -103,7 +103,7 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
     await page.screenshot({ path: `tools/captures/fimbul/escudero-${width}x${height}.png` })
 
     await page.keyboard.press('Escape')
-    await page.mouse.dblclick(box.x + box.width / 2, box.y + box.height + 26)
+    await page.mouse.dblclick(spot.x, spot.y)
     const copyDialog = page.getByRole('dialog', { name: card.name, exact: true })
     await copyDialog.getByRole('button', { name: 'Carta completa', exact: true }).click()
     await expect(copyDialog.locator('[title="Ataque 3"]')).toBeVisible()

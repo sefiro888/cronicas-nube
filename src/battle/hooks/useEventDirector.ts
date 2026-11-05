@@ -8,6 +8,7 @@ import { useMatchStore } from '../../store/match'
 import type { PreferencesState } from '../../store/preferences'
 import { ARRIVAL_LANDING } from '../arrivalMotion'
 import { eventDuration } from '../eventTiming'
+import { protectionEffect } from '../resolvedEffects'
 import { clashExchange, duelIntroDuration, endsExchange, foldExchange, isFinisher, openExchange, pushRecentPlay, recentPlayFor, spotlightFor, type CombatExchange, type RecentPlay, type Spotlight } from '../presentation'
 
 /** Traduce un evento del motor a su señal sonora. `me` es el bando que controla este navegador. */
@@ -241,7 +242,9 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
     const state = useMatchStore.getState()
     const cue = cueForEvent(currentEvent, me)
     if (cue && !preferences.muted) {
-      playSynthCue(cue)
+      const cardFaction = currentEvent.cardId ? CARD_BY_ID[currentEvent.cardId]?.faction : undefined
+      const faction = currentEvent.faction ?? cardFaction
+      playSynthCue(cue, currentEvent.type === 'turn' || currentEvent.type === 'victory' ? undefined : faction)
     }
     // Los canales laterales actualizan estado de React fuera del cuerpo del
     // efecto para no encadenar renders síncronos.
@@ -255,7 +258,7 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
         reactedRef.current.add(id)
         setReaction({ ...next, key: currentEvent.id })
       }
-      if (currentEvent.type === 'shield' && (currentEvent.amount ?? 0) > 0) {
+      if (currentEvent.type === 'shield' && protectionEffect(currentEvent) === 'absorb' && (currentEvent.amount ?? 0) > 0) {
         respond({ key: '', kind: 'block', title: '¡Bloqueado!', detail: `El Escudo absorbe ${currentEvent.amount}` })
       } else if (currentEvent.type === 'damage' && /petardazo/.test(currentEvent.effectId ?? '')) {
         respond({ key: '', kind: 'burst', title: '¡Petardazo!', detail: 'Estalla al morir y daña a sus vecinas' })

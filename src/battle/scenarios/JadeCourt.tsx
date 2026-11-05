@@ -1,3 +1,4 @@
+import { ScenarioAmbientLight, ScenarioHemisphereLight, ScenarioDirectionalLight } from './ScenarioLights'
 import { Sparkles } from '@react-three/drei'
 import type { AnimationEvent } from '../../game'
 import type { GraphicsQuality } from '../../store/preferences'
@@ -20,14 +21,14 @@ const INCENSE: readonly PlumeVent[] = [
  * construidos. El amanecer cálido conserva sombras frías y piedra legible. */
 export function JadeCourt({ quality, reducedMotion }: JadeCourtProps) {
   return <>
-    <ambientLight intensity={0.25} color="#bfc7ca" />
-    <hemisphereLight intensity={0.35} color="#c9dbe2" groundColor="#666052" />
-    <directionalLight position={[-7, 12, 5]} intensity={2} color="#ffdfaf"
+    <ScenarioAmbientLight intensity={0.25} color="#bfc7ca" />
+    <ScenarioHemisphereLight intensity={0.35} color="#c9dbe2" groundColor="#666052" />
+    <ScenarioDirectionalLight position={[-7, 12, 5]} intensity={2} color="#ffdfaf"
       castShadow={quality !== 'low'} shadow-mapSize-width={quality === 'high' ? 2048 : 1024}
       shadow-mapSize-height={quality === 'high' ? 2048 : 1024}
       shadow-camera-left={-12} shadow-camera-right={12} shadow-camera-top={12} shadow-camera-bottom={-12}
       shadow-bias={-0.0006} />
-    <directionalLight position={[8, 6, -7]} intensity={0.5} color="#a9c8df" />
+    <ScenarioDirectionalLight position={[8, 6, -7]} intensity={0.5} color="#a9c8df" />
     <DistantVista image={`/assets/scenarios/jade-vista-v1${quality === 'low' ? '-low' : ''}.webp`} />
     <JadeCourtFloor quality={quality} />
     <JadePavilion quality={quality} />

@@ -1,3 +1,4 @@
+import { ScenarioAmbientLight, ScenarioHemisphereLight, ScenarioDirectionalLight } from './ScenarioLights'
 import { Sparkles } from '@react-three/drei'
 import type { AnimationEvent } from '../../game'
 import type { GraphicsQuality } from '../../store/preferences'
@@ -29,12 +30,12 @@ export function FimbulFjord({ quality, reducedMotion }: FimbulProps) {
   return <>
 
 
-    <ambientLight intensity={0.25} color="#a7bccb" />
-    <hemisphereLight intensity={0.32} color="#b5ced7" groundColor="#4c6173" />
-    <directionalLight position={[-8, 12, 6]} intensity={1.75} color="#d4e2e9" castShadow={quality !== 'low'}
+    <ScenarioAmbientLight intensity={0.25} color="#a7bccb" />
+    <ScenarioHemisphereLight intensity={0.32} color="#b5ced7" groundColor="#4c6173" />
+    <ScenarioDirectionalLight position={[-8, 12, 6]} intensity={1.75} color="#d4e2e9" castShadow={quality !== 'low'}
       shadow-mapSize-width={quality === 'high' ? 2048 : 1024} shadow-mapSize-height={quality === 'high' ? 2048 : 1024}
       shadow-camera-left={-12} shadow-camera-right={12} shadow-camera-top={12} shadow-camera-bottom={-12} shadow-bias={-0.0006} />
-    <directionalLight position={[6, 7, -10]} intensity={0.42} color="#8eb9ad" />
+    <ScenarioDirectionalLight position={[6, 7, -10]} intensity={0.42} color="#8eb9ad" />
     <DistantVista image={`/assets/scenarios/fimbul-vista-v1${quality === 'low' ? '-low' : ''}.webp`} />
     <ReflectiveWater quality="low" reducedMotion frozen level={-0.76} radius={16} color="#152735" />
     <mesh receiveShadow={quality !== 'low'}>

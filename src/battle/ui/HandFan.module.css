@@ -189,3 +189,6 @@
     border-radius: 50%;
   }
 }
+/* La mano llena conserva los títulos de los extremos: una curvatura fuerte los hundía bajo el carril. */
+.hand[data-full-hand] .fanCard { transform: rotate(var(--fan-rotation)) translateY(calc(var(--fan-lift) + 4px)); }
+@media (max-width: 760px) { .hand[data-full-hand] .fanCard { transform: translateY(4px); } }

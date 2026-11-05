@@ -1,3 +1,4 @@
+import { ScenarioAmbientLight, ScenarioHemisphereLight, ScenarioDirectionalLight } from './ScenarioLights'
 import { Sparkles } from '@react-three/drei'
 import type { AnimationEvent } from '../../game'
 import type { GraphicsQuality } from '../../store/preferences'
@@ -25,14 +26,14 @@ const SPRAY: readonly PlumeVent[] = [
  * Un solo reflejo sirve al mar y baja no necesita otra captura de escena. */
 export function TidalShore({ quality, reducedMotion, event }: TidalShoreProps) {
   return <>
-    <ambientLight intensity={0.27} color="#b1c5cb" />
-    <hemisphereLight intensity={0.36} color="#c5d7dd" groundColor="#565750" />
-    <directionalLight position={[-9, 11, 5]} intensity={2.2} color="#ffdfad"
+    <ScenarioAmbientLight intensity={0.27} color="#b1c5cb" />
+    <ScenarioHemisphereLight intensity={0.36} color="#c5d7dd" groundColor="#565750" />
+    <ScenarioDirectionalLight position={[-9, 11, 5]} intensity={2.2} color="#ffdfad"
       castShadow={quality !== 'low'} shadow-mapSize-width={quality === 'high' ? 2048 : 1024}
       shadow-mapSize-height={quality === 'high' ? 2048 : 1024}
       shadow-camera-left={-13} shadow-camera-right={13} shadow-camera-top={13} shadow-camera-bottom={-13}
       shadow-bias={-0.0006} />
-    <directionalLight position={[8, 7, -9]} intensity={0.58} color="#a1c2d2" />
+    <ScenarioDirectionalLight position={[8, 7, -9]} intensity={0.58} color="#a1c2d2" />
     <DistantVista image={`/assets/scenarios/shore-vista-v1${quality === 'low' ? '-low' : ''}.webp`} />
     <ReflectiveWater quality={quality} reducedMotion={reducedMotion} ocean level={-0.76} radius={18} color="#20363d" />
     <CoastalSlate quality={quality} />

@@ -230,3 +230,30 @@
 @keyframes verdictIn { from { opacity: 0; transform: translateY(6px) scale(0.7); } to { opacity: 1; transform: none; } }
 @keyframes verdictPulse { from { box-shadow: 0 0 10px var(--tone), 0 4px 10px rgba(0, 0, 0, 0.7); } to { box-shadow: 0 0 26px var(--tone), 0 4px 10px rgba(0, 0, 0, 0.7); } }
 @media (prefers-reduced-motion: reduce) { .verdict { animation: none !important; } }
+/* Los indicadores se anclan al pie de la ficha: la cara queda libre incluso al seleccionar. */
+.cardLabel { width: calc(96px * var(--label-scale, 1)); min-width: 0; transform: translateY(14px); font-size: calc(10px * var(--label-scale, 1)); }
+.labelInner { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.labelInner .cardName, .labelInner[data-compact] .cardName, .labelInner[data-selected] .cardName {
+  display: block; order: 2; position: relative; width: 100%; max-width: 100%; padding: 2px 5px;
+  font: 600 calc(9px * var(--label-scale, 1))/1.12 var(--display, Georgia, serif);
+  color: #ffe3ac; border: 1px solid color-mix(in srgb, var(--piece-accent) 42%, #a68a58);
+  border-radius: 2px 2px 7px 7px; background: linear-gradient(110deg, #171a22ee, #302c23f2, #101621ee);
+  box-shadow: inset 0 1px #f5da9f30, 0 2px 5px #0007; overflow: hidden; text-overflow: ellipsis;
+}
+.labelInner .cardName[data-mine]:not([data-spent]):not([data-frozen]) { color: #ffe3ac; }
+.labelInner .cardName:not([data-mine]) { color: #ffbcb5; }
+.labelInner[data-selected] .cardName { white-space: nowrap; overflow: hidden; }
+.labelInner .cardStats, .labelInner[data-crowded][data-wide] .cardStats { order: 1; flex-direction: row; align-items: center; gap: 9px; margin: 0; }
+.labelInner .cardStats > span:not(.uniqueMark), .labelInner[data-compact] .cardStats > span:not(.uniqueMark), .labelInner[data-crowded][data-wide] .cardStats > span:not(.uniqueMark) {
+  position: relative; min-width: 32px; height: 25px; padding: 2px 5px; gap: 3px;
+  border: 1px solid #c5a06a; border-radius: 42% 42% 38% 38%; background: radial-gradient(ellipse at 35% 20%, #575044, #20242b 48%, #0d131a 85%);
+  box-shadow: inset 0 0 0 2px #141a22, inset 0 3px 5px #fff0b72b, 0 0 0 1px #312313, 0 3px 6px #0009;
+  font: 800 calc(13px * var(--label-scale, 1))/1 var(--display, Georgia, serif);
+}
+.labelInner .cardStats > .attackStat { border-radius: 22% 22% 45% 45% !important; }
+.labelInner .cardStats svg, .labelInner[data-compact] .cardStats svg { width: .8em; height: .8em; filter: drop-shadow(0 1px 1px #000); }
+.maximumHealth { font: 600 8px/1 sans-serif; opacity: .78; }
+.labelInner .cardStatuses { order: 3; margin: 0; }
+.labelInner .cardStats .uniqueMark { top: -7px; font-size: 9px; }
+@media (max-width: 760px) { .cardLabel { width: calc(76px * var(--label-scale, 1)); min-width: 0; transform: translateY(12px); } .labelInner .cardStats { gap: 5px; } .labelInner .cardStats > span:not(.uniqueMark) { min-width: 27px; height: 23px; } .labelInner .cardName { font-size: calc(8px * var(--label-scale, 1)); } }
+.nexusPortraitFractures { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; fill: none; stroke: #ffe6c1; stroke-width: 2; filter: drop-shadow(0 0 2px #ff766a); }

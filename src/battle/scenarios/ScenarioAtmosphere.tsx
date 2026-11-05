@@ -1,4 +1,7 @@
 import type { ScenarioId } from '../../store/preferences'
+import { usePreferences } from '../../store/preferences'
+import { useScenarioLight } from '../../store/scenarioMood'
+import { ScenarioBorderLife } from './ScenarioBorderLife'
 
 interface Atmosphere {
   readonly background: string
@@ -31,9 +34,15 @@ const ATMOSPHERE: Readonly<Record<Exclude<ScenarioId, 'auto'>, Atmosphere>> = {
  * Un attach dentro de ese grupo creaba Group.background/Group.fog: Three no
  * los lee, dejaba el fondo negro y no aplicaba ninguna niebla de escenario. */
 export function ScenarioAtmosphere({ scenario }: { readonly scenario: ScenarioId }) {
-  const profile = ATMOSPHERE[scenario === 'auto' ? 'sanctuary' : scenario]
+  const actual = scenario === 'auto' ? 'sanctuary' : scenario
+  const profile = ATMOSPHERE[actual]
+  const { mood } = useScenarioLight()
+  const quality = usePreferences((state) => state.graphicsQuality)
+  const reducedMotion = usePreferences((state) => state.reducedMotion)
+  const tint = mood === 'moonlight' ? '#26394f' : mood === 'dusk' ? '#60566c' : mood === 'dawn' ? '#a7a0a0' : undefined
   return <>
-    <color attach="background" args={[profile.background]} />
-    <fog attach="fog" args={[...profile.fog]} />
+    <color attach="background" args={[tint ?? profile.background]} />
+    <fog attach="fog" args={[tint ?? profile.fog[0], profile.fog[1], profile.fog[2]]} />
+    <ScenarioBorderLife scenario={actual} quality={quality} reducedMotion={reducedMotion} />
   </>
 }

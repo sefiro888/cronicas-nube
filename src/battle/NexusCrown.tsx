@@ -60,14 +60,14 @@ export function NexusCrown({ color, damage, hitAt, collapsing, reducedMotion }: 
     if (!collapsing) collapseAt.current = null
     const fall = collapseAt.current === null ? 0 : Math.min(1, (now - collapseAt.current) / 1600)
     // Peligro: latido rojo rápido; si no, respiración lenta del color propio.
-    const pulse = danger ? 0.5 + 0.5 * Math.sin(t * 9) : 0.5 + 0.5 * Math.sin(t * 1.6)
+    const pulse = reducedMotion ? .5 : .5 + .5 * Math.sin(t * (danger ? 2.2 : 1.6))
     tint.copy(base).lerp(DANGER, danger ? 0.55 + pulse * 0.3 : damage * 0.25)
 
     if (crystal.current) {
       const material = crystal.current.material as MeshStandardMaterial
       material.color.copy(tint)
       material.emissive.copy(tint)
-      material.emissiveIntensity = (0.5 + (1 - damage) * 0.9 + hit * 2.5) * (danger && Math.sin(t * 23) > 0.7 ? 0.35 : 1)
+      material.emissiveIntensity = (0.5 + (1 - damage) * 0.9 + hit * 2.5) * (danger ? .76 + pulse * .24 : 1)
       const bob = reducedMotion ? 0 : Math.sin(t * 1.3) * 0.06
       // Implosión: se hincha un instante y desaparece hacia dentro.
       const swell = fall < 0.25 ? 1 + fall * 1.6 : Math.max(0, 1.4 * (1 - (fall - 0.25) / 0.35))

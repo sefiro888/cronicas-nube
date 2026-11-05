@@ -1,7 +1,7 @@
 import { memo } from 'react'
 import type { CSSProperties } from 'react'
 import { Card } from '../../components'
-import { CARD_BY_ID, canPlayHandCard, handCardCost, planManaPayment, type MatchState, type PlayerId } from '../../game'
+import { CARD_BY_ID, canPlayHandCard, handCardBlockReason, handCardCost, planManaPayment, type MatchState, type PlayerId } from '../../game'
 import styles from './HandFan.module.css'
 
 interface HandFanProps {
@@ -39,11 +39,12 @@ export const HandFan = memo(function HandFan({ match, reducedMotion, localPlayer
   // Con diez cartas, 50 px por lado tapaban incluso el centro pulsable de
   // la siguiente carta. Hasta doce todavía caben con un centro descubierto.
   const overlap = count <= 4 ? 20 : count <= 6 ? 32 : count <= 12 ? 40 : 50
-  const maxRotation = Math.min(3.4, 20 / Math.max(1, count))
-  const liftStep = Math.min(3.6, 20 / Math.max(1, count))
+  const dense = count >= 9
+  const maxRotation = dense ? 0.75 : Math.min(3.4, 20 / Math.max(1, count))
+  const liftStep = dense ? 0.48 : Math.min(3.6, 20 / Math.max(1, count))
   return (
     <div className={styles.handViewport} data-testid="hand-scroll-rail">
-    <div className={styles.hand} style={{ '--fan-count': count } as CSSProperties} aria-label="Tu mano" data-reduced-motion={reducedMotion || undefined}>
+    <div className={styles.hand} style={{ '--fan-count': count } as CSSProperties} aria-label="Tu mano" data-full-hand={dense || undefined} data-reduced-motion={reducedMotion || undefined}>
       {orderedHand.map((instance, index) => {
         const card = CARD_BY_ID[instance.cardId]
         if (!card) return null
@@ -66,6 +67,7 @@ export const HandFan = memo(function HandFan({ match, reducedMotion, localPlayer
             data-selected={selected}
             data-playable={playable}
             data-dragging={draggingId === instance.instanceId || undefined}
+            title={handCardBlockReason(match, localPlayerId, card, instance) ?? 'Lista para jugar. Selecciona esta carta.'}
             onPointerDown={(event) => { if (playable) onDragStart?.(instance.instanceId, event) }}
             // El hueco fijo de la carta también la selecciona: al levantarse por
             // encima, la parte de abajo de su hueco queda libre y antes ese clic

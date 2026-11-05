@@ -1,3 +1,4 @@
+import { ScenarioAmbientLight, ScenarioHemisphereLight, ScenarioDirectionalLight } from './ScenarioLights'
 import type { AnimationEvent } from '../../game'
 import type { GraphicsQuality } from '../../store/preferences'
 import { AtmosphericPlumes, type PlumeVent } from '../materials/AtmosphericPlumes'
@@ -21,14 +22,14 @@ const MIST: readonly PlumeVent[] = [
  * a diecinueve metros. La rueda es tallada, con vanos reales y sombra fría. */
 export function WheelGhat({ quality, reducedMotion }: WheelGhatProps) {
   return <>
-    <ambientLight intensity={0.24} color="#a8b7cb" />
-    <hemisphereLight intensity={0.35} color="#b4c7df" groundColor="#686064" />
-    <directionalLight position={[-6, 12, 5]} intensity={1.8} color="#f5d6b0"
+    <ScenarioAmbientLight intensity={0.24} color="#a8b7cb" />
+    <ScenarioHemisphereLight intensity={0.35} color="#b4c7df" groundColor="#686064" />
+    <ScenarioDirectionalLight position={[-6, 12, 5]} intensity={1.8} color="#f5d6b0"
       castShadow={quality !== 'low'} shadow-mapSize-width={quality === 'high' ? 2048 : 1024}
       shadow-mapSize-height={quality === 'high' ? 2048 : 1024}
       shadow-camera-left={-12} shadow-camera-right={12} shadow-camera-top={12} shadow-camera-bottom={-12}
       shadow-bias={-0.0006} />
-    <directionalLight position={[8, 6, -7]} intensity={0.5} color="#8da9db" />
+    <ScenarioDirectionalLight position={[8, 6, -7]} intensity={0.5} color="#8da9db" />
     <DistantVista image={`/assets/scenarios/wheel-vista-v1${quality === 'low' ? '-low' : ''}.webp`} />
     <ReflectiveWater quality={quality} reducedMotion={reducedMotion} level={-1.4}
       radius={23} color="#182e3a" geometry={ghatRiverGeometry()} />

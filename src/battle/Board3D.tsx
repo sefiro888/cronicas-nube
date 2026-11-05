@@ -60,6 +60,7 @@ import { LavaRiver } from './LavaRiver'
 import { MaterialEnvironment } from './MaterialEnvironment'
 import { arrivalMotion } from './arrivalMotion'
 import { FACTION_BY_ID } from '../game/factions'
+import { scenarioMaterialForFloor } from './scenarioEnvironments'
 import { NexusRupture } from './NexusRupture'
 import { useVisualTimers } from './useVisualTimers'
 import { battleStrain, BattleClimateProvider } from './scenarios/BattleClimate'
@@ -105,6 +106,7 @@ const BestiaryRavine = lazy(() =>
 )
 
 interface Board3DProps {
+  nexusMaxHealth?: Readonly<Record<PlayerId, number>>
   state: MatchState
   /** Bando de la partida que controla este navegador: decide qué Nexo queda cerca de la cámara. */
   localPlayerId: PlayerId
@@ -441,12 +443,14 @@ function FactionTileMaterial({ floor, position, material }: { floor: string; pos
     factionTileMaps.set(source, maps)
   }
   const map = maps[position.y * BOARD_SIZE + position.x]
+  const profile = scenarioMaterialForFloor(floor)
+  const relief = { roughness: profile.roughness, metalness: profile.metalness, envMapIntensity: profile.environment, bumpMap: map, bumpScale: profile.bumpScale }
   // Un poco de luz del propio mapa recupera el grabado en los suelos oscuros.
   // En casillas con aviso, el color de juego tiene prioridad sobre el dibujo.
   if (material.emissiveIntensity === 0 && DARK_FACTION_FLOORS.has(floor)) {
-    return <meshStandardMaterial key="relief" {...material} map={map} emissiveMap={map} emissive="#ffffff" emissiveIntensity={0.26} />
+    return <meshStandardMaterial key="relief" {...material} {...relief} map={map} emissiveMap={map} emissive="#ffffff" emissiveIntensity={0.26} />
   }
-  return <meshStandardMaterial key="markers" {...material} map={map} emissiveMap={null} />
+  return <meshStandardMaterial key="markers" {...material} {...relief} map={map} emissiveMap={null} />
 }
 
 /** Mapa de brillo de las grietas de lava de la Caldera (mismos recortes que la roca). */
@@ -1192,16 +1196,16 @@ const BoardCard = memo(function BoardCard({ deploying = false, piece, runo, form
           A la altura del borde superior del standee (2×CARD_STAND_RISE), no de la
           carta tumbada de antes: si no, el nombre y las estadísticas quedan
           flotando muy por encima de la carta en vez de justo sobre ella. */}
-      <Html center position={[0, CARD_STAND_RISE * 2 + 0.05, 0]} distanceFactor={8.6} zIndexRange={[14, 0]} className={styles.cardLabel}>
+      <Html position={[0, 0.045, 0]} style={{ transform: 'translate(-50%, 5px)' }} distanceFactor={8.6} zIndexRange={[14, 0]} className={styles.cardLabel}>
         {/* Contenedor propio para el marcador de «elegida»: `<Html>` de drei no
             propaga los data-* al div que crea, así que el atributo tiene que
             vivir aquí dentro para que el CSS pueda usarlo. */}
-        <div ref={label} style={{ visibility: !reducedMotion && (waiting || arrival) ? 'hidden' : undefined }} className={styles.labelInner} data-selected={selected || hovered || targetable || undefined} data-crowded={crowded || undefined} data-compact={crowded && !selected && !hovered && !targetable || undefined} data-wide={stackSafe && (piece.currentHealth >= 10 || displayedAttack >= 10) || undefined}>
+        <div ref={label} style={{ visibility: !reducedMotion && (waiting || arrival) ? 'hidden' : undefined, '--piece-accent': FACTION_BY_ID[card.faction].accentColor } as CSSProperties} className={styles.labelInner} data-faction={card.faction} data-selected={selected || hovered || targetable || undefined} data-crowded={crowded || undefined} data-compact={crowded && !selected && !hovered && !targetable || undefined} data-wide={stackSafe && (piece.currentHealth >= 10 || displayedAttack >= 10) || undefined}>
         <div className={styles.cardName} data-mine={mine || undefined} data-frozen={frozen || undefined} data-spent={spent || undefined}>{card.name}</div>
         <div className={styles.cardStats} data-unique={card.unique || undefined}>
           {card.unique && <span className={styles.uniqueMark} role="img" aria-label="Carta única">◆</span>}
           {card.attack !== undefined && <span className={styles.attackStat} aria-label={`Ataque ${displayedAttack}`}><GameIcon name="attack" /> {displayedAttack}</span>}
-          <span className={damaged ? styles.damagedStat : styles.healthStat} aria-label={`Vida ${piece.currentHealth}`}><GameIcon name="health" /> {piece.currentHealth}</span>
+          <span className={damaged ? styles.damagedStat : styles.healthStat} aria-label={`Vida ${piece.currentHealth} de ${maxHealth}`} title={`Vida actual ${piece.currentHealth} / máxima ${maxHealth} · impresa ${card.health ?? card.resistance ?? 1}`}><GameIcon name={card.type === 'structure' ? 'shield' : 'health'} /> {piece.currentHealth}<small className={styles.maximumHealth}>/{maxHealth}</small></span>
         </div>
         {/* Estados: solo aparecen cuando los hay, en su propia fila para que no
             empujen a las estadísticas. «Aturdida» faltaba desde que se añadió
@@ -1431,6 +1435,11 @@ function Nexus({
           data-collapsed={collapse ? true : undefined} data-reduced-motion={reducedMotion || collapse?.settled || undefined}
           style={collapse ? { '--rupture-duration': `${collapse.durationMs}ms` } as CSSProperties : undefined}>
           <img src={withBase(commanderArt)} alt="" />
+          {damage > .2 && <svg className={styles.nexusPortraitFractures} viewBox="0 0 100 100" aria-hidden="true">
+            <path d="M54 2 46 25 55 41 47 57" />
+            {damage > .45 && <path d="M46 25 28 34 16 53M55 41 72 45 87 63" />}
+            {damage > .7 && <path d="M47 57 39 73 51 98M47 57 64 76 60 94M28 34 14 22" />}
+          </svg>}
         </div>
       </Html>
       <Html center position={[0, 1.28, 0]} distanceFactor={7} zIndexRange={[14, 0]} className={styles.nexusLabel}>
@@ -1974,7 +1983,7 @@ function Scene(props: Board3DProps) {
         playerId="player"
         mine={props.localPlayerId === 'player'}
         health={props.state.players.player.nexusHealth}
-        maxHealth={COMMANDER_BY_ID[props.state.players.player.commanderId]?.nexusHealth ?? 35}
+        maxHealth={props.nexusMaxHealth?.player ?? COMMANDER_BY_ID[props.state.players.player.commanderId]?.nexusHealth ?? 35}
         targetable={props.validTargets.includes('player-nexus')}
         onClick={() => props.onNexus('player')}
         onHover={props.onHoverNexus}
@@ -1990,7 +1999,7 @@ function Scene(props: Board3DProps) {
         playerId="ai"
         mine={props.localPlayerId === 'ai'}
         health={props.state.players.ai.nexusHealth}
-        maxHealth={COMMANDER_BY_ID[props.state.players.ai.commanderId]?.nexusHealth ?? 35}
+        maxHealth={props.nexusMaxHealth?.ai ?? COMMANDER_BY_ID[props.state.players.ai.commanderId]?.nexusHealth ?? 35}
         targetable={props.validTargets.includes('ai-nexus')}
         onClick={() => props.onNexus('ai')}
         onHover={props.onHoverNexus}

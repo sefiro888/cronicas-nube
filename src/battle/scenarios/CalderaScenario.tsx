@@ -1,3 +1,4 @@
+import { ScenarioAmbientLight, ScenarioHemisphereLight, ScenarioDirectionalLight } from './ScenarioLights'
 import { Sparkles } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { useEffect, useLayoutEffect, useMemo, useRef } from 'react'
@@ -142,12 +143,12 @@ export function CalderaScenario({ quality, reducedMotion, event }: CalderaScenar
   return <>
 
 
-    <ambientLight intensity={0.3} color="#9ba8c5" />
-    <hemisphereLight intensity={0.45} color="#a5b6d8" groundColor="#70371e" />
-    <directionalLight position={[-6, 11, 7]} intensity={2.3} color="#ffd8b6" castShadow={quality !== 'low'}
+    <ScenarioAmbientLight intensity={0.3} color="#9ba8c5" />
+    <ScenarioHemisphereLight intensity={0.45} color="#a5b6d8" groundColor="#70371e" />
+    <ScenarioDirectionalLight position={[-6, 11, 7]} intensity={2.3} color="#ffd8b6" castShadow={quality !== 'low'}
       shadow-mapSize-width={quality === 'high' ? 2048 : 1024} shadow-mapSize-height={quality === 'high' ? 2048 : 1024}
       shadow-camera-left={-13} shadow-camera-right={13} shadow-camera-top={13} shadow-camera-bottom={-13} shadow-bias={-0.0006} />
-    <directionalLight position={[8, 5, -9]} intensity={0.8} color="#9ab6e8" />
+    <ScenarioDirectionalLight position={[8, 5, -9]} intensity={0.8} color="#9ab6e8" />
     <pointLight position={[0, -1.8, 0]} color="#ff671b" intensity={13} distance={15} decay={2} />
     <DistantVista image={`/assets/scenarios/caldera-vista-v1${quality === 'low' ? '-low' : ''}.webp`} />
     <mesh><sphereGeometry args={[72, 32, 20]} /><meshBasicMaterial color="#20242d" side={BackSide} fog={false} /></mesh>

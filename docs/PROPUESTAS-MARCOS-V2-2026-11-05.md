@@ -1,6 +1,6 @@
 # Nuevos marcos de facción — propuestas del 5 de noviembre de 2026
 
-Estado: cuatro propuestas terminadas, pendientes de valoración del propietario. No sustituyen los chasis activos ni modifican el juego.
+Estado posterior: el propietario aprobó los cuatro diseños. Están incorporados en la rama del encargo de 32 mejoras; ver `TRABAJO-32-MEJORAS-2026-11-05.md`. Este documento conserva la comparativa y la procedencia de las propuestas originales.
 
 ![Comparativa](propuestas/marcos-v2/comparativa.png)
 

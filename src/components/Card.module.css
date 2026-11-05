@@ -710,3 +710,9 @@
   transition: none;
 }
 .card[data-frame].inspect [role='tooltip']::after { display: none; }
+.healthMaximum { font: 600 .36em/1 sans-serif; font-style: normal; margin-left: .08em; opacity: .86; }
+.card[data-frame] .textBox { overflow: hidden; }
+.card[data-frame] .rules { overflow-wrap: anywhere; }
+.card[data-frame].inspect .textBox { overflow: visible; }
+.card[data-frame].inspect[data-frame-dense] .rules { line-height: 1.18; }
+.card[data-frame] .cost[data-modified] .frameCostTotal { color: #b2edff; text-shadow: 0 0 7px #43c8ff99; }

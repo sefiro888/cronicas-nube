@@ -6,11 +6,14 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties }
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   CARD_BY_ID,
+  createMatch,
   canTakeMulligan,
   COMMANDER_BY_ID,
   FACTION_BY_ID,
   canPlayHandCard,
   handCardCost,
+  handCardBlockReason,
+  handCardCostDetails,
   getValidAttacks,
   getValidDeploymentPositions,
   getValidMoves,
@@ -46,7 +49,7 @@ import { GuidedTutorial } from '../battle/ui/GuidedTutorial'
 import { GlossaryPanel } from '../components/GlossaryPanel'
 import { actionHintFor, attackNexusPreviewLines, attackNexusVerdicts, attackPieceVerdicts, attackPiecePreviewLines, cardStatLine, isBoardCard, pieceStatLine, requiresPieceTarget } from '../battle/ui/battleHints'
 import { describePendingActions, pendingTurnActions } from '../battle/ui/pendingTurnActions'
-import { CardInspector, FactionSigil } from '../components'
+import { CardInspector, FactionSigil, formatManaCost } from '../components'
 import { GameIcon } from '../components/GameIcon'
 import { inspectionStatuses } from '../battle/inspectionStatuses'
 import { useNetworkSync } from '../multiplayer/useNetworkSync'
@@ -63,7 +66,9 @@ import { useNetworkStore } from '../store/network'
 import { rejoinRoom } from '../multiplayer/room'
 import { clearTicket, readTicket } from '../multiplayer/ticket'
 import { usePreferences } from '../store/preferences'
-import { opponentForFloor, towerMaxHealth, useTower } from '../store/tower'
+import { opponentForFloor, towerBattleSetup, prepareTowerMatch, towerCanEnter, towerMatchIsPrepared, useTower } from '../store/tower'
+import { useAdventure } from '../store/adventure'
+import { AdventureBattlePanel } from './AdventurePage'
 import { summarizeRecords, useRecords } from '../store/records'
 import { evaluateDailyChallenge } from '../store/dailyChallenge'
 import { withBase } from '../utils/assets'
@@ -88,6 +93,7 @@ import { SparkDialog } from './battle/SparkDialog'
 import { TacticalDialog } from './battle/TacticalDialog'
 import { TurnBanner } from './battle/TurnBanner'
 import { RecentPlays } from './battle/RecentPlays'
+import { EffectChronicle } from './battle/EffectChronicle'
 import { SelectionPanel } from './battle/SelectionPanel'
 import styles from './BattlePage.module.css'
 
@@ -133,6 +139,7 @@ export function BattlePage() {
   // «?seed=N» reproduce una partida concreta; sin él cada escaramuza es distinta.
   /** «?tower=1»: esta partida es un piso de la Torre del Nexo. */
   const isTowerMatch = searchParams.get('tower') === '1'
+  const isAdventureMatch = searchParams.get('adventure') === '1'
   const forcedSeed = useMemo(() => {
     const raw = searchParams.get('seed')
     if (raw === null) return undefined
@@ -183,6 +190,7 @@ export function BattlePage() {
 
   const match = store.match
   const currentEvent = store.currentEvent
+  const resolvedImpact = currentEvent && store.resolvedEffects.find(({ id }) => id === currentEvent.id)
   const visualEvent = useMemo(() => currentEvent ? {
     ...currentEvent, durationMs: eventDuration(currentEvent, {
       animationSpeed: preferences.animationSpeed, reducedMotion: preferences.reducedMotion,
@@ -234,6 +242,10 @@ export function BattlePage() {
       ai: (store.match?.players.ai.nexusHealth ?? 0) + pending('ai'),
     }
   }, [store.match, store.pendingAnimations])
+  const nexusMaxHealth = {
+    player: Math.max(COMMANDER_BY_ID[match?.players.player.commanderId ?? '']?.nexusHealth ?? 35, store.healthHistory[0]?.player ?? 0, displayedNexusHealth.player),
+    ai: Math.max(COMMANDER_BY_ID[match?.players.ai.commanderId ?? '']?.nexusHealth ?? 35, store.healthHistory[0]?.ai ?? 0, displayedNexusHealth.ai),
+  }
   const duelOnBoard = director.duelHolding && director.exchange
     ? { attacker: director.exchange.attacker.id, defender: director.exchange.defender.id }
     : undefined
@@ -267,6 +279,8 @@ export function BattlePage() {
   const towerReported = useRef<MatchState | undefined>(undefined)
   useEffect(() => {
     if (!isTowerMatch || !match?.winner) return
+    const run = useTower.getState().run
+    if (!run || !towerCanEnter(run) || !towerMatchIsPrepared(match, run)) return
     if (towerReported.current === match) return
     towerReported.current = match
     useTower.getState().finishFloor(match.winner === ME, match.players[ME].nexusHealth)
@@ -296,6 +310,12 @@ export function BattlePage() {
     // En multijugador la partida la siembra el anfitrión vía useNetworkSync,
     // no este efecto: aquí no hay mazo de IA que elegir ni semilla que forzar.
     if (room || rejoining) return
+    if (isAdventureMatch) {
+      const current = useMatchStore.getState()
+      const run = useAdventure.getState().run
+      if (!current.match || current.mode !== 'adventure' || run?.battleSeed !== current.match.seed) navigate('/adventures', { replace: true })
+      return
+    }
     // Crea partida nueva si no hay ninguna o si la que persiste en el store no
     // corresponde al mazo elegido. Sin la segunda condición, la primera facción
     // con la que se juega quedaba fija al volver a entrar con otra distinta.
@@ -303,6 +323,10 @@ export function BattlePage() {
     // La Torre manda sobre los ajustes normales: fija rival, Vida de entrada y
     // castigo del rival según la bendición elegida en el piso anterior.
     const towerRun = isTowerMatch ? useTower.getState().run : undefined
+    if (isTowerMatch && (!towerRun || !towerCanEnter(towerRun))) {
+      if (!store.match?.winner) navigate('/tower', { replace: true })
+      return
+    }
     const towerOpponentId = towerRun ? opponentForFloor(towerRun, towerRun.floor) : undefined
     // Además del mazo propio, cuenta el rival elegido: si se cambia de rival
     // en «Jugar» y la partida guardada era contra otro, hay que empezar una
@@ -321,24 +345,28 @@ export function BattlePage() {
     const matchesSelection = Boolean(
       store.match
       && selectedDeck
+      && !('towerPreparation' in store.match)
       && store.match.players.player.commanderId === commanderElegido
       && (!chosenOpponent || store.match.players.ai.commanderId === chosenOpponent.commanderId),
     )
-    if (!matchesSelection) {
+    if (towerRun) {
+      if (!store.match || !towerMatchIsPrepared(store.match, towerRun)) {
+        const playerDeck = STARTER_DECKS.find((deck) => deck.id === towerRun.deckId)
+        if (!playerDeck || !chosenOpponent) { navigate('/tower', { replace: true }); return }
+        const prepared = createMatch(playerDeck, chosenOpponent, forcedSeed ?? towerRun.seed + towerRun.floor, towerBattleSetup(towerRun, preferences.commanderByDeck[towerRun.deckId]))
+        useMatchStore.getState().startFromMatch(prepareTowerMatch(prepared, towerRun))
+      }
+      return
+    }
+    if (!matchesSelection || store.mode === 'adventure') {
       useMatchStore.getState().startMatch(
         deckIdEnJuego,
         forcedSeed,
         chosenOpponent?.id,
-        towerRun
-          ? {
-              playerNexusHealth: towerRun.health,
-              aiNexusHealth: Math.max(1, towerMaxHealth(towerRun.deckId) - towerRun.enemyPenalty),
-              playerCommanderId: preferences.commanderByDeck[deckIdEnJuego],
-            }
-          : { playerCommanderId: preferences.commanderByDeck[deckIdEnJuego] },
+        { playerCommanderId: preferences.commanderByDeck[deckIdEnJuego] },
       )
     }
-  }, [preferences.selectedDeckId, preferences.opponentDeckId, preferences.commanderByDeck, store.match, forcedSeed, room, rejoining, isTowerMatch])
+  }, [preferences.selectedDeckId, preferences.opponentDeckId, preferences.commanderByDeck, store.match, store.mode, forcedSeed, room, rejoining, isTowerMatch, isAdventureMatch, navigate])
 
   // Los avisos de acción inválida se disuelven solos para no exigir un clic.
   useEffect(() => {
@@ -457,8 +485,11 @@ export function BattlePage() {
   const inspectedHand = player?.hand.find(({ instanceId }) => instanceId === inspectedHandId)
   const inspectedCost = match && inspected && inspectedHand && inspectedHand.cardId === inspected.id
     ? handCardCost(match, ME, inspected, inspectedHand) : undefined
+  const inspectedCostExplanation = match && inspected && inspectedHand && inspectedHand.cardId === inspected.id
+    ? handCardCostDetails(match, ME, inspected, inspectedHand).reasons.join(' · ') : undefined
   const inspectedPiece = match?.board.find((piece) => piece.instanceId === store.inspectedPieceId)
   const inspectedStats = inspected && cardFrameFor(inspected.faction) && inspectedPiece && match ? {
+    maxHealth: Math.max(1, (inspected.health ?? inspected.resistance ?? 1) + (inspectedPiece.formationHealthApplied ?? 0) + (inspectedPiece.permanentHealthBonus ?? 0) - (inspectedPiece.permanentHealthPenalty ?? 0)),
     attack: inspected.attack === undefined ? undefined : effectiveAttack(inspectedPiece, inspected, match),
     health: inspected.health === undefined ? undefined : inspectedPiece.currentHealth,
     resistance: inspected.resistance === undefined ? undefined : inspectedPiece.currentHealth,
@@ -983,6 +1014,7 @@ export function BattlePage() {
     selectedCard,
     canPaySelectedCard: payment?.payable !== false,
     canPlaySelectedCard: selectedPlayable,
+    selectedBlockReason: selectedCard && selectedInstance ? handCardBlockReason(match, ME, selectedCard, selectedInstance) : undefined,
     selectedPiece,
     moveCount: moves.length,
     canAttackPiece: attacks.pieceIds.length > 0,
@@ -1078,6 +1110,7 @@ export function BattlePage() {
         </div>
       </header>
 
+      {isAdventureMatch && <AdventureBattlePanel match={match} queueBusy={queueBusy} />}
       {enemyPanelOpen && <EnemyPanel rival={rival} onClose={() => setEnemyPanelOpen(false)} />}
       {director.spotlight && !photoMode && (
         <CastSpotlight
@@ -1091,9 +1124,9 @@ export function BattlePage() {
 
       {/* Fase de peligro: con tu Nexo a un cuarto de Vida o menos, los bordes
           de la pantalla laten en rojo. La corona 3D del Nexo late a la vez. */}
-      {match && !photoMode && displayedNexusHealth[ME] > 0
-        && displayedNexusHealth[ME] <= (COMMANDER_BY_ID[match.players[ME].commanderId]?.nexusHealth ?? 35) * NEXUS_DANGER_RATIO
-        && <div className={styles.dangerVignette} data-reduced-motion={preferences.reducedMotion || undefined} aria-hidden="true" />}
+      {match && !photoMode && preferences.nexusWarning !== 'off' && displayedNexusHealth[ME] > 0
+        && displayedNexusHealth[ME] <= nexusMaxHealth[ME] * NEXUS_DANGER_RATIO
+        && <div className={styles.dangerVignette} data-warning-style={preferences.nexusWarning ?? 'subtle'} data-reduced-motion={preferences.reducedMotion || undefined} aria-hidden="true" />}
       <div className={styles.arena}>
         <div
           className={styles.boardFrame}
@@ -1102,6 +1135,7 @@ export function BattlePage() {
         >
           <Board3D
             state={match}
+            nexusMaxHealth={nexusMaxHealth}
             localPlayerId={ME}
             selectedPieceId={duelOnBoard?.attacker ?? store.selectedPieceId}
             validCells={validCells}
@@ -1190,7 +1224,7 @@ export function BattlePage() {
               {paceHint}
             </div>
           )}
-          {!photoMode && <RecentPlays plays={director.recentPlays} me={ME} onInspect={inspectCard} />}
+          {!photoMode && <><RecentPlays plays={director.recentPlays} me={ME} onInspect={inspectCard} /><EffectChronicle effects={store.resolvedEffects} /></>}
           {/* El comandante habla: poder, golpe fuerte a su Nexo o victoria. */}
           {director.quote && !photoMode && COMMANDER_BY_ID[match.players[director.quote.owner].commanderId] && (
             <CommanderQuote
@@ -1221,14 +1255,15 @@ export function BattlePage() {
               me={ME}
               commanderIds={{ player: match.players.player.commanderId, ai: match.players.ai.commanderId }}
               nexusHealth={displayedNexusHealth}
+              nexusMaxHealth={nexusMaxHealth}
               holding={director.duelHolding}
               onSkip={director.dismissDuel}
               combo={director.combo?.key === director.exchange.key ? director.combo.count : undefined}
             />
           )}
-          {director.eventBanner && !director.exchange && (
-            <div key={director.eventBanner} className={styles.eventBanner} data-kind={director.eventBannerKind} role="status">
-              {director.eventBanner}
+          {(resolvedImpact || director.eventBanner) && !director.exchange && (
+            <div key={resolvedImpact?.id ?? director.eventBanner} className={styles.eventBanner} data-kind={resolvedImpact?.tone === 'damage' ? 'damage' : director.eventBannerKind} role="status">
+              {resolvedImpact ? `${resolvedImpact.source} → ${resolvedImpact.target} · ${resolvedImpact.text}` : director.eventBanner}
             </div>
           )}
           {director.nexusFlash && <div className={styles.nexusFlash} data-who={director.nexusFlash} aria-hidden="true" />}
@@ -1444,12 +1479,14 @@ export function BattlePage() {
           onToggleFavorite={toggleFavoriteHand}
         />
         <section className={styles.handContext} aria-label="Información de la mano">
-          <span className={styles.ledgerTitle}>{selectedCard ? 'Carta elegida' : 'Tu mano'}</span>
-          <strong>{selectedCard?.name ?? `${player.hand.length} cartas`}</strong>
-          <p>{selectedCard && payment
-            ? !payment.payable ? 'Te falta Esencia para esta carta.'
-              : selectedPlayable ? 'Esencia preparada para esta jugada.' : 'Esta carta aún necesita cumplir una condición de juego.'
-            : match.activePlayer === ME ? 'Las cartas con halo y sello LISTA se pueden jugar.' : 'El rival está jugando su turno.'}</p>
+          <span className={styles.ledgerTitle}>{selectedCard ? 'Carta elegida' : selectedPiece || viewedPiece ? 'Ficha consultada' : 'Tu mano'}</span>
+          <strong>{selectedCard?.name ?? selectedBoardCard?.name ?? viewedBoardCard?.name ?? `${player.hand.length} cartas`}</strong>
+          <p>{selectedCard && selectedInstance
+            ? handCardBlockReason(match, ME, selectedCard, selectedInstance) ?? (selectedCard.type === 'mana' ? 'Puedes incorporar esta fuente a tu reserva.' : selectedCard.type === 'instant' ? 'Lista: elige un objetivo si la carta lo requiere.' : 'Lista: elige una casilla iluminada para desplegar.')
+            : selectedPiece && selectedBoardCard ? pieceStatLine(selectedPiece, selectedBoardCard)
+            : viewedPiece && viewedBoardCard ? pieceStatLine(viewedPiece, viewedBoardCard)
+            : match.activePlayer === ME ? `${readyHandCount} cartas listas · ${mana.available} de ${mana.total} Esencia. Selecciona una carta para ver sus opciones.` : 'El rival está jugando su turno. Puedes inspeccionar cartas y consultar tus recursos.'}</p>
+          {selectedCard && selectedInstance && <small className={styles.costContext}>Coste efectivo: {formatManaCost(selectedCost ?? selectedCard.cost)}{handCardCostDetails(match, ME, selectedCard, selectedInstance).reasons.length > 0 && ` · ${handCardCostDetails(match, ME, selectedCard, selectedInstance).reasons.join(' · ')}`}</small>}
           <dl className={styles.handFacts}>
             <div data-ready={readyHandCount > 0 || undefined}><dt>Listas</dt><dd aria-label="Cartas que puedes jugar">{readyHandCount}</dd></div>
             <div><dt>En mesa</dt><dd>{match.board.filter(({ owner }) => owner === ME).length}</dd></div>
@@ -1598,9 +1635,9 @@ export function BattlePage() {
           onDone={finishIntro}
         />
       )}
-      {inspected && <CardInspector card={inspected} statusEffects={inspectionStatuses(inspectedPiece)} combatStats={inspectedStats} cost={inspectedCost} onClose={closeInspection} />}
+      {inspected && <CardInspector card={inspected} statusEffects={inspectionStatuses(inspectedPiece)} combatStats={inspectedStats} cost={inspectedCost} costExplanation={inspectedCostExplanation} onClose={closeInspection} />}
 
-      {match.winner && !queueBusy && (
+      {match.winner && !queueBusy && !isAdventureMatch && (
         <MatchResultDialog
           match={match}
           me={ME}

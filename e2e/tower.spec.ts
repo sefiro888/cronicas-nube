@@ -24,10 +24,11 @@ test('la Torre encadena pisos conservando la Vida', async ({ page }) => {
   await page.getByRole('button', { name: /Conservar las diez/i }).click()
   await page.getByRole('button', { name: /Saltar guía/i }).click({ timeout: 4000 }).catch(() => {})
   await page.keyboard.press('Control+Shift+KeyD')
-  // «-5 al Nexo rival» siete veces lo deja a cero (35 de Vida).
+  // Cada rival trae la Vida de su comandante; no se presupone el máximo propio.
   const golpe = page.getByRole('button', { name: /-5 al Nexo rival/i })
   await golpe.waitFor({ state: 'visible', timeout: 10_000 })
-  for (let i = 0; i < 7; i += 1) await golpe.click()
+  const health = await page.evaluate(() => JSON.parse(localStorage.getItem('cronicas-nexo-match')!).state.match.players.ai.nexusHealth as number)
+  for (let i = 0; i < Math.ceil(health / 5); i += 1) await golpe.click()
   await expect(page.getByText(/Victoria|Has ganado|quiebra/i).first()).toBeVisible({ timeout: 15_000 })
 
   // El propio diálogo de final de partida devuelve a la Torre.

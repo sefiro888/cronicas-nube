@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test'
 import { CARD_BY_ID, STARTER_DECKS, createMatch, type MatchState } from '../src/game'
 import { resolveScenario } from '../src/battle/scenarioForFaction'
 import { cardFrameFor } from '../src/presentation/cardFrames'
-import { fiberModuleUrl } from './helpers/cameraSnapshot'
+import { fiberModuleUrl, pieceScreenSpot } from './helpers/cameraSnapshot'
 import type { RootState } from '@react-three/fiber'
 import type { Mesh, MeshStandardMaterial } from 'three'
 
@@ -60,8 +60,8 @@ for (const deck of STARTER_DECKS) {
         return { tiles, faces, valid }
       }, { url, floor })
       await expect.poll(boardState, { timeout: 15_000 }).toMatchObject({ tiles: 64, faces: frame ? 2 : 0 })
-      const box = (await label.boundingBox())!
-      await page.mouse.click(box.x + box.width / 2, box.y + box.height + 26)
+      const spot = await pieceScreenSpot(page, url, 'review')
+      await page.mouse.click(spot.x, spot.y)
       await expect.poll(async () => (await boardState()).valid).toBeGreaterThan(0)
       await page.mouse.move(8, 8)
       const captures = `tools/captures/facciones/${deck.faction}${quality === 'medium' ? '' : `/${quality}`}`

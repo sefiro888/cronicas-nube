@@ -57,3 +57,6 @@
   .main { min-height: calc(100vh - 106px); }
   .footer { padding: 23px 18px; flex-direction: column; gap: 10px; text-align: center; font-size: 7px; }
 }
+/* Las secciones nuevas comparten un carril acotado; los ajustes conservan su propia columna. */
+@media (min-width: 721px) { .header { grid-template-columns: minmax(190px, .65fr) minmax(0, 2.5fr) 90px; gap: 16px; } .nav { overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; scrollbar-color: #a58d5466 transparent; justify-content: flex-start; } .navLink { flex-shrink: 0; padding-inline: 11px; font-size: 9px; letter-spacing: .08em; } .actions { min-width: 88px; } }
+@media (min-width: 721px) and (max-width: 1050px) { .header { grid-template-columns: 38px minmax(0, 1fr) 90px; } .brandText { display: none; } }

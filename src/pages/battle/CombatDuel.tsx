@@ -15,6 +15,7 @@ interface CombatDuelProps {
   readonly commanderIds: Readonly<Record<PlayerId, string>>
   /** Vida actual de cada Nexo: si el objetivo es un Nexo, cuánto le queda importa más que su nombre. */
   readonly nexusHealth: Readonly<Record<PlayerId, number>>
+  readonly nexusMaxHealth?: Readonly<Record<PlayerId, number>>
   /** El golpe aún no ha caído: se puede adelantar con un clic. */
   readonly holding: boolean
   readonly onSkip: () => void
@@ -93,7 +94,7 @@ function NexusMonolith({ artUrl, faction, name, health, maxHealth, damage }: {
         ))}
       </span>
       <div className={styles.crystal}>
-        <NexusReliquary className={styles.facets} />
+        <NexusReliquary className={styles.facets} integrity={ratio} />
         <span className={styles.core} />
         <div className={styles.portrait}>
           <svg className={styles.runes} viewBox="0 0 100 100" aria-hidden="true">
@@ -124,12 +125,13 @@ function NexusMonolith({ artUrl, faction, name, health, maxHealth, damage }: {
   )
 }
 
-function Fighter({ side, role, me, commanderIds, nexusHealth, phase, holding, foeRarity }: {
+function Fighter({ side, role, me, commanderIds, nexusHealth, nexusMaxHealth, phase, holding, foeRarity }: {
   side: CombatSide
   role: 'attacker' | 'defender'
   me: PlayerId
   commanderIds: CombatDuelProps['commanderIds']
   nexusHealth: CombatDuelProps['nexusHealth']
+  nexusMaxHealth?: CombatDuelProps['nexusMaxHealth']
   phase: CombatExchange['phase']
   holding: boolean
   /** Rareza de quien le golpea: decide el color del tajo y las chispas. */
@@ -177,7 +179,7 @@ function Fighter({ side, role, me, commanderIds, nexusHealth, phase, holding, fo
               faction={commander?.faction}
               name={commander?.name}
               health={nexusHealth[side.owner]}
-              maxHealth={commander?.nexusHealth}
+              maxHealth={nexusMaxHealth?.[side.owner] ?? commander?.nexusHealth}
               damage={side.damage}
             />
           )}
@@ -257,7 +259,7 @@ function Fighter({ side, role, me, commanderIds, nexusHealth, phase, holding, fo
  * golpeada se agrieta y, si cae, estalla en fragmentos. La rareza de quien
  * golpea cambia el color del tajo y la cantidad de chispas.
  */
-export function CombatDuel({ exchange, me, commanderIds, nexusHealth, holding, onSkip, combo }: CombatDuelProps) {
+export function CombatDuel({ exchange, me, commanderIds, nexusHealth, nexusMaxHealth, holding, onSkip, combo }: CombatDuelProps) {
   const { attacker, defender } = exchange
 
   useEffect(() => {
@@ -302,8 +304,8 @@ export function CombatDuel({ exchange, me, commanderIds, nexusHealth, holding, o
           Combo <strong>×{combo}</strong>
         </span>
       )}
-      <Fighter side={attacker} role="attacker" me={me} commanderIds={commanderIds} nexusHealth={nexusHealth} phase={exchange.phase} holding={holding} foeRarity={rarityOf(defender)} />
-      <Fighter side={defender} role="defender" me={me} commanderIds={commanderIds} nexusHealth={nexusHealth} phase={exchange.phase} holding={holding} foeRarity={rarityOf(attacker)} />
+        <Fighter side={attacker} role="attacker" me={me} commanderIds={commanderIds} nexusHealth={nexusHealth} nexusMaxHealth={nexusMaxHealth} phase={exchange.phase} holding={holding} foeRarity={rarityOf(defender)} />
+        <Fighter side={defender} role="defender" me={me} commanderIds={commanderIds} nexusHealth={nexusHealth} nexusMaxHealth={nexusMaxHealth} phase={exchange.phase} holding={holding} foeRarity={rarityOf(attacker)} />
     </div>
   )
 }

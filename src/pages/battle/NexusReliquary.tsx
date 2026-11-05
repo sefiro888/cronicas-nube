@@ -2,7 +2,7 @@ import { useId } from 'react'
 
 /** Relieve frontal del relicario. La base permanece quieta mientras el núcleo
  * y la corona reaccionan al golpe, de modo que el Nexo pesa en el encuadre. */
-export function NexusReliquary({ className }: { className?: string }) {
+export function NexusReliquary({ className, integrity = 1 }: { className?: string; integrity?: number }) {
   const id = useId()
   const paint = (name: string) => `url(#${id}-${name})`
   return <svg className={className} viewBox="0 0 240 302" aria-hidden="true">
@@ -17,7 +17,7 @@ export function NexusReliquary({ className }: { className?: string }) {
         <stop offset=".7" stopColor="#171821" /><stop offset="1" stopColor="#4c444a" />
       </linearGradient>
       <radialGradient id={`${id}-glass`} cx=".34" cy=".25" r=".8">
-        <stop stopColor="#fcf5df" /><stop offset=".24" stopColor="var(--accent)" />
+        <stop stopColor="#fcf5df" stopOpacity={.4 + integrity * .6} /><stop offset=".24" stopColor={integrity < .25 ? '#a94338' : 'var(--accent)'} />
         <stop offset=".62" stopColor="#29243b" /><stop offset="1" stopColor="#090b18" />
       </radialGradient>
     </defs>
@@ -39,5 +39,7 @@ export function NexusReliquary({ className }: { className?: string }) {
       <path d={`M${x} 141v31`} stroke="#fff3de" opacity=".65" />
     </g>)}
     <path d="M72 229H168L184 241 168 254H72L56 241Z" fill="#141522" stroke={paint('metal')} strokeWidth="1.6" />
+    {integrity < .55 && <path d="M50 214l10 9-5 13 12 8m126-36-12 13 4 17-9 9" fill="none" stroke="#ffd6a4" strokeWidth="1.8" opacity={.4 + (1 - integrity) * .5} />}
+    {integrity < .25 && <path d="M72 252l8 8-5 8 18 8m64-27 12 10-6 11 15 8" fill="none" stroke="#ff946a" strokeWidth="2" />}
   </svg>
 }

@@ -9,6 +9,8 @@ import { expect, test, type Page } from '@playwright/test'
  */
 import { CARD_BY_ID, STARTER_DECKS, createMatch } from '../src/game'
 import type { BoardPiece, CardDefinition, MatchState, PlayerId, Position } from '../src/game'
+import { fiberModuleUrl, pieceScreenSpot } from './helpers/cameraSnapshot'
+import { matchStoreUrl } from './helpers/matchStoreUrl'
 
 const pieza = (instanceId: string, cardId: string, owner: PlayerId, position: Position): BoardPiece => {
   const card = CARD_BY_ID[cardId]!
@@ -16,19 +18,11 @@ const pieza = (instanceId: string, cardId: string, owner: PlayerId, position: Po
 }
 const unit = (test: (card: CardDefinition) => boolean) => Object.values(CARD_BY_ID).find((card) => card.type === 'unit' && test(card))!
 
-const store = (page: Page) => page.evaluate(async () => {
-  const path = '/src/store/match.ts'
+const store = (page: Page, path: string) => page.evaluate(async (path) => {
   const { useMatchStore } = await import(/* @vite-ignore */ path)
   const state = useMatchStore.getState()
   return { selected: state.selectedPieceId as string | undefined, rivalOnBoard: state.match.board.filter((p: BoardPiece) => p.owner === 'ai').length, rivalHealth: state.match.board.find((p: BoardPiece) => p.instanceId === 'suya')?.currentHealth as number | undefined, events: state.pendingAnimations.length + (state.currentEvent ? 1 : 0) }
-})
-
-/** Punto de pantalla de una ficha: justo debajo de su rótulo de nombre/estadísticas. */
-const pieceSpot = async (page: Page, name: string) => {
-  const label = page.locator('[class*="cardLabel"]').filter({ hasText: name }).first()
-  const box = (await label.boundingBox())!
-  return { x: box.x + box.width / 2, y: box.y + box.height + 30 }
-}
+}, path)
 
 test('fichas pegadas: seleccionar, apuntar y atacar con el ratón', async ({ page }) => {
   test.setTimeout(300_000)
@@ -47,21 +41,24 @@ test('fichas pegadas: seleccionar, apuntar y atacar con el ratón', async ({ pag
     localStorage.setItem('cronicas-nexo-preferences', JSON.stringify({ state: { muted: true, scenario: 'sanctuary', confirmEndTurn: false, selectedDeckId: 'furia-caldera' }, version: 7 }))
   }, [match] as const)
   await page.setViewportSize({ width: 1366, height: 768 })
+  const fiber = fiberModuleUrl(page)
+  const matchModule = matchStoreUrl(page)
   await page.goto('/battle')
+  const [fiberUrl, storeUrl] = await Promise.all([fiber, matchModule])
   await expect(page.getByTestId('battle-board')).toBeVisible({ timeout: 60_000 })
-  await page.waitForTimeout(4000)
+  await expect(page.locator('[class*="cardLabel"]').filter({ hasText: mythic.name })).toBeVisible({ timeout: 25000 })
 
-  const mine = await pieceSpot(page, mythic.name)
+  const mine = await pieceScreenSpot(page, fiberUrl, 'mia')
   await page.mouse.click(mine.x, mine.y)
   await page.waitForTimeout(800)
-  expect((await store(page)).selected, 'seleccionar mi mítica pegada a otra').toBe('mia')
+  expect((await store(page, storeUrl)).selected, 'seleccionar mi mítica pegada a otra').toBe('mia')
 
-  const label = (await page.locator('[class*="cardLabel"]').filter({ hasText: enemy.name }).first().boundingBox())!
+  const face = await pieceScreenSpot(page, fiberUrl, 'suya')
   let target = { x: 0, y: 0 }
   const tried: string[] = []
-  for (const dy of [-10, 0, 10, 20, 30, 40, 50, 60, 70, 80]) {
+  for (const dy of [0, -10, 10, -20, 20, -30, 30]) {
     for (const dx of [-20, 0, 20]) {
-      target = { x: label.x + label.width / 2 + dx, y: label.y + label.height + dy }
+      target = { x: face.x + dx, y: face.y + dy }
       await page.mouse.move(target.x, target.y, { steps: 3 })
       await page.waitForTimeout(250)
       if (await page.locator('[class*="verdict"]').count()) break
@@ -73,6 +70,6 @@ test('fichas pegadas: seleccionar, apuntar y atacar con el ratón', async ({ pag
   await page.screenshot({ path: (process.env.SHOT_DIR ?? 'e2e/__shots__') + '/pegadas.png' })
   await page.mouse.click(target.x, target.y)
   await page.waitForTimeout(1500)
-  const after = await store(page)
+  const after = await store(page, storeUrl)
   expect(after.rivalHealth === undefined || after.rivalHealth < (enemy.health ?? 0), 'el ataque se hace').toBe(true)
 })

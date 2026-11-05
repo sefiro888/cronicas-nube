@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react'
 
-type IconName = 'attack' | 'health' | 'mana' | 'hand' | 'deck'
+type IconName = 'attack' | 'health' | 'shield' | 'mana' | 'hand' | 'deck'
 const paths: Record<IconName, ReactNode> = {
+  shield: <><path d="M12 2 21 6l-2 9-7 7-7-7-2-9Z" /><path d="M12 5v13M7 8l5-2 5 2" /></>,
   attack: <><path d="m5 19 3-3m-3-3 6 6M9 15 17 3l4-1-1 4-12 9M4 20l1 1" /><path d="m10 10 4 4" /></>,
   health: <path d="M12 21 3.6 12.5C-2 6.5 6.2.2 12 6c5.8-5.8 14 .5 8.4 6.5Z" />,
   mana: <><path d="m12 2 8 7-3 11H7L4 9Z" /><path d="m4 9 8 3 8-3M12 2v10l5 8M12 12 7 20" /></>,

@@ -47,6 +47,7 @@ export interface ActionHintContext {
   readonly canPaySelectedCard: boolean
   /** Incluye objetivos, espacio de despliegue y costes de sacrificio. */
   readonly canPlaySelectedCard?: boolean
+  readonly selectedBlockReason?: string
   readonly selectedPiece?: BoardPiece
   readonly moveCount: number
   readonly canAttackPiece: boolean
@@ -70,6 +71,7 @@ export const actionHintFor = (context: ActionHintContext): string | undefined =>
   }
   if (!context.isMyTurn) return 'Turno rival: observa sus movimientos.'
   if (context.selectedCard) {
+      if (context.selectedBlockReason) return context.selectedBlockReason
     if (!context.canPaySelectedCard) return 'No tienes Esencia suficiente para esta carta.'
     if (context.canPlaySelectedCard === false) return 'Esta carta no tiene una jugada válida ahora mismo.'
     if (isBoardCard(context.selectedCard)) return 'Elige una casilla iluminada en azul para desplegar.'

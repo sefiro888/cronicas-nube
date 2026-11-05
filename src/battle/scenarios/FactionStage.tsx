@@ -1,3 +1,4 @@
+import { ScenarioAmbientLight, ScenarioHemisphereLight, ScenarioDirectionalLight } from './ScenarioLights'
 import { Sparkles, useTexture } from '@react-three/drei'
 import { useEffect, useMemo } from 'react'
 import { DoubleSide, Shape, ShapeGeometry, SRGBColorSpace } from 'three'
@@ -325,10 +326,10 @@ export default function FactionStage({ scenario, quality, reducedMotion }: {
     'shadow-camera-right': 12, 'shadow-camera-top': 12, 'shadow-camera-bottom': -12, 'shadow-bias': -.0006,
   }
   return <group name={scenario}>
-    <ambientLight color={ambient} intensity={.29} />
-    <hemisphereLight color={fill} groundColor={ambient} intensity={.38} />
-    <directionalLight color={key} position={[-7, 10, 6]} intensity={2.1} {...shadows} />
-    <directionalLight color={fill} position={[7, 5, -9]} intensity={.65} />
+    <ScenarioAmbientLight color={ambient} intensity={.29} />
+    <ScenarioHemisphereLight color={fill} groundColor={ambient} intensity={.38} />
+    <ScenarioDirectionalLight color={key} position={[-7, 10, 6]} intensity={2.1} {...shadows} />
+    <ScenarioDirectionalLight color={fill} position={[7, 5, -9]} intensity={.65} />
     <DistantVista image={`/assets/scenarios/${scenario}-vista-v1${quality === 'low' ? '-low' : ''}.webp`} />
     <Model quality={quality} reducedMotion={reducedMotion} />
     {quality !== 'low' && !reducedMotion && <Sparkles position={[0, .9, -3]} scale={[12, 2, 9]}
