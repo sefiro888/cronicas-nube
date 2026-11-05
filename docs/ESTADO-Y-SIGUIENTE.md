@@ -119,8 +119,16 @@ locales por bloque. Conservar el punto de retoma al cerrar cada bloque.
   un objetivo o condición pese a tener Esencia, y «Resolver carta» respeta esa
   disponibilidad. Pasan las tres resoluciones de coste y los cuatro casos
   de objetivo de Marea. Unitarias 749/5, compilación y lint correctos.
-- **Siguiente:** repaso del acabado de los escenarios nuevos y cierre de
-  validación. Rama de retoma `codex/coste-panel`.
+- **Detalle y calidad, 08:48 Madrid.** Tercios incorpora cañones con cureña
+  y ruedas, aparejo de sillares y banderas de aspa. Plaga tiene rocas de apoyo,
+  relieves de osario y hongos con pie y sombrero. Goblins tiene faroles de
+  jaula, cadenas y engranajes remendados. Vacío gana dovelas fracturadas y se
+  baja el portal para que no choque con la cabecera. El Sampo tiene corona
+  dentada de bronce y remaches. Las 38 vistas en calidad alta y las 38 en
+  calidad baja han pasado. El encuadre final de Vacío vuelve a pasar en las
+  dos resoluciones. El visor de capturas acepta `FACTION_SHOTS_QUALITY`.
+- **Siguiente:** comprobar una carta rebajada jugada desde la mano hasta
+  el cobro real y cerrar validación. Rama de retoma `codex/detalle-escenarios`.
 - **En cola:** marco de Olimpo elegido. Los otros tres chasis generados
   siguen como propuestas pendientes de valoración.
 

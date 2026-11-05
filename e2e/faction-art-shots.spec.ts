@@ -8,6 +8,8 @@ import type { Mesh, MeshStandardMaterial } from 'three'
 
 test.skip(!process.env.RUN_FACTION_SHOTS, 'revisión visual bajo demanda con RUN_FACTION_SHOTS=1')
 test.use({ actionTimeout: 10_000 })
+const quality = process.env.FACTION_SHOTS_QUALITY === 'high' ? 'high'
+  : process.env.FACTION_SHOTS_QUALITY === 'low' ? 'low' : 'medium'
 
 for (const deck of STARTER_DECKS) {
   for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
@@ -29,15 +31,15 @@ for (const deck of STARTER_DECKS) {
             (cardId, index) => ({ cardId, instanceId: `review-${index}` })) } },
       }
       await page.setViewportSize({ width, height })
-      await page.addInitScript(({ match, deckId, scenario }) => {
+      await page.addInitScript(({ match, deckId, scenario, quality }) => {
         localStorage.setItem('cronicas-nexo-howto-visto', '1')
         localStorage.setItem('cronicas-nexo-preferences', JSON.stringify({ state: {
-          muted: true, reducedMotion: true, graphicsQuality: 'medium', scenario, selectedDeckId: deckId,
+          muted: true, reducedMotion: true, graphicsQuality: quality, scenario, selectedDeckId: deckId,
         }, version: 7 }))
         localStorage.setItem('cronicas-nexo-match', JSON.stringify({ state: {
           match, history: [], matchLog: [], healthHistory: [], startedAtMs: Date.now(), elapsedSeconds: 0,
         }, version: 2 }))
-      }, { match, deckId: deck.id, scenario: width === 1920 ? 'auto' : resolveScenario('auto', deck.faction) })
+      }, { match, deckId: deck.id, scenario: width === 1920 ? 'auto' : resolveScenario('auto', deck.faction), quality })
       const fiber = fiberModuleUrl(page)
       await page.goto('/battle')
       const url = await fiber
@@ -62,7 +64,8 @@ for (const deck of STARTER_DECKS) {
       await page.mouse.click(box.x + box.width / 2, box.y + box.height + 26)
       await expect.poll(async () => (await boardState()).valid).toBeGreaterThan(0)
       await page.mouse.move(8, 8)
-      await page.screenshot({ path: `tools/captures/facciones/${deck.faction}/batalla-${width}x${height}.png` })
+      const captures = `tools/captures/facciones/${deck.faction}${quality === 'medium' ? '' : `/${quality}`}`
+      await page.screenshot({ path: `${captures}/batalla-${width}x${height}.png` })
       if (width !== 1366) return
 
       const hand = page.locator(`[aria-label="Tu mano"] [data-card-id="${card.id}"]`)
@@ -72,7 +75,7 @@ for (const deck of STARTER_DECKS) {
       const exhibit = dialog.locator(`[data-view="card"] article[data-card-id="${card.id}"]`)
       await expect(exhibit).toBeInViewport({ ratio: frame ? 1 : .95 })
       if (frame) await expect(exhibit).toHaveAttribute('data-frame', frame.id)
-      await exhibit.screenshot({ path: `tools/captures/facciones/${deck.faction}/carta.png` })
+      await exhibit.screenshot({ path: `${captures}/carta.png` })
     })
   }
 }

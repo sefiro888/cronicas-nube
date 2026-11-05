@@ -7,8 +7,9 @@ import { stoneMaps, type StoneFinish } from '../materials/stoneMaterial'
 import { timberMaps } from '../materials/timberMaterial'
 import { DistantVista } from './architecture/DistantVista'
 import { ShorePine } from './architecture/ShorePine'
-import { StoneColumns, StoneVault } from './architecture/StoneArchitecture'
+import { StoneColumns, StoneMasonry, StoneVault } from './architecture/StoneArchitecture'
 import { masonryBlockGeometry } from './architecture/stoneGeometry'
+import { gearGeometry } from './architecture/foundryGeometry'
 import type { FactionStageId } from './factionStages'
 
 type Point = [number, number, number]
@@ -119,22 +120,53 @@ function OlympusAcropolis() {
   </>
 }
 
-function TerciosBastion() {
+function GunCarriage() {
+  return <group position={[0, 1.17, .1]}>
+    <Block position={[0, -.01, -.08]} size={[.55, .14, .85]} color="#69503a" finish="timber" />
+    <Block position={[0, -.08, -.15]} size={[.91, .1, .1]} color="#443b30" metalness={.55} />
+    {SIDES.map((side) => <group key={side} position={[side * .38, -.07, -.15]} rotation={[0, Math.PI / 2, 0]}>
+      <Band position={[0, 0, 0]} radius={.25} tube={.043} color="#5c4d3a" />
+      {Array.from({ length: 6 }, (_, i) => <Block key={i} position={[0, 0, 0]} size={[.47, .038, .05]}
+        rotation={[0, 0, i * Math.PI / 6]} color="#827053" finish="timber" />)}
+      <mesh rotation={[Math.PI / 2, 0, 0]}><cylinderGeometry args={[.065, .065, .13, 12]} />
+        <meshStandardMaterial color="#2e2a24" metalness={.6} roughness={.7} /></mesh>
+    </group>)}
+    <group position={[0, .12, .15]} rotation={[-.14, 0, 0]}>
+      <mesh rotation={[Math.PI / 2, 0, 0]} castShadow receiveShadow>
+        <cylinderGeometry args={[.105, .16, 1.12, 20]} />
+        <meshStandardMaterial color="#514b3b" metalness={.65} roughness={.52} />
+      </mesh>
+      {[-.43, -.18, .46].map((z) => <Band key={z} position={[0, 0, z]} radius={z > 0 ? .148 : .12} tube={.021} color="#86704a" />)}
+      <mesh position={[0, 0, .566]}>
+        <circleGeometry args={[.115, 20]} />
+        <meshBasicMaterial color="#0c0b09" />
+      </mesh>
+    </group>
+  </group>
+}
+
+function TerciosBastion({ quality }: { quality: GraphicsQuality }) {
   return <>
     <StonePlatform color="#82755f" finish="sandstone" />
     <Block position={[0, -.42, 0]} size={[13, .28, 14]} color="#8f7d64" finish="sandstone" />
     {SIDES.map((side) => <group key={side} position={[side * 4.65, -.18, -4.3]} rotation={[0, side * .39, 0]}>
       <Block position={[0, .48, -.1]} size={[2.2, .96, 2.3]} color="#8c7961" finish="sandstone" />
+      <StoneMasonry finish="sandstone" color="#a58d6c" quality={quality}
+        blocks={Array.from({ length: 12 }, (_, index) => ({
+          position: [((index % 4) - 1.5) * .54, .15 + Math.floor(index / 4) * .27, 1.06] as const,
+          size: [.52, .25, .17] as const,
+        }))} />
       {[-.81, -.27, .27, .81].map((x) => <Block key={x} position={[x, 1.05, .84]}
         size={[.38, .45, .4]} color="#a48b6b" finish="sandstone" />)}
       {[0, 1, 2].map((i) => <Block key={i} position={[-.6 + .4 * i, .14, .98]}
         size={[.34, .3, .36]} color="#705943" finish="timber" />)}
       <Block position={[.12, 1.55, -.34]} size={[.06, 2.3, .06]} color="#554333" finish="timber" />
-      <Block position={[.5, 2.36, -.34]} size={[.76, .41, .04]} color={side === 1 ? '#b4a387' : '#7e4436'} rotation={[0, 0, -.14]} />
-      <mesh position={[0, 1.12, .33]} rotation={[Math.PI / 2.8, 0, 0]} castShadow>
-        <cylinderGeometry args={[.12, .19, 1.22, 12]} />
-        <meshStandardMaterial color="#44382d" metalness={.57} roughness={.56} />
-      </mesh>
+      <group position={[.5, 2.36, -.34]} rotation={[0, 0, -.14]}>
+        <Block position={[0, 0, 0]} size={[.76, .41, .04]} color="#c2b69c" />
+        {SIDES.map((diagonal) => <Block key={diagonal} position={[0, 0, .024]}
+          size={[.68, .053, .013]} rotation={[0, 0, diagonal * .46]} color="#823b2c" />)}
+      </group>
+      <GunCarriage />
     </group>)}
     {[-1, 0, 1].map((i) => <Block key={i} position={[i * 2.4, .16, -5.55]} size={[1.9, .68, .54]} color="#917b60" finish="sandstone" />)}
   </>
@@ -143,9 +175,15 @@ function TerciosBastion() {
 function VoidThreshold() {
   return <>
     <StonePlatform color="#51445e" finish="basalt" depth={1.9} />
-    {SIDES.map((side) => <group key={side} position={[side * 3.6, 1.26, -5.65]} scale={[.88, .87, .88]} rotation={[.13, side * -.4, side * .26]}>
+    {SIDES.map((side) => <group key={side} position={[side * 3.6, 1.03, -5.65]} scale={[.88, .87, .88]} rotation={[.13, side * -.4, side * .26]}>
       <group scale={[.9, 1.15, 1]}>
         <Band position={[0, 0, 0]} radius={1.53} tube={.2} arc={Math.PI * 1.61} color="#61566f" rotation={[0, 0, .28]} />
+        {Array.from({ length: 17 }, (_, i) => {
+          const angle = .28 + i * Math.PI * 1.61 / 17
+          return <Block key={i} position={[Math.cos(angle) * 1.53, Math.sin(angle) * 1.53, 0]}
+            size={[.4, .32, .39]} rotation={[0, Math.sin(i * 7) * .12, angle + Math.PI / 2]}
+            finish="basalt" color={i % 3 ? '#696074' : '#87798f'} />
+        })}
         <Band position={[0, 0, .06]} radius={1.34} tube={.045} arc={Math.PI * 1.63} color="#a666bd" glow="#a937d1" rotation={[0, 0, .27]} />
       </group>
       <Band position={[side * .28, -.18, -.25]} radius={1.65} tube={.08} arc={Math.PI * 1.35} color="#7d5fa3" glow="#3d266a" rotation={[.3, .17, -.29]} />
@@ -166,17 +204,31 @@ function PlagueCrypt({ quality, reducedMotion }: { quality: GraphicsQuality; red
     <ReflectiveWater quality={quality === 'high' ? 'medium' : 'low'} reducedMotion={reducedMotion} color="#31433a" />
     <StonePlatform color="#6d7760" finish="granite" />
     {SIDES.map((side) => <group key={side} position={[side * 3.95, -.16, -5.35]} scale={[1, .75, 1]} rotation={[0, side * .28, side * .09]}>
+      <mesh position={[0, -.85, -.02]} scale={[1.05, .63, .78]} rotation={[0, side * .31, 0]} castShadow receiveShadow>
+        <dodecahedronGeometry args={[1.7, 1]} />
+        <meshStandardMaterial {...stoneMaps('granite')} color="#586252" roughness={1} bumpScale={.05} />
+      </mesh>
       <Block position={[0, .25, 0]} size={[2.02, .5, 1.54]} color="#69755d" finish="granite" />
       <Block position={[0, .7, 0]} size={[1.65, .53, .95]} color="#67705c" finish="granite" />
       <Block position={[0, 1, 0]} size={[1.82, .17, 1.1]} color="#87907a" finish="granite" />
+      {[-.48, 0, .48].map((x) => <group key={x} position={[x, .72, .48]}>
+        <Block position={[0, 0, 0]} size={[.28, .28, .045]} color="#303a2c" finish="granite" />
+        <Block position={[0, 0, .028]} size={[.037, .18, .02]} color="#83916c" />
+      </group>)}
       {SIDES.map((post) => <group key={post}>
         <Block position={[post * .84, 1.44, -.48]} size={[.4, 2.9, .47]} color="#596453" finish="granite" rotation={[0, 0, post * -.07]} />
         <Block position={[post * .46, 2.82, -.48]} size={[.24, 1.13, .4]} color="#63735c" finish="granite" rotation={[0, 0, post * .54]} />
       </group>)}
-      {Array.from({ length: 9 }, (_, i) => <mesh key={i} position={[-.9 + (i % 5) * .37, .1 + i % 3 * .09, .45 + (i % 4) * .21]}>
-        <sphereGeometry args={[.12 + (i % 3) * .028, 9, 6]} />
-        <meshStandardMaterial color={i % 3 ? '#70804c' : '#b0bc72'} emissive="#40552e" emissiveIntensity={.38} />
-      </mesh>)}
+      {Array.from({ length: 9 }, (_, i) => <group key={i} position={[-.9 + (i % 5) * .37, .04 + i % 3 * .09, .45 + (i % 4) * .21]}>
+        <mesh position={[0, .1, 0]} rotation={[0, 0, Math.sin(i) * .2]}>
+          <cylinderGeometry args={[.027, .044, .21, 7]} />
+          <meshStandardMaterial color="#a5a880" roughness={1} />
+        </mesh>
+        <mesh position={[0, .2, 0]} rotation={[0, i, Math.sin(i) * .12]}>
+          <sphereGeometry args={[.13 + (i % 3) * .028, 12, 6, 0, TAU, 0, Math.PI / 2]} />
+          <meshStandardMaterial color={i % 3 ? '#70804c' : '#b0bc72'} emissive="#40552e" emissiveIntensity={.28} side={DoubleSide} />
+        </mesh>
+      </group>)}
     </group>)}
   </>
 }
@@ -189,11 +241,26 @@ function GoblinScrapyard() {
       <Block position={[-.77, 1.08, -.16]} size={[.25, 2.22, .29]} color="#66514a" metalness={.4} rotation={[0, 0, -.16]} />
       <Block position={[.71, 1.08, -.13]} size={[.25, 2.22, .3]} color="#595b58" metalness={.5} rotation={[0, 0, .09]} />
       <Block position={[0, 2.2, -.12]} size={[2.04, .22, .35]} color="#946441" metalness={.4} rotation={[0, 0, side * -.12]} />
-      <Block position={[.1, 1.76, .03]} size={[.23, .45, .22]} color="#3e4930" />
+      {Array.from({ length: 5 }, (_, i) => <Band key={i} position={[.1, 2.08 - i * .07, .03]}
+        radius={.045} tube={.012} rotation={[0, i % 2 * Math.PI / 2, 0]} color="#645d49" />)}
+      <mesh position={[.1, 1.62, .03]}>
+        <cylinderGeometry args={[.1, .1, .29, 10]} />
+        <meshStandardMaterial color="#b9d76d" emissive="#c6ee54" emissiveIntensity={1.3} roughness={.6} />
+      </mesh>
+      {[-1, 1].map((cap) => <Block key={cap} position={[.1, 1.62 + cap * .17, .03]}
+        size={[.31, .06, .3]} color="#564c3b" metalness={.6} />)}
+      {Array.from({ length: 4 }, (_, i) => <Block key={i}
+        position={[.1 + Math.cos(i * Math.PI / 2) * .13, 1.62, .03 + Math.sin(i * Math.PI / 2) * .13]}
+        size={[.025, .31, .025]} color="#484538" metalness={.5} />)}
       <pointLight position={[.1, 1.65, .24]} color="#c3ea45" intensity={5} distance={4} />
       {Array.from({ length: 11 }, (_, i) => <Block key={i} position={[(i % 4 - 1.5) * .43, .14 + (i % 3) * .18, .1 + (i % 5) * .22]}
         size={[.52, .12, .36]} rotation={[.15 * i, i * .7, i * .46]}
         color={i % 3 === 0 ? '#9a5732' : '#4e5353'} metalness={.51} />)}
+      {[0, 1, 2].map((i) => <mesh key={`gear-${i}`} position={[-.6 + i * .63, .22, .7 + i * .13]}
+        rotation={[-1.1 + i * .22, .2 * i, i * 1.3]} castShadow receiveShadow>
+        <primitive attach="geometry" object={gearGeometry(.27 + i * .04, 11 + i * 2)} />
+        <meshStandardMaterial color={i % 2 ? '#8b583b' : '#636653'} metalness={.55} roughness={.78} />
+      </mesh>)}
     </group>)}
     {SIDES.map((side) => <group key={side} position={[side * 4.75, -.24, .1]} rotation={[0, side * .12, 0]}>
       {[-.26, .26].map((x) => <Block key={x} position={[x, .09, 0]} size={[.09, .07, 7.7]} color="#927555" metalness={.65} />)}
@@ -221,9 +288,15 @@ function SampoLake({ quality, reducedMotion }: { quality: GraphicsQuality; reduc
       <Block position={[0, -1.25, 0]} size={[2.05, .57, 1.09]} color="#58696a" finish="granite" />
       <Band position={[0, 0, 0]} radius={1.17} tube={.15} color="#8e7652" />
       <Band position={[0, 0, .1]} radius={.99} tube={.04} color="#8bb5ac" glow="#3a8985" />
-      {Array.from({ length: 8 }, (_, i) => <Block key={i}
-        position={[Math.cos(i * TAU / 8) * .53, Math.sin(i * TAU / 8) * .53, .025]}
-        size={[1.08, .11, .11]} color="#826345" finish="timber" rotation={[0, 0, i * TAU / 8]} />)}
+      <mesh position={[0, 0, .02]} castShadow receiveShadow>
+        <primitive attach="geometry" object={gearGeometry(1.02, 27)} />
+        <meshStandardMaterial color="#967748" metalness={.62} roughness={.53} />
+      </mesh>
+      {Array.from({ length: 12 }, (_, i) => <mesh key={i}
+        position={[Math.cos(i * TAU / 12) * 1.17, Math.sin(i * TAU / 12) * 1.17, .13]}>
+        <sphereGeometry args={[.038, 7, 5]} />
+        <meshStandardMaterial color="#c3a265" metalness={.67} roughness={.48} />
+      </mesh>)}
       <mesh position={[0, 0, .19]}>
         <icosahedronGeometry args={[.31, 1]} />
         <meshStandardMaterial color="#5d9d9e" emissive="#58afa6" emissiveIntensity={.75} />
