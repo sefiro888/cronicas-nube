@@ -1894,8 +1894,10 @@ function Scene(props: Board3DProps) {
           decorado. La arquitectura conserva la composición de cámara; solo
           el contenido táctico cambia de orientación para cada jugador. */}
       <BattleClimateProvider strain={battleStrain(props.state.turn, [
-        { health: props.state.players.player.nexusHealth, maxHealth: COMMANDER_BY_ID[props.state.players.player.commanderId]?.nexusHealth ?? 35 },
-        { health: props.state.players.ai.nexusHealth, maxHealth: COMMANDER_BY_ID[props.state.players.ai.commanderId]?.nexusHealth ?? 35 },
+        { health: props.displayedNexusHealth?.player ?? props.state.players.player.nexusHealth,
+          maxHealth: props.nexusMaxHealth?.player ?? COMMANDER_BY_ID[props.state.players.player.commanderId]?.nexusHealth ?? 35 },
+        { health: props.displayedNexusHealth?.ai ?? props.state.players.ai.nexusHealth,
+          maxHealth: props.nexusMaxHealth?.ai ?? COMMANDER_BY_ID[props.state.players.ai.commanderId]?.nexusHealth ?? 35 },
       ])}>
       <group name="scenario-stage">
       <Suspense fallback={<LoadingStage />}>

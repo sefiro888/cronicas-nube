@@ -55,6 +55,7 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
     if (process.env.RUN_CLIMATE_SHOTS) await page.screenshot({ path: `e2e/__shots__/gremio-presion-${width}x${height}.png` })
     await page.getByRole('button', { name: /Bendición de la Luna/ }).first().click()
     await page.getByRole('button', { name: 'Resolver carta' }).click()
+    await expect(page.getByText('TU NEXO · 16', { exact: true })).toBeVisible({ timeout: 15_000 })
     await expect(page.locator('[data-integrity="critical"]')).toHaveCount(0)
     await expect.poll(async () => (await furnaceState(page, url)).light).toBeLessThan(before.light)
     const after = await furnaceState(page, url)

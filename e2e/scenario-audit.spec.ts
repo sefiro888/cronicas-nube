@@ -15,7 +15,8 @@ for (const deck of STARTER_DECKS) for (const width of [1920, 1366]) {
     const environment = SCENARIO_ENVIRONMENTS[scenario]
     const unit = deck.cards.map(({ cardId }) => CARD_BY_ID[cardId]!).find((card) => card.type === 'unit')!
     const base = createMatch(deck, STARTER_DECKS.find((other) => other.id !== deck.id)!, 73)
-    const match: MatchState = { ...base, turn: 5, phase: 'main', activePlayer: 'player', terrain: [], animations: [],
+    const match: MatchState = { ...base, turn: 5, phase: 'main', activePlayer: 'player', animations: [],
+      terrain: [{ kind: 'rubble', position: { x: 4, y: 5 } }, { kind: 'cover', position: { x: 2, y: 3 } }],
       players: { ...base.players, player: { ...base.players.player, mulliganTaken: true, hand: [] }, ai: { ...base.players.ai, mulliganTaken: true } },
       board: [{ instanceId: 'audit-near', cardId: unit.id, owner: 'player', position: { x: 3, y: 5 }, currentHealth: unit.health!, attackModifier: 0, movedThisTurn: false, attackedThisTurn: false, enteredOnTurn: 1, statuses: [] },
         { instanceId: 'audit-middle', cardId: unit.id, owner: 'ai', position: { x: 5, y: 3 }, currentHealth: unit.health!, attackModifier: 0, movedThisTurn: false, attackedThisTurn: false, enteredOnTurn: 1, statuses: [] },
@@ -45,8 +46,8 @@ for (const deck of STARTER_DECKS) for (const width of [1920, 1366]) {
         if (image.src.endsWith(floor)) tiles += 1
         if (image.src.endsWith(panorama)) vista += 1
       })
-      return { tiles, vista }
-    }, { url, floor: environment.floor, panorama: environment.panorama }), { timeout: 40000 }).toEqual({ tiles: 64, vista: 1 })
+      return { tiles, vista, ruin: Boolean(scene?.getObjectByName('ruina-bloqueante')) }
+    }, { url, floor: environment.floor, panorama: environment.panorama }), { timeout: 40000 }).toEqual({ tiles: 64, vista: 1, ruin: true })
     const labels = page.locator('[class*="cardLabel"]').filter({ hasText: unit.name })
     await expect(labels).toHaveCount(3)
     const poses = [[9, 9, 9], [-9, 9, -9]] as const
