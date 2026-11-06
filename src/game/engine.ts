@@ -1622,7 +1622,10 @@ const resolveEntryEffects = (
       }
     } else if (effect.kind === 'damage-all-enemies') {
       for (const target of next.board.filter(
-        (candidate) => (candidate.owner !== piece.owner || effect.includeAllies) && pieceDefinition(candidate)?.type === 'unit',
+        (candidate) =>
+          candidate.instanceId !== piece.instanceId &&
+          (candidate.owner !== piece.owner || effect.includeAllies) &&
+          pieceDefinition(candidate)?.type === 'unit',
       )) {
         next = damagePiece(next, target.instanceId, effect.amount, piece.owner, card.vfx.impactEffect, undefined, card);
       }

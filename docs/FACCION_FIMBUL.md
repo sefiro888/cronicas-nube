@@ -267,7 +267,7 @@ resolver o si hay que programar algo.
 #### `serpiente-del-mundo`
 - **Tipo**: Unidad — Dragón · **Rareza**: Mítica · **Coste**: 4 gen + 2 escarcha
 - **ATQ/VID**: 8/6 · **Alcance** 2 · **Movimiento** 1
-- **Reglas**: Al entrar en juego, inflige 3 de daño a todas las unidades, incluidas las tuyas.
+- **Reglas**: Al entrar en juego, inflige 3 de daño a todas las demás unidades, aliadas y enemigas.
 - **Sabor**: «Rodea el mundo y se muerde la cola. El día que suelte, se acaba.»
 - **Motor**: ya soportado (barrido que incluye aliados)
 - **Prompt**: *Una serpiente marina colosal emergiendo del mar en tempestad,

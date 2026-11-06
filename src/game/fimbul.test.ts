@@ -207,7 +207,7 @@ describe('piezas propias de Fimbul', () => {
     expect(result.state.board.find((piece) => piece.instanceId === 'grande')?.currentHealth).toBe(7 - 3);
   });
 
-  it('la Serpiente del Mundo daña a todas las unidades al entrar, incluidas las propias', () => {
+  it('la Serpiente del Mundo daña a las demás unidades al entrar y conserva su Vida', () => {
     let state = fimbulMatch();
     state = withPlayer(state, 'player', {
       hand: [{ cardId: 'serpiente-del-mundo', instanceId: 'serpiente' }],
@@ -226,6 +226,7 @@ describe('piezas propias de Fimbul', () => {
       type: 'play-card', playerId: 'player', cardInstanceId: 'serpiente', position: { x: 4, y: 5 },
     });
     expect(result.ok).toBe(true);
+    expect(result.state.board.find((piece) => piece.cardId === 'serpiente-del-mundo')?.currentHealth).toBe(6);
     expect(result.state.board.find((piece) => piece.instanceId === 'aliada')?.currentHealth).toBe(4 - 3);
     expect(result.state.board.find((piece) => piece.instanceId === 'enemiga')?.currentHealth).toBe(4 - 3);
   });
