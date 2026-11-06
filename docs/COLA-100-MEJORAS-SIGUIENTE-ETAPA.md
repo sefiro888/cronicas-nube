@@ -1,0 +1,134 @@
+# Crónicas del Nexo — 100 mejoras para la siguiente etapa
+
+Cola de propuestas posterior a la integración de las 32 mejoras en `main`. La numeración empieza de nuevo. El [registro de la entrega](TRABAJO-32-MEJORAS-2026-11-05.md) identifica los puntos ya completados y la [lista original](COLA-100-MEJORAS-2026-11-05.md) conserva sus números históricos.
+
+La prioridad es que apetezca jugar otra batalla por las decisiones que abre. Una buena partida deja claro qué está pasando, tiene poco tiempo muerto y ofrece una jugada que te gustaría probar de otra forma. Los sobres y el Álbum siguen siendo colección. Las unidades conservan su forma de carta y las previsiones aparecen al consultar una jugada concreta. Las reglas nuevas de mapa, campaña y Torre se probarían en sus propios modos antes de plantear cambios en la escaramuza habitual.
+
+**Primera entrega propuesta.** Indicadores 1–6 y medición de ritmo 21–24. Después, una misión completa de Fimbul que combine 31, 32 y 43. El resto queda en cola para elegir por número.
+
+La [auditoría posterior](AUDITORIA-COLA-Y-DISENO-NEXO.md) contrasta las 100 propuestas con el juego actual. El alcance básico de 30 y 76 ya existe. El 77 parte de una matriz de equilibrio operativa y el 79 de una reconexión ya implementada. Consultar el alcance restante antes de seleccionar un punto.
+
+## Poderes visibles y decisiones de facción
+
+1. **Franja de poderes de ambos bandos.** Coloca el estado público junto al emblema de cada bando y abre la explicación al pulsar o enfocar. A 1366 × 768 y en móvil, conserva el valor breve a la vista y despliega el detalle debajo de la cabecera. Comprueba que funciona con la facción propia y con la rival.
+2. **Jade · Sello del Mandato.** Muestra «Tuyo», «Rival» o «Libre» entre ambos bandos. Mueve el sello al reclamarlo y anota el cambio en la crónica. Prueba una reclamación, un arrebato y la pérdida del Mandato al acabar el turno sin piezas.
+3. **Quinto Sol · Disco de la Cuenta.** Muestra el contador desde cero junto al emblema. Al sacrificar, enseña el incremento real y el nuevo total. Al seleccionar una carta que usa la Cuenta, traduce el valor a su efecto concreto, como daño o robo.
+4. **Olimpo · Medidor de Hybris.** Enseña cuánto tienes, qué umbral importa a la carta elegida y cuánta Vida perderá tu Nexo si cierras el turno. Comprueba el aviso al pasar de 5 a 6, al reiniciar el contador y cuando una carta modifica el castigo.
+5. **Marea · Fase actual y siguiente.** Bajo el turno, muestra Pleamar o Bajamar y la fase que viene. Al elegir una carta, destaca la rama que se resolverá ahora. Valida el cambio de turno y que el indicador se entiende también al enfrentarte a Marea.
+6. **Kalevala · Runo y regreso por Canto.** Lleva el Runo y el bono de Ataque al emblema de ambos bandos. En las unidades hundidas, explica cuándo se intentará su regreso y qué pasa si falta espacio. Prueba el salto de 2 a 3 de Runo y un regreso aplazado.
+7. **Duna · Ofrenda con consecuencias a la vista.** En la confirmación, muestra el coste efectivo, la Vida que quedará y si el pago activa Juicio para esa resolución. Permite comparar la carta con y sin Ofrenda sin apartar la vista del objetivo.
+8. **Fimbul · Furor y Desafío por objetivo.** Marca al pie de la ficha el Furor activo. Al apuntar, compara el Ataque efectivo de ambas piezas y muestra si se cumple Desafío y qué efecto aporta esa carta.
+9. **Samsara · Estado de Renacer por copia.** Distingue una unidad que todavía puede Renacer de otra que ya volvió. En una previsión letal, muestra si volvería a la mano y con qué mejoras. Prueba dos copias del mismo nombre en distinto estado.
+10. **Plaga · Contagio legible.** En la ficha infectada, muestra el próximo drenaje y, al consultar el estado, quién se beneficiaría si muere. Contrasta muerte por drenaje y por ataque con el destino real de la carta.
+11. **Forja · Ensamblaje antes de desplegar.** En la reserva, muestra cuántas estructuras cuentan. En la carta elegida, enseña Ataque y Vida de entrada con el límite del Ensamblaje aplicado. Comprueba que se recalcula al perder una estructura.
+12. **Goblins · Chispa y Petardazo comprensibles.** Antes de lanzar Chispa, presenta cara y cruz con sus objetivos. Después, marca qué salió. En una acción que mataría una unidad con Petardazo, señala a quién alcanzaría la explosión cuando el resultado sea determinable.
+13. **Tercios · Formación y Descarga visibles.** Al seleccionar una unidad, conecta visualmente las piezas que sostienen su Formación. Al probar un movimiento, identifica quién perdería Vida. En Descarga, dibuja la línea de tiro concreta que atraviesa a un aliado.
+14. **Furia · Remates con daño efectivo.** Al apuntar a una unidad o Nexo, separa el daño previsto del que absorberá una protección. Destaca el remate solo si la jugada confirmada alcanza de verdad y señala si requiere un sacrificio.
+15. **Arcano · Control con fecha de fin.** En una unidad congelada o bloqueada, indica qué acción está impedida y cuándo se recupera. Al apuntar otro control sobre ella, explica si el efecto amplía el bloqueo o cuándo vencerá.
+16. **Naturaleza · Curación y crecimiento útiles.** Al elegir objetivo, muestra la Vida que se recuperará de verdad y la que quedaría sin aprovechar. Si la carta genera Esencia, presenta el cambio de reserva que aplicará el motor.
+17. **Orden · Guardia y protección explicadas.** Al seleccionar un atacante, identifica la Guardia que limita sus objetivos cuando proceda. Al apuntar el golpe, indica cuánto absorberá la protección y cuánto llegará a Vida.
+18. **Sombra · Veneno y recuperación consultables.** Muestra cuándo se resolverá el siguiente daño aplicable. Cuando una carta permita recuperar del cementerio, abre la lista de opciones legales y explica por qué una carta queda excluida.
+19. **Vacío · Previsión de teletransporte.** Señala la pieza de origen y las casillas que admite el efecto. Al pasar por un destino, deja una silueta temporal para valorar posición y alcance sin mover la ficha hasta confirmar.
+20. **Bestiario · Habilidades que cambian el duelo.** Al apuntar con una bestia, destaca la palabra clave relevante y su consecuencia. Con Perforar, separa daño a la pieza y exceso al Nexo según la resolución prevista.
+
+## Ritmo y ganas de jugar otra batalla
+
+21. **Medir dónde se va el tiempo.** Registra por separado decisión humana, cálculo de IA, carga y animación. Compara partidas de Furia, Duna y Tercios, cortas y largas. Así podremos actuar sobre el tramo que más retrasa cada turno.
+22. **Ritmo cinematográfico adaptado al momento.** Conserva las escenas amplias para un jefe, un poder decisivo o un golpe final. Acorta la presentación de una acción rutinaria repetida. Prueba una partida larga y comprueba que se sigue entendiendo qué pasó al reducir la duración.
+23. **Resolver cadenas de impactos por grupos.** En un hechizo de área, agrupa golpes simultáneos y destaca las muertes que disparan otros efectos. La crónica permite desplegar el orden real. Compara una cadena de varias piezas con y sin aceleración.
+24. **Final de turno con la decisión relevante.** Si hay un efecto pendiente importante, muestra un resumen cerca del botón. Por ejemplo, «Hybris hará perder 3 de Vida». Si quedan acciones voluntarias, agrúpalas sin abrir una ventana por cada una.
+25. **Apertura de partida más directa.** Tras elegir mazo y rival, precarga las primeras cartas y el suelo mientras aparece el encuentro. Permite abreviar el cara a cara y llegar a un mulligan legible. Mide el tiempo hasta la primera decisión en una carga fría.
+26. **Fin de batalla con una siguiente acción clara.** En escaramuza ofrece revancha, cambiar de rival o revisar la jugada decisiva. En campaña o Torre, da prioridad al siguiente paso del recorrido. Conserva las opciones de la partida anterior al pedir revancha.
+27. **Formato rápido como modo aparte.** Prototipa partidas con estado inicial preparado y objetivo breve. Prueba un inicio de media partida y mide duración, remontadas y variedad de jugadas antes de fijar reglas para ese formato.
+28. **Mulligan con plan de apertura.** Muestra fuentes, cartas que podrías jugar pronto y cartas que dependen de una condición. Deja comparar qué pierdes al devolver una carta sin recomendar siempre la misma mano.
+29. **Avance visual entre turnos.** En el cambio de turno, muestra un resumen corto de lo que se recargó, el robo y los efectos que cambiaron el tablero. Después, devuelve el foco a la primera decisión disponible, con soporte de teclado.
+30. **Tres ritmos de presentación.** Ofrece perfiles Cinemático, Equilibrado y Ágil. Especifica qué se abrevia y conserva los resultados de daño, protección y estados en todos. Comprueba que cambiar de perfil durante una partida no repite ni altera acciones.
+
+## Mapas, misiones y jefes
+
+31. **Defensa de Fimbul con objetivo alternativo.** Crea una misión en la que debas mantener un paso durante un número visible de turnos. El rival puede presionar por otro flanco. Prueba si proteger una unidad y ceder terreno puede ser tan útil como atacar.
+32. **Hielo de Fimbul con rutas que cambian.** Introduce un atajo helado que se agrieta según un ciclo anunciado. Marca qué casillas cambiarán y ofrece un camino estable. La prueba clave es que puedas anticipar la pérdida del paso y replantear tu posición.
+33. **Tormenta de Duna por franjas.** Señala con un turno de antelación qué franja se verá afectada. Da valor a moverse antes del golpe o a ocupar un refugio. Prueba una misión de escolta donde tanto avanzar como esperar tengan un coste.
+34. **Compuertas de Forja.** Alterna dos rutas según un ciclo público. Añade una estructura que permita modificar el ciclo a cambio de una acción en la misión. Comprueba que hay una respuesta útil aunque el rival controle la compuerta.
+35. **Disputa de reliquias en Jade.** Coloca dos objetivos alejados y exige conservar uno durante un turno para reclamarlo. Usa el Mandato existente para variar las opciones de ciertas cartas. Comprueba que dividir el ejército puede ser útil aunque pierdas fuerza en el centro.
+36. **Terreno de Marea que cambia con su ciclo.** En una misión específica, abre pasos al bajar el agua y señala adónde puede desplazar una corriente al subir. Aprovecha la misma fase que consultan las cartas. Verifica el cambio antes de confirmar un movimiento.
+37. **Misiones de escolta.** Lleva una unidad designada hasta una casilla final con ruta elegible. La interfaz muestra avance, distancia y condición de derrota. La IA debe poder bloquear el camino o atacar la escolta según la posición.
+38. **Control de dos zonas.** Puntúa el control al cerrar el turno y muestra qué piezas cuentan para cada zona. El diseño debe permitir recuperar terreno tras ceder un punto. Prototipa el objetivo con mapas simétricos y ambos órdenes de salida.
+39. **Mapas asimétricos de asedio.** Da al defensor un paso protegido y al atacante dos accesos con ventajas distintas. Intercambia los bandos en las pruebas para evaluar si hay una ruta dominante. Úsalo como misión con condiciones visibles desde el inicio.
+40. **Jefe de Forja con conductos y ataque anunciado.** Dos conductos alimentan el escudo y el jefe anuncia la fila que va a barrer. El jugador puede romper un conducto, cambiar de ruta o buscar una ventana de ataque. Comprueba que dos mazos de estilos distintos pueden resolverlo.
+41. **Jefe de Plaga con propagación contenible.** Prepara focos visibles que puedas limpiar, bloquear o bordear. Muestra el orden de propagación antes de cerrar turno. El encuentro debe admitir victoria mediante contención o agresión antes de que crezca la infección.
+42. **Jefe de Vacío con portales previsibles.** Anuncia el origen y el destino de la siguiente alteración espacial. Deja que el jugador aproveche la apertura para su propia jugada. Prueba qué ocurre con destinos ocupados y piezas que no se pueden mover.
+43. **Ficha previa de misión.** Antes de entrar, presenta mapa reducido, objetivo, condición de derrota y regla ambiental. Mantén el mismo objetivo en un panel breve durante la batalla. Pide a un jugador nuevo que explique cómo gana tras leerlo.
+44. **Dificultad con cambios comprensibles.** Presenta qué altera cada nivel, como un objetivo secundario, otro patrón del jefe o una ruta bloqueada. Prueba el mismo encuentro en dos dificultades y verifica que se puede anticipar qué cambia.
+
+## IA, aprendizaje y herramientas de mazo
+
+45. **IA de Tercios que cuide sus apoyos.** Valora si un movimiento derrumba Formación y busca recolocar una pieza antes de romper la línea. Usa posiciones del Laboratorio con pérdidas en cadena y comprueba que la IA conserva o sacrifica la línea por una razón táctica.
+46. **IA de Marea que prepare el empuje.** Evalúa el destino tras empujar, la fase y la posibilidad de que otra unidad aproveche la casilla abierta. Incluye una posición donde el empuje con menos daño inmediato es la jugada que abre el ataque decisivo.
+47. **IA de Duna que mida el riesgo de Ofrenda.** Compara el efecto mejorado, el Juicio que activa y el posible remate rival. Prueba la misma carta con Vida alta y baja para comprobar que sabe pagar y sabe cuándo renunciar.
+48. **IA con secuencias cortas de jugadas.** Evalúa combinaciones como mover un guardia y después atacar, o desplegar apoyo antes del golpe. Limita el tiempo de cálculo y conserva una acción legal de respaldo. Mide decisiones y duración en tableros cargados.
+49. **IA que entienda objetivos de misión.** Enséñale a valorar el puente, la escolta o una reliquia además del Nexo. Comprueba que cambia de plan al quedar un turno para perder por el objetivo.
+50. **Academia de posicionamiento.** Crea ejercicios breves de bloqueo, Guardia y alcance con una posición fija. Una pista resalta qué dato mirar y otra sugiere un primer paso. Acepta cualquier solución legal que cumpla la meta.
+51. **Academia de poderes de facción.** Prepara un ejercicio por mecánica, como recuperar el Mandato o aprovechar una Bajamar. Al terminar, explica qué cambió y por qué. Usa las mismas señales de combate para que el aprendizaje se traslade a partida.
+52. **Deshacer y ramificar en el Laboratorio.** Vuelve al estado anterior a una acción y conserva una rama para comparar dos soluciones. Comprueba que ambas empiezan con el mismo turno, recursos y azar cuando corresponda.
+53. **Escenarios del Laboratorio exportables.** Guarda ambos mazos, piezas, recursos, fase y semilla en un archivo versionado. Importa la posición en una sesión aislada. Si faltan cartas o cambia el formato, muestra qué impide cargarla.
+54. **Simulador de aperturas del mazo.** Genera manos reproducibles y permite ensayar el mulligan varias veces. Resume cuántas aperturas dieron una fuente y una jugada temprana. Deja abrir una mano concreta en el Laboratorio.
+55. **Constructor con avisos de curva.** Señala costes que compiten por las mismas fuentes y turnos en que el mazo podría quedarse sin jugada. Al pulsar un aviso, filtra las cartas implicadas para que el jugador pueda decidir qué cambiar.
+56. **Constructor con diagnóstico de sinergias.** Cuenta habilitadores y cartas que se benefician de una mecánica. En un mazo de Ofrenda, indica qué cartas pagan Vida y cuáles pueden aprovechar Juicio. Enlaza una mano donde esa relación se pueda practicar.
+57. **Comparador de versiones de mazo.** Duplica una lista y muestra qué cambió en curva, fuentes y tipos de carta. Usa las mismas semillas de apertura en ambas versiones para contrastar el efecto de cambiar dos o tres copias.
+58. **Códice con casos jugables.** Busca términos y abre una posición de ejemplo, como Perforar contra un escudo. La explicación muestra el resultado del motor y deja cambiar una pieza para comprobar cómo varía.
+
+## Campaña, Torre y formatos que se rejuegan
+
+59. **Una crónica con dos rutas jugables.** En Duna, rescatar el convoy podría conservar suministros y perseguir al enemigo podría evitar que refuerce su posición. Guarda la decisión y refleja su efecto al empezar el capítulo siguiente.
+60. **Objetivos secundarios con coste táctico.** Añade a una misión la opción de salvar una pieza o conservar un paso para ganar un epílogo o emblema. El jugador puede ganar por el objetivo principal aunque renuncie al secundario. Muestra ambas resoluciones al terminar.
+61. **Rival recurrente que recuerde tu elección.** Escribe dos respuestas para un comandante que reaparece y cambia su apertura según lo ocurrido. Prueba las dos rutas y conserva un registro visible de la decisión que produjo el cambio.
+62. **Torre con un mazo que cambia en la expedición.** En un recorrido separado de cinco pisos, ofrece sustituir una carta, tomar una reliquia o recuperar Vida entre combates. Valida la legalidad de la lista en cada paso y conserva el mazo base para otras partidas.
+63. **Rutas de Torre que puedas evaluar.** Antes de bifurcarte, muestra rival, dificultad, recompensa y qué información queda por descubrir. Compara una ruta de recuperación y otra de riesgo para comprobar que ambas sirven a estrategias distintas.
+64. **Campamento con recuperación a cambio de una decisión.** Permite gastar una recompensa de expedición en curar, ajustar una carta o preparar el siguiente encuentro. Expón el coste y el resultado antes de confirmar.
+65. **Reliquias que cambien cómo planteas el tablero.** Prototipa una reliquia que premie proteger una posición y otra que favorezca rotar piezas. Limita sus efectos al recorrido y prueba si inducen planes distintos con el mismo mazo.
+66. **Expediciones reproducibles.** Comparte un código con semilla, recorrido y versión de reglas. Dos jugadores deben ver las mismas opciones iniciales y bifurcaciones cuando elijan igual. El resumen final recoge sus decisiones y resultado.
+67. **Resumen de piso que prepare el siguiente.** Muestra Vida de entrada y salida, objetivo cumplido y modificadores que se arrastran. Si una bendición afecta al siguiente encuentro, enséñala antes de elegir ruta.
+68. **Modo sellado con colección temporal.** Genera un grupo de cartas para el intento y permite construir con sus fuentes. Valida que cada grupo pueda formar un mazo legal. El lote y la lista quedan asociados a la sesión.
+69. **Draft contra IA por rondas.** Ofrece elecciones donde competir por sinergia tenga un coste. Guarda el orden de selección y deja revisar las alternativas al terminar. Prototipa primero un grupo reducido de facciones compatibles.
+70. **Reto semanal de posición fija.** Usa el mismo tablero, mazo y rival para todos. Puntúa criterios visibles, como ganar conservando tres unidades. Permite repetir y compartir una solución mediante una repetición compatible.
+71. **Duelo local con manos privadas.** Cuando cambia el turno, oculta la mano y muestra una pantalla de entrega antes de que el siguiente jugador confirme. Prueba cambio de turno, recarga y regreso desde una decisión pendiente.
+72. **Partidas de práctica con estado inicial elegido.** Permite elegir aperturas de desarrollo, bloqueo o remontada y jugarlas completas contra la IA. Cada posición explica qué practicar. El resultado se registra aparte para poder comparar intentos.
+
+## Repeticiones, equilibrio y multijugador
+
+73. **Repetición completa reproducible.** Guarda el estado inicial, la semilla, la versión y el orden de las acciones. Comprueba que la repetición llega al mismo resultado después de un final con varios efectos encadenados.
+74. **Volver a jugar el turno decisivo.** Desde una repetición, abre ese punto en el Laboratorio con ambas manos y recursos restaurados. El jugador puede probar otra línea y comparar el resultado del turno con la partida original.
+75. **Crónica final con momentos seleccionables.** Identifica cambios importantes por eventos reales, como perder la última Guardia o la primera caída del Nexo a Vida crítica. Cada momento lleva al turno y muestra qué pieza causó el cambio.
+76. **Informe de partida compartible.** Exporta resultado, mazos públicos, turnos y momentos seleccionados en un archivo legible. En PvP, mantén fuera del informe la información privada según las reglas de visibilidad de la repetición.
+77. **Matriz de equilibrio de las 19 facciones.** Simula enfrentamientos con semillas fijas y ambos órdenes de salida. Separa victorias, duración y turnos sin jugada. Marca los resultados que necesitan revisión humana porque la IA no explota bien la mecánica.
+78. **Batería de posiciones de equilibrio.** Guarda casos concretos donde una carta decide demasiado pronto o un bloqueo deja pocas respuestas. Compara la misma posición con el cambio propuesto y registra qué otras facciones resultan afectadas.
+79. **Reconexión PvP que restaure el turno exacto.** Recupera sala, fase y elecciones pendientes tras cortar la conexión durante un ataque. Comprueba desde ambos dispositivos que tablero, Vida y jugador activo coinciden y que el ataque se aplica una sola vez.
+80. **Verificación de acciones y resultado en PvP.** Prueba un validador de acciones con estado versionado. Debe rechazar jugadas ilegales, duplicadas o fuera de orden y devolver un estado coherente a ambos clientes. Es la base antes de una clasificación pública.
+81. **Estado de conexión que permita decidir.** Diferencia esperando al rival, reconectando, recuperado y partida cerrada. Indica cuándo puedes seguir jugando o salir. Prueba cortes breves y largos con una acción pendiente.
+82. **Series privadas con reglas acordadas.** Crea una sala al mejor de tres que muestre marcador y reglas de mazo antes de iniciar. Conserva la serie tras una reconexión y comprueba que una revancha no cuenta dos veces.
+83. **Sala de torneo pequeña.** Después de validar resultados y reconexión, prueba un cuadro privado de cuatro personas. Cada ronda enlaza con su sala y confirma el resultado verificable. Incluye una ruta clara para una ausencia.
+84. **Observación de partidas con información pública.** Permite ver tablero, turno y crónica en una sala que lo habilite. Comprueba que la mano y las elecciones privadas quedan fuera de la vista y que observar no permite enviar acciones.
+
+## Presentación, acceso y fiabilidad
+
+85. **Ayudas de palabras clave que se puedan leer.** Permite pasar del término a la explicación sin que desaparezca. Abre también por toque y teclado, ajusta la posición a los bordes y conserva el foco al cerrar. Comprueba Guardia y Adyacente en cartas ampliadas.
+86. **Carta ampliada con encuadre y texto consistentes.** Crea una revisión con nombres largos, reglas densas y marcos de las 19 facciones. Ajusta encuadre del arte, contraste y separación entre título, coste y rareza. Comprueba especialmente las cartas que cambian de una a dos líneas.
+87. **Inspección táctil sin jugadas involuntarias.** Distingue pulsar para seleccionar, mantener para inspeccionar y arrastrar para mover la cámara. Prueba que cerrar la carta ampliada devuelve la selección anterior sin confirmar una acción.
+88. **Texto escalable y señales con forma.** Aumenta tamaño de texto en cabecera, reserva y ventanas de decisión. Añade formas y etiquetas a alertas que hoy dependen del color. Valida estados apilados con teclado y resoluciones estrechas.
+89. **Lectura por voz centrada en cambios relevantes.** Anuncia turno, resultado de la acción y alertas como un cambio de Mandato. Permite repasar el estado por bloques. Prueba una cadena de efectos para evitar anuncios duplicados que oculten la decisión pendiente.
+90. **Selección múltiple con consecuencias visibles.** En cartas con varios objetivos o decisiones, muestra qué falta, qué se eligió y cómo deshacer un objetivo antes de confirmar. Mantén visible el tablero y prueba cancelación con teclado y toque.
+91. **Reserva consultable fuente por fuente.** Al enfocar una fuente, indica su tipo de Esencia y si está disponible o agotada. Relaciona el bloqueo de jugar otra fuente con la que se usó ese turno. Prueba una mano llena con doce fuentes.
+92. **Audio que ayude a seguir la acción.** Sitúa impactos de forma sutil según su posición y baja el ambiente cuando hay una decisión importante. Separa el volumen de interfaz y ambiente. Escucha una cadena larga y comprueba que se entiende también en mono.
+93. **Suelos y luces con lectura consistente.** Ajusta exposición y variación de baldosas en los mapas que pierdan detalle, conservando motivos de facción y bordes de casilla. Usa Duna como referencia de legibilidad. Compara capturas del mismo encuadre en calidad baja y alta.
+94. **Calidad adaptable con medición real.** Ante caídas sostenidas de fluidez, reduce primero partículas, reflejos y efectos de fondo. Conserva visibles fichas, casillas y estados. Mide cambios de fluidez y comprueba que la calidad no oscila durante cada ataque.
+95. **Control de memoria en sesiones largas.** Repite cambios de escenario y revanchas para detectar texturas, sonidos o efectos que queden vivos. Libera los recursos al salir y compara el uso tras una serie fija de partidas.
+96. **Caché de arte coherente entre versiones.** Versiona el vínculo entre marcos, texturas y medidas. Simula una actualización con una sesión abierta y comprueba que al recargar aparece una versión completa del arte sin mezclar recursos antiguos y nuevos.
+97. **Guardado recuperable tras una interrupción.** Conserva la última copia válida cuando se está escribiendo la siguiente. Prueba un cierre durante campaña, Torre y apertura de sobre, verificando Vida, recompensas y último paso confirmado.
+98. **Copia y traslado del progreso.** Exporta colección, ajustes e historial en un formato versionado. Antes de importar, muestra qué se añadiría o reemplazaría y permite conservar una copia local. Prueba un archivo antiguo y otro dañado.
+99. **Álbum como colección consultable.** Añade filtros combinables por facción, rareza, doradas y copias. Permite comparar acabados con la misma ilustración, marcar favoritos y ver el progreso de cada facción. Prueba que todo se consulta desde el Álbum sin perder filtros al volver de una carta.
+100. **Celebraciones de colección con identidad de mundo.** Al completar un conjunto, muestra un distintivo cosmético y una escena breve de su facción. Presenta copias nuevas y repetidas de forma clara al abrir el sobre. Mantén la celebración saltable y comprueba que cerrar en mitad de la escena conserva exactamente la colección obtenida.
+
+## Cómo decidir si merece pasar a la siguiente tanda
+
+En el primer bloque, comprueba que un jugador reconoce quién tiene el Mandato, cuánto vale la Cuenta y qué fase está activa antes de elegir una carta, tanto a 1920 × 1080 como a 1366 × 768. Mide cuánto tiempo ocupan las animaciones y la IA frente a las decisiones. En la misión de Fimbul, juega con dos estilos de mazo y comprueba si el hielo y el objetivo cambian las rutas que elegirías. Pregunta después qué jugada repetirías de otra forma y si jugarías una revancha. Ese resultado vale más para priorizar que el número de efectos nuevos.
