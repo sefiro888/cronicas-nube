@@ -1,4 +1,5 @@
 import type { ResolvedEffect } from '../../battle/resolvedEffects'
+import { BattlePlate } from './BattlePlate'
 import styles from './EffectChronicle.module.css'
 
 export function EffectChronicle({ effects }: { readonly effects: readonly ResolvedEffect[] }) {
@@ -9,8 +10,8 @@ export function EffectChronicle({ effects }: { readonly effects: readonly Resolv
       <ol aria-label="Efectos resueltos en orden de ejecución">
         {effects.map((effect) => <li key={effect.id} data-tone={effect.tone}>
           <small>Turno {effect.turn}</small>
-          <strong>{effect.source} → {effect.target}</strong>
-          <span>{effect.text}</span>
+          <BattlePlate label={effect.label ?? effect.text} keyword={effect.keyword} faction={effect.faction} metric={effect.metric} compact
+            detail={`${effect.source} → ${effect.target}${effect.label && effect.label !== effect.text ? ` · ${effect.text}` : ''}`} />
           {effect.before !== undefined && effect.after !== undefined && effect.before !== effect.after && <small>Vida antes y después de la acción: {effect.before} → {effect.after}</small>}
         </li>)}
       </ol>

@@ -77,6 +77,7 @@ import { evaluateDailyChallenge } from '../store/dailyChallenge'
 import { withBase } from '../utils/assets'
 import { AI_GAP_SCALE, PACE_LABELS, PRESENTATION_PACES } from '../battle/presentation'
 import { TYPE_LABELS } from '../utils/cardLabels'
+import { BattlePlate } from './battle/BattlePlate'
 import { CastSpotlight } from './battle/CastSpotlight'
 import { NEXUS_DANGER_RATIO } from '../battle/NexusCrown'
 import { CombatDuel } from './battle/CombatDuel'
@@ -193,7 +194,9 @@ export function BattlePage() {
 
   const match = store.match
   const currentEvent = store.currentEvent
-  const resolvedImpact = currentEvent && store.resolvedEffects.find(({ id }) => id === currentEvent.id)
+  const cue = currentEvent?.id.split(REPLAY_MARK)[0]
+  const resolvedPlates = cue ? store.resolvedEffects.filter(({ id, cueId }) => id === cue || cueId === cue) : []
+  const resolvedImpact = resolvedPlates[0]
   const visualEvent = useMemo(() => currentEvent ? {
     ...currentEvent, durationMs: eventDuration(currentEvent, {
       animationSpeed: preferences.animationSpeed, reducedMotion: preferences.reducedMotion,
@@ -238,8 +241,13 @@ export function BattlePage() {
   // cuando el golpe se ve caer, no antes.
   const displayedNexusHealth = useMemo(() => {
     const pending = (owner: PlayerId) => store.pendingAnimations
-      .filter((event) => event.type === 'nexus-damage' && event.targetId === `${owner}-nexus` && !event.id.includes(REPLAY_MARK))
-      .reduce((total, event) => total + (event.amount ?? 0), 0)
+      .filter((event) => event.targetId === `${owner}-nexus` && !event.id.includes(REPLAY_MARK))
+      .reduce((total, event) => {
+        const amount = event.amount ?? 0
+        if (event.type === 'nexus-damage') return total + amount
+        if (event.effectId === 'nexo-curacion' || event.effectId === 'vinculo-vital') return total - amount
+        return total
+      }, 0)
     return {
       player: (store.match?.players.player.nexusHealth ?? 0) + pending('player'),
       ai: (store.match?.players.ai.nexusHealth ?? 0) + pending('ai'),
@@ -1027,6 +1035,10 @@ export function BattlePage() {
     if (attackPreview) factionHint = attackPreview.lines.join(' · ')
     else if (selectedCard?.effects.some((effect) => effect.kind === 'tide')) {
       factionHint = `Se resuelve en ${tide === 'high' ? 'Pleamar' : 'Bajamar'}. Consulta esa rama en la carta.`
+    } else if (selectedCard?.id === 'dragon-del-rio-amarillo') {
+      factionHint = match.mandate === ME
+        ? 'Con Mandato · al entrar intenta congelar 2 turnos a la unidad enemiga con más Ataque.'
+        : 'Sin Mandato · el Dragón entra sin congelar.'
     } else if (selectedCard?.effects.some((effect) => effect.kind === 'mandate')) {
       factionHint = `Rama de Mandato ${match.mandate === ME ? 'activa' : 'inactiva'} con el estado actual.`
     } else if (sunDamage && !selectedCard?.effects.some((effect) => effect.kind === 'sacrifice')) {
@@ -1100,7 +1112,7 @@ export function BattlePage() {
               </span>
             </div>
           </div>
-          <div className={styles.nexusOrb} title="Vida del Nexo rival"><GameIcon name="health" />{rival.nexusHealth}</div>
+          <div className={styles.nexusOrb} title="Vida del Nexo rival"><GameIcon name="health" />{displayedNexusHealth[RIVAL]}</div>
         </button>
           <div className={styles.battleTools}>
       <button
@@ -1294,10 +1306,17 @@ export function BattlePage() {
               combo={director.combo?.key === director.exchange.key ? director.combo.count : undefined}
             />
           )}
-          {(resolvedImpact || director.eventBanner) && !director.exchange && (
-            <div key={`resultado-${resolvedImpact?.id ?? director.eventBanner}`} className={styles.eventBanner} data-kind={resolvedImpact?.tone === 'damage' ? 'damage' : director.eventBannerKind} role="status">
-              {resolvedImpact ? `${resolvedImpact.source} → ${resolvedImpact.target} · ${resolvedImpact.text}` : director.eventBanner}
+          {resolvedImpact && !photoMode && !director.spotlight && (
+            <div className={styles.liveEffect} data-duel={Boolean(director.exchange) || undefined} role="status" aria-live="polite">
+              {resolvedPlates.slice(0, 2).map((effect) => (
+                <BattlePlate key={`${currentEvent?.id}-${effect.id}`} label={effect.label ?? effect.text}
+                  detail={`${effect.source} · ${effect.target}${effect.label && effect.label !== effect.text ? ` · ${effect.text}` : ''}`}
+                  metric={effect.metric} keyword={effect.keyword} faction={effect.faction} active />
+              ))}
             </div>
+          )}
+          {!resolvedImpact && director.eventBanner && !director.exchange && !photoMode && (
+            <div key={director.eventBanner} className={styles.eventBanner} data-kind={director.eventBannerKind} role="status">{director.eventBanner}</div>
           )}
           {director.nexusFlash && <div className={styles.nexusFlash} data-who={director.nexusFlash} aria-hidden="true" />}
           {queueBusy && pendingCount >= 2 && (
@@ -1380,7 +1399,7 @@ export function BattlePage() {
           <section className={styles.panelSection}>
             <div className={styles.lifeRow}>
               <span>Vida del Nexo</span>
-              <span key={player.nexusHealth} className={styles.life}><GameIcon name="health" /> {player.nexusHealth}</span>
+              <span key={displayedNexusHealth[ME]} className={styles.life}><GameIcon name="health" /> {displayedNexusHealth[ME]}</span>
             </div>
             <div className={styles.deckCounters}>
               <div className={styles.counter}><strong key={player.deck.length}>{player.deck.length}</strong><span>Mazo</span></div>

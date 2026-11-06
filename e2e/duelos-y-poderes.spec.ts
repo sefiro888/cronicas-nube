@@ -70,6 +70,7 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
     const cast = page.getByTestId('cast-spotlight')
     await expect(cast).toContainText('Mandato · Tuyo', { timeout: 15000 })
     await expect(cast.locator('[data-faction-art="jade"][data-kind="spell"]')).toBeVisible()
+    await expect(cast.locator('section').filter({ hasText: 'Caligrafía imperial' })).toHaveCSS('opacity', '1')
     await page.screenshot({ path: `tools/captures/duelos-y-poderes/hechizo-jade-${width}.png` })
   })
 
@@ -95,6 +96,7 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
     await expect(duel.locator('[data-faction-art="fimbul"][data-kind="strike"]')).toBeVisible({ timeout: 15000 })
     const defender = duel.locator('[data-role="defender"]')
     await expect(defender).toContainText('2 absorbidos', { timeout: 20000 })
+    await expect(defender.getByTestId('battle-plate').filter({ hasText: 'Absorbe 2 de daño' })).toHaveAttribute('data-active', 'true')
     await expect(defender).toContainText('Vida 5 → 3', { timeout: 20000 })
     await page.screenshot({ path: `tools/captures/duelos-y-poderes/duelo-${width}.png` })
   })

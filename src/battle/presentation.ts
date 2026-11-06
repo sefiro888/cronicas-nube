@@ -309,14 +309,14 @@ export const foldExchange = (exchange: CombatExchange, event: AnimationEvent): C
       ...current, damage: current.damage + event.amount, countered: current.countered || event.retaliation,
       health: event.pieceHealth ? { before: current.health?.before ?? event.pieceHealth.before, after: event.pieceHealth.after } : current.health,
     }
-    // Vínculo vital y Aturdir no dejan evento propio: actúan cuando el golpe
-    // del atacante entra, así que se encienden con ese daño.
-    if (which === 'defender') {
-      const fired = (['lifelink', 'stun'] as const).filter((keyword) => attackerHas(exchange.attacker, keyword))
-      const triggered = fired.reduce<readonly string[]>((list, keyword) => (list.includes(keyword) ? list : [...list, keyword]), exchange.attacker.triggered)
-      return { ...exchange, defender: hit, attacker: { ...exchange.attacker, triggered } }
-    }
     return { ...exchange, [which]: hit }
+  }
+  if (event.effectId === 'vinculo-vital' && event.cardId === exchange.attacker.cardId
+    && event.actorId === exchange.attacker.owner) {
+    return { ...exchange, attacker: { ...exchange.attacker, triggered: withTrigger(exchange.attacker, 'lifelink') } }
+  }
+  if (event.effectId === 'stun-daze' && event.targetId === exchange.defender.id && attackerHas(exchange.attacker, 'stun')) {
+    return { ...exchange, attacker: { ...exchange.attacker, triggered: withTrigger(exchange.attacker, 'stun') } }
   }
   if (event.type === 'shield' && protectionEffect(event) === 'absorb') {
     const which = side(event.targetId)

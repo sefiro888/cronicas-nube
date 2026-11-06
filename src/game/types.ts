@@ -507,6 +507,8 @@ export interface AnimationEvent {
   /** Conserva el material de la víctima aunque ya no esté en el tablero. */
   readonly targetCardId?: string;
   /** Vida al abrir el duelo, antes de reproducir sus impactos. */
+  readonly statusTurns?: number;
+  readonly piercing?: true;
   readonly openingHealth?: { readonly attacker: number; readonly defender: number };
   readonly renacerBonus?: number;
   readonly retaliation?: true;

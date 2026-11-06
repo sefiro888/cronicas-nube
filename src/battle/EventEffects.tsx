@@ -454,6 +454,9 @@ function EventBody({ event, reducedMotion, impact }: EventEffectsProps) {
       const to: readonly [number, number] | undefined = event.to
         ? [boardX(event.to.x), boardZ(event.to.y)]
         : event.targetId ? NEXUS_POSITION[event.targetId] : undefined
+      if (to && (event.effectId === 'nexo-curacion' || event.effectId === 'vinculo-vital')) {
+        return <HealingLight from={from ?? to} targets={[to]} tone="#a6ffbe" durationMs={event.durationMs} />
+      }
       // Cada hechizo con su propia animación (ver spellStyle.ts). Los
       // objetivos salen de lo que la carta cambió de verdad en el tablero.
       if (event.cast && from) {

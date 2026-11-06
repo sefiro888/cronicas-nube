@@ -757,3 +757,5 @@
 @media (max-width: 760px) { .castRoute { display: none; } }
 .overlay[data-tide='low'] .castInscription svg { transform: scaleY(-1); }
 .overlay[data-tide='high'] .castInscription svg { transform: scaleY(1.32); }
+.impactPlates { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 4px; }
+.impactPlates > span { max-width: 100%; }

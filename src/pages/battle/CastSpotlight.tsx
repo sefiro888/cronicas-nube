@@ -1,9 +1,10 @@
 import { useEffect, type CSSProperties } from 'react'
 import { Card, CARD_TYPE_LABELS } from '../../components'
-import { FAMILY_LABELS, glossaryEntriesIn, KeywordGlyph, keywordIdentity, keywordStyle } from '../../components/keywordIdentity'
-import { CARD_BY_ID, FACTION_BY_ID, type PlayerId } from '../../game'
+import { glossaryEntriesIn, KeywordGlyph } from '../../components/keywordIdentity'
+import { CARD_BY_ID, FACTION_BY_ID, type FactionId, type PlayerId } from '../../game'
 import { spotlightHeading, type Spotlight } from '../../battle/presentation'
 import { durationLabel, impactHeadline, type ImpactChange } from '../../battle/castImpact'
+import { BattlePlate } from './BattlePlate'
 import { FactionBattleArt, factionBattleSignature } from './FactionBattleArt'
 import { withBase } from '../../utils/assets'
 import styles from './CastSpotlight.module.css'
@@ -34,23 +35,9 @@ const PANEL_SKIP = new Set(['nexo', 'adyacencia'])
 /** Cuántas unidades afectadas se listan: más no cabe a 1366 × 768. */
 const IMPACT_ROWS = 5
 
-const TONE_LABEL: Readonly<Record<ImpactChange['tone'], string>> = {
-  harm: 'Daño', boon: 'Mejora', control: 'Control', neutral: 'Cambio',
-}
-
-function ChangeChip({ change }: { change: ImpactChange }) {
-  const identity = change.glossaryId ? keywordIdentity(change.glossaryId) : undefined
-  return (
-    <span
-      className={styles.chip}
-      data-tone={change.tone}
-      style={change.glossaryId ? keywordStyle(change.glossaryId) : undefined}
-      title={TONE_LABEL[change.tone]}
-    >
-      {identity && <KeywordGlyph glyph={identity.glyph} className={styles.chipGlyph} />}
-      {change.label}
-    </span>
-  )
+function ChangeChip({ change, faction }: { change: ImpactChange; faction: FactionId }) {
+  const fallback = change.tone === 'harm' ? 'impacto' : change.tone === 'boon' ? 'curacion' : 'movimiento'
+  return <BattlePlate label={change.label} keyword={change.glossaryId ?? fallback} faction={faction} active compact />
 }
 
 /**
@@ -170,15 +157,19 @@ export function CastSpotlight({ spotlight, me, reducedMotion, onDismiss }: CastS
 
             <div className={styles.castInscription}>
               <FactionBattleArt faction={spotlight.card.faction} kind="spell" reducedMotion={reducedMotion} />
-              <span>{spotlight.tide ? spotlight.tide === 'high' ? 'Pleamar · Ola creciente' : 'Bajamar · Corriente de retorno' : signature.name}</span>
+              <span>{spotlight.tide ? spotlight.tide === 'high' ? 'Pleamar · Ola creciente' : 'Bajamar · Corriente de retorno' : `Firma de ${FACTION_BY_ID[spotlight.card.faction].name} · ${signature.name}`}</span>
             </div>
             {(impact?.mandate || impact?.sun || spotlight.payment || spotlight.sparkFace) && <ul className={styles.castLedger}>
-              {spotlight.payment && <li>Ofrenda · −{spotlight.payment.offering} Vida{spotlight.payment.judged && spotlight.card.effects.some((effect) => effect.kind === 'judgement') ? ' · Juicio activo' : ''}</li>}
-              {spotlight.sparkFace && <li><span className={styles.sparkCoin} aria-hidden="true">✦</span> Chispa · {spotlight.sparkFace === 'cara' ? 'Cara' : 'Cruz'}</li>}
-              {impact?.mandate && <li>Mandato · {impact.mandate === 'free' ? 'Libre' : impact.mandate === me ? 'Tuyo' : 'Rival'}</li>}
+              {spotlight.payment && <li><BattlePlate label={`Ofrenda · −${spotlight.payment.offering} Vida`} keyword="ofrenda" faction="duna"
+                detail={spotlight.payment.judged && spotlight.card.effects.some((effect) => effect.kind === 'judgement') ? 'Vida pagada · Juicio activo' : 'Vida pagada'} active compact /></li>}
+              {spotlight.sparkFace && <li><BattlePlate label={`Chispa · ${spotlight.sparkFace === 'cara' ? 'Cara' : 'Cruz'}`}
+                keyword="chispa" faction="goblins" active compact /></li>}
+              {impact?.mandate && <li><BattlePlate label={`Mandato · ${impact.mandate === 'free' ? 'Libre' : impact.mandate === me ? 'Tuyo' : 'Rival'}`}
+                keyword="mandato" faction="jade" active compact /></li>}
               {(['player', 'ai'] as const).map((id) => {
                 const counter = impact?.sun?.[id]
-                return counter ? <li key={id}>Cuenta del Sol · {id === me ? 'Tu bando' : 'Rival'} · {counter.before} → {counter.after}</li> : null
+                return counter ? <li key={id}><BattlePlate label={`Cuenta del Sol · ${id === me ? 'Tu bando' : 'Rival'}`}
+                  keyword="cuenta-del-sol" faction="sol" metric={`${counter.before} → ${counter.after}`} active compact /></li> : null
               })}
             </ul>}
             {headline && (
@@ -192,8 +183,8 @@ export function CastSpotlight({ spotlight, me, reducedMotion, onDismiss }: CastS
                         <li key={piece.instanceId} data-owner={piece.owner === me ? 'own' : 'rival'} style={{ '--i': index } as CSSProperties}>
                           {card && <img src={withBase(card.art.webp)} alt="" />}
                           <span className={styles.affectedName}>{card?.name ?? 'Unidad'}</span>
-                          <span className={styles.chips}>
-                            {piece.changes.map((change) => <ChangeChip key={change.label} change={change} />)}
+                          <span className={styles.impactPlates}>
+                            {piece.changes.map((change) => <ChangeChip key={change.label} change={change} faction={spotlight.card.faction} />)}
                           </span>
                         </li>
                       )
@@ -213,23 +204,11 @@ export function CastSpotlight({ spotlight, me, reducedMotion, onDismiss }: CastS
 
             {terms.length > 0 && (
               <ul className={styles.terms}>
-                {terms.map((entry, index) => {
-                  const identity = keywordIdentity(entry.id)
-                  return (
-                    <li
-                      key={entry.id}
-                      className={styles.term}
-                      data-family={identity.family}
-                      style={{ ...keywordStyle(entry.id), '--i': index } as CSSProperties}
-                    >
-                      <span className={styles.termGlyph}><KeywordGlyph glyph={identity.glyph} /></span>
-                      <span className={styles.termText}>
-                        <strong>{entry.label}<em>{FAMILY_LABELS[identity.family]}</em></strong>
-                        <small>{entry.definition}</small>
-                      </span>
-                    </li>
-                  )
-                })}
+                {terms.map((entry) => (
+                  <li key={entry.id}>
+                    <BattlePlate label={entry.label} detail={entry.definition} keyword={entry.id} faction={spotlight.card.faction} compact />
+                  </li>
+                ))}
               </ul>
             )}
 

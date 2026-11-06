@@ -26,6 +26,19 @@ describe('crónica de efectos resueltos', () => {
     expect(target[1]).toMatchObject({ source: CARD_BY_ID[attacker.cardId]?.name, before: 5, after: 3 })
   })
 
+  it('muestra solo la Vida que recupera Vínculo vital al llegar al máximo del Nexo', () => {
+    const devourer = { ...attacker, cardId: 'devoradora-del-inframundo', attackModifier: 0, position: { x: 3, y: 0 } }
+    const base = boardWith([devourer])
+    const maximum = base.players.player.nexusHealth
+    const before = { ...base, players: { ...base.players, player: { ...base.players.player, nexusHealth: maximum - 1 } } }
+    const result = applyAction(before, { type: 'attack-nexus', playerId: 'player', attackerId: devourer.instanceId })
+    expect(result.ok).toBe(true)
+    expect(result.state.players.player.nexusHealth).toBe(maximum)
+    expect(resolvedEffectsFor(before, result.state, result.state.animations)).toContainEqual(expect.objectContaining({
+      source: 'Devoradora del Inframundo', keyword: 'vinculo-vital', metric: '+1', text: '+1 Vida al Nexo',
+    }))
+  })
+
   it('registra el contagio del final del turno sin inventar un atacante', () => {
     const before = boardWith([{ ...attacker, statuses: [{ kind: 'infected', infectorId: 'ai' }] }])
     const result = applyAction(before, { type: 'end-turn', playerId: 'player' })

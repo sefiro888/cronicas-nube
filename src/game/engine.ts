@@ -872,6 +872,7 @@ const damageNexus = (
   sourceId: PlayerId,
   actorId: string,
   card: CardDefinition,
+  piercing?: true,
 ): { readonly state: MatchState; readonly lethal: boolean } => {
   if (amount <= 0) return { state, lethal: false };
   const target = state.players[targetId];
@@ -889,7 +890,7 @@ const damageNexus = (
     stats: { ...source.stats, damageDealt: source.stats.damageDealt + amount },
   });
   next = enqueue(next, {
-    type: 'nexus-damage', actorId, targetId: `${targetId}-nexus`, amount,
+    type: 'nexus-damage', actorId, targetId: `${targetId}-nexus`, amount, piercing,
     cardId: card.id, faction: card.faction,
     effectId: card.vfx.impactEffect ?? `${card.faction}-nexus-impact`, durationMs: 440,
   });
@@ -929,7 +930,7 @@ const addStatus = (
     ...piece,
     statuses: [...piece.statuses.filter((status) => status.kind !== 'frozen'), { kind: 'frozen', expiresOnTurn }],
   }));
-  next = enqueue(next, { type: 'freeze', targetId: pieceId, to: target.position, effectId: 'freeze-lock', durationMs: 360 });
+  next = enqueue(next, { type: 'freeze', targetId: pieceId, to: target.position, effectId: 'freeze-lock', statusTurns: Math.max(1, duration), durationMs: 360 });
   return next;
 };
 
@@ -978,14 +979,19 @@ const applyOrenToll = (state: MatchState, playerId: PlayerId): MatchState => {
 };
 
 /** Cura el Nexo propio sin superar el máximo del comandante. */
-const healNexus = (state: MatchState, playerId: PlayerId, amount: number): MatchState => {
+const healNexus = (state: MatchState, playerId: PlayerId, amount: number, lifelink?: { card: CardDefinition; from: Position }): MatchState => {
   if (amount <= 0) return state;
   const player = state.players[playerId];
   const maximum = COMMANDER_BY_ID[player.commanderId]?.nexusHealth ?? 35;
   const healed = Math.min(maximum, player.nexusHealth + amount);
   const next = withPlayer(state, playerId, { ...player, nexusHealth: healed });
   // Con el Nexo ya al máximo no hay cura de verdad, así que Orén no cobra.
-  return healed > player.nexusHealth ? applyOrenToll(next, playerId) : next;
+  if (healed <= player.nexusHealth) return next;
+  return applyOrenToll(enqueue(next, {
+    type: 'spell', actorId: playerId, targetId: `${playerId}-nexus`, amount: healed - player.nexusHealth,
+    effectId: lifelink ? 'vinculo-vital' : 'nexo-curacion', cardId: lifelink?.card.id,
+    faction: lifelink?.card.faction, from: lifelink?.from, durationMs: 180,
+  }), playerId);
 };
 
 /**
@@ -1254,7 +1260,7 @@ const resolveSpell = (
       }));
       next = enqueue(next, {
         type: 'freeze', targetId: targetPiece.instanceId, to: targetPiece.position,
-        effectId: 'stun-daze', durationMs: 300,
+        effectId: 'stun-daze', statusTurns: 1, durationMs: 300,
       });
       next = applySialuDraw(next, caster, targetPiece.instanceId);
     } else if (effect.kind === 'passive' && effect.id === 'target-shield' && targetPiece?.owner === caster) {
@@ -1643,7 +1649,7 @@ const resolveEntryEffects = (
           ],
         }));
         next = enqueue(next, {
-          type: 'freeze', targetId: victim.instanceId, to: victim.position, effectId: 'stun-daze', durationMs: 300,
+          type: 'freeze', targetId: victim.instanceId, to: victim.position, effectId: 'stun-daze', statusTurns: 1, durationMs: 300,
         });
         next = applySialuDraw(next, piece.owner, victim.instanceId);
       }
@@ -2756,7 +2762,7 @@ export const attackPiece = (
   // Vínculo vital: el Nexo propio se cura por el daño que llegó de verdad, no
   // por el anunciado — escudos y reducciones lo recortan antes.
   if (hit.dealt > 0 && hasLifelink(next, attacker, playerId)) {
-    next = healNexus(next, playerId, hit.dealt);
+    next = healNexus(next, playerId, hit.dealt, { card, from: defenderPosition });
   }
   // Plaga — Contagio: si la defensora sobrevive al golpe, queda Infectada
   // (propio o por el aura de la Médica de la Peste). Si el golpe la mata,
@@ -2776,7 +2782,7 @@ export const attackPiece = (
   const overkill = hit.dealt - hit.healthBefore;
   if (overkill > 0 && hasKeyword(attacker, 'pierce')) {
     const enemyId = opponentOf(playerId);
-    const pierced = damageNexus(next, enemyId, overkill, playerId, attackerId, card);
+    const pierced = damageNexus(next, enemyId, overkill, playerId, attackerId, card, true);
     next = pierced.state;
     if (card.faction === 'olimpo') next = applyHybrisGain(next, playerId, attackerId);
     if (pierced.lethal) {
@@ -2840,7 +2846,7 @@ export const attackPiece = (
       ],
     }));
     next = enqueue(next, {
-      type: 'freeze', targetId: defenderId, to: defenderPosition, effectId: 'stun-daze', durationMs: 300,
+      type: 'freeze', targetId: defenderId, to: defenderPosition, effectId: 'stun-daze', statusTurns: 1, durationMs: 300,
     });
     next = applySialuDraw(next, playerId, defenderId);
   }
@@ -3093,7 +3099,7 @@ export const attackNexus = (
   if (amount > 0 && card.faction === 'olimpo') next = applyHybrisGain(next, playerId, attackerId);
   // Vínculo vital: golpear el Nexo enemigo también cura el propio.
   if (amount > 0 && hasLifelink(next, attacker, playerId)) {
-    next = healNexus(next, playerId, amount);
+    next = healNexus(next, playerId, amount, { card, from: attacker.position });
   }
   next = applyOnAttackExtras(next, playerId, attackerId, card, amount);
   if (struck.lethal) {

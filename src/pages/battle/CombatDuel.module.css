@@ -858,3 +858,5 @@
 .monolith[data-hit] .relicSeal { animation: relicShock 420ms ease-out both; }
 @keyframes relicShock { 24% { transform: translateX(-50%) scale(1.16); box-shadow: 0 0 19px var(--accent); } }
 @media (prefers-reduced-motion: reduce) { .monolith[data-hit] .relicSeal { animation: none; } }
+.traits li.traitPlate { display: block; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; width: 100%; }
+@media (min-width: 761px) { .fighter .traits { width: 100%; max-height: 118px; overflow: clip; padding: 2px; } }

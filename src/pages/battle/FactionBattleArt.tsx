@@ -60,7 +60,7 @@ const SIGNATURES = {
     trail: 'M4 34Q34 3 64 34T124 34T184 34L196 34 M54 34a10 10 0 1 0 20 0a10 10 0 1 0 -20 0 M114 34a10 10 0 1 0 20 0a10 10 0 1 0 -20 0',
   },
   jade: {
-    name: 'Sello imperial', ink: '#58cba2', light: '#f5efab', rhythm: 'assemble',
+    name: 'Caligrafía imperial', ink: '#58cba2', light: '#f5efab', rhythm: 'assemble',
     motif: 'M12 12H58V58H12Z M19 19H51V51H19Z M26 26H44V35H33V44H26Z M38 44H45',
     trail: 'M4 40Q40 14 75 31T134 32Q155 25 167 34H196 M153 14H183V53H153Z M161 23H175V44H161Z',
   },

@@ -213,6 +213,8 @@ describe('rótulo de combate', () => {
     if (linker) {
       let exchange = openExchange({ ...attack, cardId: linker.id }, 'ai')!
       exchange = foldExchange(exchange, { id: 'h', type: 'damage', targetId: 'defensor', amount: 3, durationMs: 1 })
+      expect(combatTraits(exchange.attacker, 'attacker').find((trait) => trait.id === 'lifelink')?.active).toBe(false)
+      exchange = foldExchange(exchange, { id: 'cura', type: 'spell', actorId: 'ai', cardId: linker.id, effectId: 'vinculo-vital', amount: 2, durationMs: 180 })
       expect(combatTraits(exchange.attacker, 'attacker').find((trait) => trait.id === 'lifelink')?.active).toBe(true)
     }
     expect(piercer ?? linker).toBeDefined()

@@ -1,6 +1,6 @@
 import { useEffect, type CSSProperties } from 'react'
 import { Card, FactionSigil, RARITY_LABELS } from '../../components'
-import { KeywordGlyph, keywordIdentity, keywordStyle } from '../../components/keywordIdentity'
+import { BattlePlate } from './BattlePlate'
 import { CARD_BY_ID, COMMANDER_BY_ID, FACTION_BY_ID, type FactionId, type PlayerId } from '../../game'
 import { inspectionStatuses } from '../../battle/inspectionStatuses'
 import { combatTraits, type CombatExchange, type CombatSide } from '../../battle/presentation'
@@ -232,19 +232,12 @@ function Fighter({ side, role, me, commanderIds, nexusHealth, nexusMaxHealth, ph
       </div>
       {traits.length > 0 && (
         <ul className={styles.traits}>
-          {traits.map((trait) => {
-            const glossaryId = TRAIT_GLOSSARY[trait.id]
-            const identity = glossaryId ? keywordIdentity(glossaryId) : undefined
-            return (
-              <li key={trait.id} data-active={trait.active || undefined} style={glossaryId ? keywordStyle(glossaryId) : undefined}>
-                {identity && <span className={styles.traitGlyph}><KeywordGlyph glyph={identity.glyph} /></span>}
-                <span className={styles.traitText}>
-                  <strong>{trait.label}</strong>
-                  <small>{trait.active ? `¡Actúa! ${trait.detail}` : trait.detail}</small>
-                </span>
-              </li>
-            )
-          })}
+          {traits.map((trait) => (
+            <li key={trait.id} className={styles.traitPlate}>
+              <BattlePlate label={trait.label} detail={trait.detail} keyword={TRAIT_GLOSSARY[trait.id]}
+                faction={faction} active={trait.active} compact />
+            </li>
+          ))}
         </ul>
       )}
       {role === 'attacker' && holding && <span className={styles.skip}>Clic para golpear ya</span>}
