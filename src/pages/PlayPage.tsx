@@ -1,6 +1,6 @@
 import { SCENARIO_OPTIONS as SCENARIOS } from '../battle/scenarioCatalog'
 import { useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { CARD_BY_ID, COMMANDER_BY_ID, COMMANDERS, FACTION_BY_ID, STARTER_DECKS, commanderForDeck } from '../game'
 import { usePreferences, type AiDifficulty, type ScenarioId } from '../store/preferences'
 import { useRecords } from '../store/records'
@@ -142,7 +142,7 @@ export function PlayPage() {
               <option key={option.value} value={option.value}>{option.label}</option>
             ))}
           </select>
-          <small>{SCENARIOS.find((option) => option.value === preferences.scenario)?.hint}</small>
+          <small>{SCENARIOS.find((option) => option.value === preferences.scenario)?.hint} <Link className={styles.atlasLink} to="/atlas">Elegir en el Atlas</Link></small>
         </div>
       </section>
       <div className={styles.decks}>

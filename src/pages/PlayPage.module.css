@@ -87,6 +87,7 @@
   font-family: inherit; font-size: 13px; cursor: pointer;
 }
 .setupField select:focus-visible { outline: 2px solid var(--gold-bright); outline-offset: 2px; }
+.atlasLink { color: var(--gold-bright); text-underline-offset: 3px; }
 .setupField small { color: #918e86; font-size: 11px; line-height: 1.45; min-height: 2.9em; }
 
 @media (max-width: 720px) {
