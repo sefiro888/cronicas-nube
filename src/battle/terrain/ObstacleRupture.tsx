@@ -14,12 +14,14 @@ const accents: Record<BoardTileStyle, string> = {
 
 type Fragment = { mesh: Mesh; at: Vector3; angle: Euler }
 
-export function ObstacleRupture({ event, position, terrainStyle, reducedMotion }: {
+export function ObstacleRupture({ event, position, terrainStyle, reducedMotion, accent }: {
   event: AnimationEvent
   position: Position
   terrainStyle: BoardTileStyle
   reducedMotion: boolean
+  accent?: string
 }) {
+  const root = useRef<Group>(null)
   const body = useRef<Group>(null)
   const shards = useRef<Group>(null)
   const dust = useRef<Group>(null)
@@ -27,20 +29,22 @@ export function ObstacleRupture({ event, position, terrainStyle, reducedMotion }
   const light = useRef<PointLight>(null)
   const started = useRef<number | undefined>(undefined)
   const fragments = useRef<Fragment[]>([])
-  const color = accents[terrainStyle]
+  const color = accent ?? accents[terrainStyle]
   const x = position.x - (event.from?.x ?? position.x)
   const z = position.y - (event.from?.y ?? position.y)
   useFrame(({ clock }) => {
     started.current ??= clock.elapsedTime
-    const t = reducedMotion ? .32 : Math.min(1, (clock.elapsedTime - started.current) * 1000 / event.durationMs)
-    const burst = Math.max(0, (t - .17) / .83)
+    const contact = .43
+    const t = reducedMotion ? .54 : Math.min(1, (clock.elapsedTime - started.current) * 1000 / event.durationMs)
+    const burst = Math.max(0, (t - contact) / (1 - contact))
+    if (root.current) root.current.userData.ruptureProgress = t
     if (body.current) {
       if (!fragments.current.length) {
         body.current.traverse((object) => {
           if (object instanceof Mesh) fragments.current.push({ mesh: object, at: object.position.clone(), angle: object.rotation.clone() })
         })
       }
-      body.current.rotation.z = Math.sin(t * 44) * Math.max(0, .17 - t) * .45
+      body.current.rotation.z = Math.sin(t * 44) * Math.max(0, 1 - Math.abs(t - contact) / .12) * .06
       body.current.visible = !reducedMotion && t < .94
       for (const [index, fragment] of fragments.current.entries()) {
         const angle = index * 2.39996
@@ -56,28 +60,28 @@ export function ObstacleRupture({ event, position, terrainStyle, reducedMotion }
     }
     if (ring.current) {
       ring.current.scale.setScalar(.35 + burst * 1.35)
-      ;(ring.current.material as MeshBasicMaterial).opacity = t < .17 ? 0 : (1 - burst) ** 2 * .9
+      ;(ring.current.material as MeshBasicMaterial).opacity = t < contact ? 0 : (1 - burst) ** 2 * .9
     }
-    if (light.current) light.current.intensity = t < .17 ? 0 : (1 - burst) ** 5 * 9
+    if (light.current) light.current.intensity = t < contact ? 0 : (1 - burst) ** 5 * 9
     dust.current?.children.forEach((object, index) => {
       const cloud = object as Sprite
       const angle = index * 2.39996
       const radius = (.12 + burst * .76) * (1 + (index % 4) * .11)
       cloud.position.set(Math.cos(angle) * radius, .14 + burst * (.12 + (index % 3) * .09), Math.sin(angle) * radius)
       cloud.scale.setScalar(.22 + burst * .72)
-      cloud.material.opacity = t < .17 ? 0 : Math.sin(Math.PI * burst) * .38
+      cloud.material.opacity = t < contact ? 0 : Math.sin(Math.PI * burst) * .38
     })
     shards.current?.children.forEach((child, index) => {
       const angle = index * 2.39996
       const radius = burst * (.55 + (index % 7) * .13)
-      child.visible = !reducedMotion && t >= .17 && burst < .96
+      child.visible = !reducedMotion && t >= contact && burst < .96
       child.position.set((Math.cos(angle) + x * .55) * radius, .1 + Math.sin(burst * Math.PI) * (.22 + (index % 5) * .21), (Math.sin(angle) + z * .55) * radius)
       child.rotation.set(angle + burst * 5, burst * 3, angle)
       child.scale.setScalar(Math.min(1, (1 - burst) * 2.5))
     })
   })
-  return <group name="derrumbe-obstaculo" position={[gridToWorldX(position.x), 0, gridToWorldZ(position.y)]}>
-    <group ref={body}><TerrainMarks rubble cover={false} position={position} terrainStyle={terrainStyle} /></group>
+  return <group ref={root} name="derrumbe-obstaculo" position={[gridToWorldX(position.x), 0, gridToWorldZ(position.y)]}>
+    <group ref={body}><TerrainMarks accent={accent} rubble cover={false} position={position} terrainStyle={terrainStyle} /></group>
     <group ref={shards}>
       {Array.from({ length: 23 }, (_, index) => (
         <mesh key={index} visible={false} raycast={() => null}>
@@ -91,7 +95,7 @@ export function ObstacleRupture({ event, position, terrainStyle, reducedMotion }
     {!reducedMotion && <group ref={dust}>
       {Array.from({ length: 9 }, (_, index) => (
         <sprite key={index} raycast={() => null}>
-          <spriteMaterial alphaMap={glowTexture('gold')} color={terrainStyle === 'ice' || terrainStyle === 'tide' ? '#bddff1' : TERRAIN_LOOK[terrainStyle].coverTop}
+          <spriteMaterial map={glowTexture(terrainStyle === 'ice' || terrainStyle === 'tide' ? 'arcane' : 'gold')} color={terrainStyle === 'ice' || terrainStyle === 'tide' ? '#bddff1' : TERRAIN_LOOK[terrainStyle].coverTop}
             transparent opacity={0} depthWrite={false} />
         </sprite>
       ))}

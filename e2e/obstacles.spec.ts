@@ -42,10 +42,10 @@ for (const [width, height, scenario] of [[1920, 1080, 'caldera'], [1366, 768, 'a
         piece: match.board.find((piece) => piece.instanceId === 'lobo'), selected: useMatchStore.getState().selectedPieceId,
         playing: Boolean(useMatchStore.getState().currentEvent || useMatchStore.getState().pendingAnimations.length) }
     }, module)
-    const hasRupture = () => page.evaluate(async (url) => {
+    const ruptureProgress = () => page.evaluate(async (url) => {
       const { _roots } = await import(url) as { _roots: ReadonlyMap<HTMLCanvasElement, { store: { getState(): RootState } }> }
       const canvas = document.querySelector<HTMLCanvasElement>('[data-testid="battle-board"] canvas')!
-      return Boolean(_roots.get(canvas)?.store.getState().scene.getObjectByName('derrumbe-obstaculo'))
+      return Number(_roots.get(canvas)?.store.getState().scene.getObjectByName('derrumbe-obstaculo')?.userData.ruptureProgress ?? 0)
     }, world)
     await page.keyboard.press('ArrowUp')
     await page.keyboard.press('Enter')
@@ -54,7 +54,7 @@ for (const [width, height, scenario] of [[1920, 1080, 'caldera'], [1366, 768, 'a
     await expect(page.getByText('Romper obstáculo', { exact: true })).toBeVisible()
     await page.screenshot({ path: `tools/captures/obstaculos/objetivo-${width}.png` })
     await page.keyboard.press('Enter')
-    await expect.poll(hasRupture, { intervals: [40, 80, 120] }).toBe(true)
+    await expect.poll(ruptureProgress, { intervals: [40, 80, 120] }).toBeGreaterThan(.49)
     await page.screenshot({ path: `tools/captures/obstaculos/derrumbe-${width}.png` })
     await expect.poll(async () => (await model()).playing).toBe(false)
     expect(await model()).toMatchObject({ tile: undefined, piece: { attackedThisTurn: true } })
