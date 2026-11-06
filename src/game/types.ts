@@ -487,6 +487,7 @@ export type AnimationEventType =
   | 'damage'
   | 'shield'
   | 'destroy'
+  | 'obstacle-break'
   | 'freeze'
   | 'reveal'
   | 'nexus-damage'
@@ -600,6 +601,7 @@ export type GameAction =
       readonly attackerId: string;
       readonly defenderId: string;
     }
+  | { readonly type: 'break-obstacle'; readonly playerId: PlayerId; readonly attackerId: string; readonly position: Position }
   | { readonly type: 'attack-nexus'; readonly playerId: PlayerId; readonly attackerId: string }
   | {
       readonly type: 'commander-power';

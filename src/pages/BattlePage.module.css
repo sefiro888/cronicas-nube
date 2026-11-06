@@ -1229,3 +1229,22 @@
   .liveEffect, .liveEffect[data-duel] { top: auto; bottom: 16%; width: min(325px, 72vw); }
 }
 .liveEffect { display: grid; gap: 4px; }
+
+.breachHint {
+  position: absolute;
+  z-index: 17;
+  inset: auto auto 1rem 50%;
+  transform: translateX(-50%);
+  display: grid;
+  gap: .15rem;
+  padding: .55rem 1rem;
+  text-align: center;
+  border: 1px solid #efad5a;
+  border-radius: .55rem;
+  background: radial-gradient(ellipse at top, #52301f, #171119 80%);
+  color: #ffebbd;
+  box-shadow: 0 0 1.1rem #d97c4148;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.breachHint span { font-size: .8rem; }

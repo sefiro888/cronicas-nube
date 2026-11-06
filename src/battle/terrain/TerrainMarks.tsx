@@ -982,6 +982,49 @@ function Breakwater({ position, look }: { position: Position; look: Look }) {
   )
 }
 
+const barrierProfiles = {
+  stone:     { mesh: 'column', texture: marbleTexture, color: '#baad9c', edge: '#ddbb78', height: .47 },
+  basalt:    { mesh: 'spire', texture: basaltTexture, color: '#605054', edge: '#ff6636', height: .54 },
+  moss:      { mesh: 'stele', texture: mossStoneTexture, color: '#727d69', edge: '#b4ce81', height: .46 },
+  sand:      { mesh: 'brick', texture: sandstoneTexture, color: '#b99668', edge: '#ffcd81', height: .39 },
+  ice:       { mesh: 'spire', texture: packedSnowTexture, color: '#82bad9', edge: '#9fedff', height: .59 },
+  sandstone: { mesh: 'stele', texture: sandstoneTexture, color: '#b5825c', edge: '#fbd26b', height: .48 },
+  glaze:     { mesh: 'column', texture: marbleTexture, color: '#528575', edge: '#f8d379', height: .47 },
+  forge:     { mesh: 'brick', texture: forgeIronTexture, color: '#777c81', edge: '#ffb34e', height: .44 },
+  tide:      { mesh: 'stele', texture: basaltTexture, color: '#5e8590', edge: '#7ad8dd', height: .49 },
+  forest:    { mesh: 'timber', texture: barkTexture, color: '#846c48', edge: '#bbcc78', height: .49 },
+} as const
+
+function RuinCrest({ style, position }: { style: BoardTileStyle; position: Position }) {
+  const profile = barrierProfiles[style]
+  const map = profile.texture()
+  return <group rotation={[0, (vary(position, 213) - .5) * .65, 0]}>
+    {[-1, 0, 1].map((side) => {
+      const height = profile.height * (side ? .67 : 1)
+      return <group key={side} position={[side * .196, 0, side ? .08 : -.10]}>
+        <mesh position={[0, height / 2, 0]} rotation={[side * .16, side * .35, side * -.22]} castShadow receiveShadow>
+          {profile.mesh === 'spire' ? <coneGeometry args={[.154, height, 5]} />
+            : profile.mesh === 'column' || profile.mesh === 'timber'
+              ? <cylinderGeometry args={[.094, .139, height, profile.mesh === 'column' ? 10 : 6]} />
+              : <boxGeometry args={[.18, height, .15]} />}
+          <meshStandardMaterial map={map} bumpMap={map} bumpScale={.055} color={profile.color}
+            roughness={TERRAIN_LOOK[style].rough} metalness={style === 'forge' ? .55 : .09} flatShading />
+        </mesh>
+        {side === 0 && <>
+          <mesh position={[0, height * .60, .088]} rotation={[0, 0, Math.PI / 4]}>
+            <boxGeometry args={[.13, .13, .026]} />
+            <meshStandardMaterial color={profile.edge} metalness={.5} roughness={.36} />
+          </mesh>
+          <mesh position={[0, height * .60, .108]} rotation={[0, 0, Math.PI / 4]}>
+            <ringGeometry args={[.038, .053, 4]} />
+            <meshBasicMaterial color={profile.edge} toneMapped={false} />
+          </mesh>
+        </>}
+      </group>
+    })}
+  </group>
+}
+
 /**
  * Marca del terreno de una casilla. El `memo` importa: hay varias de estas en
  * pantalla toda la partida y ninguna cambia salvo que cambie la escena.
@@ -1000,7 +1043,18 @@ export const TerrainMarks = memo(function TerrainMarks({
   const look = TERRAIN_LOOK[terrainStyle]
   if (rubble) {
     return (
-      <group position={[0, 0.06, 0]}>
+      <group position={[0, 0.065, 0]} scale={[1.19, 1.35, 1.19]}>
+        <RuinCrest style={terrainStyle} position={position} />
+        <mesh position={[0, .025, 0]} rotation={[0, Math.PI / 4, 0]} receiveShadow>
+          <cylinderGeometry args={[.32, .37, .062, 6]} />
+          <meshStandardMaterial color={look.rubble} roughness={look.rough} flatShading />
+        </mesh>
+        {[-1, 1].map((side) => (
+          <mesh key={side} position={[side * .21, .12, side * .12]} rotation={[side * .32, side * .4, side * .27]} castShadow>
+            <dodecahedronGeometry args={[.13, 0]} />
+            <meshStandardMaterial color={look.coverTop} emissive={look.emissive} emissiveIntensity={.23} roughness={look.rough} metalness={look.metal} flatShading />
+          </mesh>
+        ))}
         {terrainStyle === 'stone' ? (
           <ColumnDrums position={position} look={look} />
         ) : terrainStyle === 'basalt' ? (

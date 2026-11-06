@@ -216,6 +216,7 @@ const actionDescription = (state: MatchState, action: GameAction, events: readon
     return `${name}: ${action.face}${dealt > 0 ? `, ${dealt} de daño` : ''}.`
   }
   if (action.type === 'move') return `${pieceName(state, action.pieceId)} se reposiciona.`
+  if (action.type === 'break-obstacle') return `${pieceName(state, action.attackerId)} derriba el obstáculo. Paso libre.`
   if (action.type === 'attack-piece') {
     const dealt = damageDealt(events, action.defenderId)
     const base = `${pieceName(state, action.attackerId)} ataca a ${pieceName(state, action.defenderId)}`

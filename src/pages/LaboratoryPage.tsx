@@ -8,6 +8,7 @@ import {
   clearAnimationQueue,
   decisionOptions,
   getValidMoves,
+  getBreakableObstacles,
   getValidAttacks,
   handCardCost,
 } from '../game/engine'
@@ -62,6 +63,7 @@ export function LaboratoryPage() {
   const selectedHand = active.hand.find((entry) => entry.instanceId === handId)
   const selectedCard = selectedHand ? CARD_BY_ID[selectedHand.cardId] : undefined
   const selectedPiece = match.board.find((entry) => entry.instanceId === pieceId)
+  const breakableObstacles = pieceId ? getBreakableObstacles(match, pieceId) : []
   const validMoves = pieceId ? getValidMoves(match, pieceId) : []
   const validAttacks = pieceId ? getValidAttacks(match, pieceId) : undefined
   const choices = match.pendingDecisions?.[0]
@@ -169,8 +171,11 @@ export function LaboratoryPage() {
       })
       return
     }
-    if (selectedPiece)
-      dispatch({ type: 'move', playerId: owner, pieceId: selectedPiece.instanceId, to: position })
+    if (selectedPiece) {
+      if (breakableObstacles.some((cell) => cell.x === position.x && cell.y === position.y)) {
+        dispatch({ type: 'break-obstacle', playerId: owner, attackerId: selectedPiece.instanceId, position })
+      } else dispatch({ type: 'move', playerId: owner, pieceId: selectedPiece.instanceId, to: position })
+    }
   }
   const restart = () => {
     setMatch(createLaboratoryMatch(playerDeckId, enemyDeckId))
@@ -348,6 +353,7 @@ export function LaboratoryPage() {
               const move = validMoves.some(
                 (entry) => entry.x === position.x && entry.y === position.y,
               )
+              const breach = breakableObstacles.some((cell) => cell.x === position.x && cell.y === position.y)
               const attack = piece && validAttacks?.pieceIds.includes(piece.instanceId)
               return (
                 <button
@@ -356,7 +362,8 @@ export function LaboratoryPage() {
                   data-terrain={terrain}
                   data-owner={piece?.owner}
                     data-selected={Boolean(piece && piece.instanceId === pieceId) || undefined}
-                  data-available={move || attack || undefined}
+                  data-available={move || attack || breach || undefined}
+                  title={breach ? "Romper obstáculo · gasta el ataque" : undefined}
                   aria-label={`Casilla ${position.x + 1},${position.y + 1}${card ? `, ${card.name}, Vida ${piece!.currentHealth}` : terrain === 'rubble' ? ', escombros' : terrain === 'cover' ? ', cobertura' : ', vacía'}`}
                   onClick={() => cell(position)}
                   onContextMenu={(event) => {

@@ -39,6 +39,7 @@ const cueForEvent = (event: AnimationEvent, me: PlayerId): SoundCue | undefined 
     case 'damage': return event.effectId === 'olympus-thunderbolt' ? 'thunder' : 'impact'
     case 'nexus-damage': return 'impact'
     case 'shield': return 'shield'
+    case 'obstacle-break':
     case 'destroy': return 'destroy'
     case 'freeze': return 'freeze'
     case 'reveal': return 'reveal'
