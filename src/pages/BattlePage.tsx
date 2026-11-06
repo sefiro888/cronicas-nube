@@ -1313,7 +1313,8 @@ export function BattlePage() {
             <div className={styles.liveEffect} data-duel={Boolean(director.exchange) || undefined} role="status" aria-live="polite">
               {resolvedPlates.slice(0, 2).map((effect) => (
                 <BattlePlate key={`${currentEvent?.id}-${effect.id}`} label={effect.label ?? effect.text}
-                  detail={`${effect.source} · ${effect.target}${effect.label && effect.label !== effect.text ? ` · ${effect.text}` : ''}`}
+                  detail={[effect.source, effect.target === effect.source ? undefined : effect.target,
+                    effect.label && effect.label !== effect.text ? effect.text : undefined].filter(Boolean).join(' · ')}
                   metric={effect.metric} keyword={effect.keyword} faction={effect.faction} active />
               ))}
             </div>

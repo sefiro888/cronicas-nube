@@ -233,7 +233,7 @@ function Fighter({ side, role, me, commanderIds, nexusHealth, nexusMaxHealth, ph
       {traits.length > 0 && (
         <ul className={styles.traits}>
           {traits.map((trait) => (
-            <li key={trait.id} className={styles.traitPlate}>
+            <li key={trait.id}>
               <BattlePlate label={trait.label} detail={trait.detail} keyword={TRAIT_GLOSSARY[trait.id]}
                 faction={faction} active={trait.active} compact />
             </li>
@@ -306,9 +306,9 @@ export function CombatDuel({ exchange, me, commanderIds, nexusHealth, nexusMaxHe
           </span>}
         </div>
       )}
-      {/* Golpe decisivo: franjas de cine y viñeta; el CSS ralentiza el choque. */}
-      {exchange.finisher && <><span className={styles.cineTop} aria-hidden="true" /><span className={styles.cineBottom} aria-hidden="true" /><span className={styles.finisherVignette} aria-hidden="true" /></>}
-      {exchange.finisher && exchange.phase === 'clash' && <span className={styles.finisherTitle} aria-hidden="true">{defender.nexus ? '¡Golpe al corazón!' : '¡Golpe final!'}</span>}
+      {/* Golpe decisivo: la viñeta enmarca el tablero; el CSS ralentiza el choque. */}
+      {exchange.finisher && <span className={styles.finisherVignette} aria-hidden="true" />}
+      {exchange.finisher && exchange.phase === 'clash' && totalDamage === 0 && <span className={styles.finisherTitle} aria-hidden="true">{defender.nexus ? '¡Golpe al corazón!' : '¡Golpe final!'}</span>}
       {exchange.attackAbility === 'desafio' && <span className={styles.duelAbility}>Desafío · condición cumplida</span>}
       {combo && combo >= 2 && (
         <span key={`combo${combo}`} className={styles.combo} data-level={Math.min(combo, 5)} aria-hidden="true">

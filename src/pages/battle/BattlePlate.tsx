@@ -17,7 +17,7 @@ export function BattlePlate({ label, detail, metric, keyword, faction, active = 
   const signature = faction ? factionBattleSignature(faction) : undefined
   return (
     <span className={styles.plate} data-testid="battle-plate" data-family={identity.family}
-      data-active={active || undefined} data-compact={compact || undefined} data-faction={faction} data-grain={signature?.rhythm}
+      data-active={active || undefined} data-compact={compact || undefined} data-faction={faction}
       style={{ '--rune': identity.color, '--metal': signature?.ink ?? identity.color } as CSSProperties}>
       <span className={styles.medal} aria-hidden="true"><KeywordGlyph glyph={identity.glyph} /></span>
       <span className={styles.words}>

@@ -29,6 +29,17 @@ async function openBattle(page: Page, match: MatchState, own: FactionId, rival: 
   return await module
 }
 
+async function waitForRenderedBoard(page: Page, url: string) {
+  await expect.poll(() => page.evaluate(async (url) => {
+    const { _roots } = await import(/* @vite-ignore */ url) as {
+      _roots: ReadonlyMap<HTMLCanvasElement, { store: { getState: () => RootState } }>
+    }
+    const canvas = document.querySelector<HTMLCanvasElement>('[data-testid="battle-board"] canvas')!
+    const state = _roots.get(canvas)?.store.getState()
+    return Boolean(state?.scene.getObjectByName('battle-view') && state.gl.info.memory.textures > 8)
+  }, url), { timeout: 25000 }).toBe(true)
+}
+
 const send = (page: Page, module: string, action: GameAction) => page.evaluate(async ({ module, action }) => {
   const { useMatchStore } = await import(/* @vite-ignore */ module) as { useMatchStore: typeof MatchStoreHook }
   const ok = useMatchStore.getState().dispatch(action)
@@ -104,6 +115,41 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
     await page.screenshot({ path: `tools/captures/duelos-y-poderes/duelo-${width}.png` })
   })
 }
+test('el remate deja visibles los resultados y las habilidades a 1366 × 768', async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 768 })
+  const base = createMatch(deck('jade'), deck('tercios'), 921)
+  const fiber = fiberModuleUrl(page)
+  const module = await openBattle(page, {
+    ...base, turn: 4, phase: 'main', activePlayer: 'player', terrain: [],
+    players: {
+      player: { ...base.players.player, mulliganTaken: true, hand: [{ cardId: 'fuegos-de-artificio', instanceId: 'en-mano' }] },
+      ai: { ...base.players.ai, mulliganTaken: true },
+    },
+    board: [
+      piece('atacante', 'tigre-blanco-del-oeste', 'player', 4),
+      { ...piece('defensor', 'rodelero', 'ai', 3), currentHealth: 2 },
+    ],
+  }, 'jade', 'tercios')
+  const url = await fiber
+  await waitForRenderedBoard(page, url)
+  const result = await send(page, module, { type: 'attack-piece', playerId: 'player', attackerId: 'atacante', defenderId: 'defensor' })
+  expect(result.ok, result.message).toBe(true)
+  const duel = page.getByTestId('combat-duel')
+  await expect(duel).toHaveAttribute('data-finisher', 'true', { timeout: 20000 })
+  const ability = duel.getByTestId('battle-plate').filter({ hasText: 'Golpe veloz' })
+  await expect(ability).toBeVisible()
+  await expect(duel.locator('[data-role="defender"]')).toContainText('Destruida', { timeout: 20000 })
+  const fits = await ability.evaluate((plate) => {
+    const arena = plate.closest('[data-testid="combat-duel"]')!.getBoundingClientRect()
+    const bounds = plate.getBoundingClientRect()
+    const list = plate.closest('ul')!.getBoundingClientRect()
+    return bounds.top >= arena.top && bounds.bottom <= arena.bottom && bounds.bottom <= list.bottom
+      && !getComputedStyle(plate, '::before').backgroundImage.includes('repeating-')
+  })
+  expect(fits).toBe(true)
+  await page.screenshot({ path: 'tools/captures/duelos-y-poderes/remate-legible-1366.png' })
+})
+
 test('Olimpo y Marea muestran el riesgo de cerrar turno y la fase pública', async ({ page }) => {
   await page.setViewportSize({ width: 1366, height: 768 })
   const base = createMatch(deck('olimpo'), deck('marea'), 129)
@@ -168,6 +214,7 @@ for (const sample of spellCases) {
       ],
     }, sample.faction, 'tercios')
     const url = await fiber
+    await waitForRenderedBoard(page, url)
     const shaderErrors: string[] = []
     page.on('console', (message) => {
       if (message.type() === 'error' && message.text().includes('Shader Error')) shaderErrors.push(message.text())

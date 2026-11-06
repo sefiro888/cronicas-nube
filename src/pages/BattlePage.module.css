@@ -1224,7 +1224,7 @@
 @media (prefers-reduced-motion: reduce) { .dangerVignette { animation: none !important; } }
 .factionHint, .hybrisNotice { margin: 6px 0; padding: 5px 8px; border-inline-start: 2px solid #d8ad58; background: #171810; color: #f6dfac; font-size: 12px; line-height: 1.35; }
 .liveEffect { position: absolute; z-index: 42; top: 13%; left: 50%; transform: translateX(-50%); width: min(420px, 52%); pointer-events: none; }
-.liveEffect[data-duel] { top: 31%; width: min(350px, 36%); }
+.liveEffect[data-duel] { top: 7%; width: min(320px, 36%); }
 @media (max-width: 760px) {
   .liveEffect, .liveEffect[data-duel] { top: auto; bottom: 16%; width: min(325px, 72vw); }
 }
