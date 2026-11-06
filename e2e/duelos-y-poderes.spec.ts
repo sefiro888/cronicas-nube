@@ -126,19 +126,27 @@ test('el remate deja visibles los resultados y las habilidades a 1366 × 768', a
       ai: { ...base.players.ai, mulliganTaken: true },
     },
     board: [
+      { ...piece('primera', 'sabueso-brasa', 'player', 4), position: { x: 1, y: 4 } },
+      { ...piece('primera-rival', 'golem-azur', 'ai', 3), position: { x: 1, y: 3 } },
       piece('atacante', 'tigre-blanco-del-oeste', 'player', 4),
       { ...piece('defensor', 'rodelero', 'ai', 3), currentHealth: 2 },
     ],
   }, 'jade', 'tercios')
   const url = await fiber
   await waitForRenderedBoard(page, url)
+  const first = await send(page, module, { type: 'attack-piece', playerId: 'player', attackerId: 'primera', defenderId: 'primera-rival' })
+  expect(first.ok, first.message).toBe(true)
+  await expect(page.getByTestId('combat-duel')).toBeVisible()
+  await expect(page.getByTestId('combat-duel')).toBeHidden({ timeout: 20000 })
   const result = await send(page, module, { type: 'attack-piece', playerId: 'player', attackerId: 'atacante', defenderId: 'defensor' })
   expect(result.ok, result.message).toBe(true)
   const duel = page.getByTestId('combat-duel')
   await expect(duel).toHaveAttribute('data-finisher', 'true', { timeout: 20000 })
+  await expect(duel.getByRole('status', { name: 'Combo por 2' })).toBeVisible()
   const ability = duel.getByTestId('battle-plate').filter({ hasText: 'Golpe veloz' })
   await expect(ability).toBeVisible()
   await expect(duel.locator('[data-role="defender"]')).toContainText('Destruida', { timeout: 20000 })
+  await expect(duel.locator('[data-role="attacker"]')).toContainText('¡Contraataque!')
   const fits = await ability.evaluate((plate) => {
     const arena = plate.closest('[data-testid="combat-duel"]')!.getBoundingClientRect()
     const bounds = plate.getBoundingClientRect()

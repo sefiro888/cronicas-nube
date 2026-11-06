@@ -220,14 +220,15 @@ function Fighter({ side, role, me, commanderIds, nexusHealth, nexusMaxHealth, ph
         )}
       </div>
       <div className={styles.outcome} aria-label={`Resultado de ${side.name}`}>
-        {side.absorbed > 0 && <span className={styles.absorbed}>⬡ {side.absorbed} absorbidos</span>}
-        {hit && <span key={side.damage} className={styles.damage}>−{side.damage}</span>}
-        {hit && !side.nexus && side.health && <span className={styles.lifeChange}>{card?.type === 'structure' ? 'Resistencia' : 'Vida'} {side.health.before} → {side.health.after}</span>}
-        {role === 'attacker' && side.countered && <span key={`c${side.damage}`} className={styles.counterTag}>¡Contraataque!</span>}
-        {hit && side.nexus && side.health && <span className={styles.lifeChange}>Vida {side.health.before} → {nexusHealth[side.owner]}</span>}
-        {side.excess !== undefined && <span className={styles.lifeChange}>Perforar · {side.excess} al Nexo</span>}
-        {side.destroyed && <span className={styles.stamp} data-renacer={side.renacer !== undefined || undefined}>
-          {side.renacer !== undefined ? `Renacer · a la mano +${side.renacer}/+${side.renacer}` : side.nexus ? 'Nexo derribado' : 'Destruida'}
+        {hit && <BattlePlate key={side.damage} label={side.health
+          ? `${card?.type === 'structure' ? 'Resistencia' : 'Vida'} ${side.health.before} → ${side.nexus ? nexusHealth[side.owner] : side.health.after}`
+          : 'Daño recibido'} metric={`−${side.damage}`} keyword={side.health ? 'vida-combate' : 'impacto'} faction={faction} active compact />}
+        {side.absorbed > 0 && <BattlePlate label={`${side.absorbed} absorbidos`} keyword="escudo" faction={faction} active compact />}
+        {role === 'attacker' && side.countered && <BattlePlate label="¡Contraataque!" keyword="contraataque" faction={foeFaction} active compact />}
+        {side.excess !== undefined && <BattlePlate label={`Perforar · ${side.excess} al Nexo`} keyword="perforar" faction={faction} active compact />}
+        {side.destroyed && <span data-renacer={side.renacer !== undefined || undefined}>
+          <BattlePlate label={side.renacer !== undefined ? `Renacer · a la mano +${side.renacer}/+${side.renacer}` : side.nexus ? 'Nexo derribado' : 'Destruida'}
+            keyword={side.renacer !== undefined ? 'renacer' : 'baja'} faction={faction} active compact />
         </span>}
       </div>
       {traits.length > 0 && (
@@ -290,7 +291,7 @@ export function CombatDuel({ exchange, me, commanderIds, nexusHealth, nexusMaxHe
       data-static={reducedMotion || undefined}
       data-finisher={exchange.finisher || undefined}
       data-counter={attacker.countered || undefined}
-      style={{ '--shake': `${Math.min(18, 3 + totalDamage * 2 + (combo ?? 0) * 1.5)}px`, '--combo': combo ?? 0 } as CSSProperties}
+      style={{ '--shake': `${Math.min(18, 3 + totalDamage * 2 + (combo ?? 0) * 1.5)}px` } as CSSProperties}
       onClick={holding ? onSkip : undefined}
       data-testid="combat-duel"
     >
@@ -311,8 +312,11 @@ export function CombatDuel({ exchange, me, commanderIds, nexusHealth, nexusMaxHe
       {exchange.finisher && exchange.phase === 'clash' && totalDamage === 0 && <span className={styles.finisherTitle} aria-hidden="true">{defender.nexus ? '¡Golpe al corazón!' : '¡Golpe final!'}</span>}
       {exchange.attackAbility === 'desafio' && <span className={styles.duelAbility}>Desafío · condición cumplida</span>}
       {combo && combo >= 2 && (
-        <span key={`combo${combo}`} className={styles.combo} data-level={Math.min(combo, 5)} aria-hidden="true">
-          Combo <strong>×{combo}</strong>
+        <span key={`combo${combo}`} className={styles.combo} data-level={Math.min(combo, 5)} role="status" aria-label={`Combo por ${combo}`}>
+          <span className={styles.comboMedal} aria-hidden="true">
+            {attackCard && <FactionBattleArt faction={attackCard.faction} kind="seal" reducedMotion={reducedMotion} />}
+          </span>
+          <span className={styles.comboLabel}>Combo</span><strong>×{combo}</strong>
         </span>
       )}
         <Fighter side={attacker} role="attacker" me={me} commanderIds={commanderIds} nexusHealth={nexusHealth} nexusMaxHealth={nexusMaxHealth} phase={exchange.phase} holding={holding} foeFaction={defendCard?.faction} foeRarity={rarityOf(defender)} reducedMotion={reducedMotion} />
