@@ -576,6 +576,7 @@ const damagePieceDetailed = (
    */
   origin?: Position,
   sourceCard?: CardDefinition,
+  retaliation?: true,
 ): DamageOutcome => {
   const target = state.board.find((piece) => piece.instanceId === pieceId);
   if (!target || amount <= 0) return { state, dealt: 0, healthBefore: target?.currentHealth ?? 0 };
@@ -603,7 +604,7 @@ const damagePieceDetailed = (
       : state;
   if (reducedBy > 0) {
     next = enqueue(next, {
-      type: 'shield', targetId: pieceId, to: target.position, amount: reducedBy, effectId: 'water-shield', durationMs: 260,
+      type: 'shield', targetId: pieceId, to: target.position, amount: reducedBy, effectId: 'water-shield', durationMs: 260, retaliation,
     });
   }
   if (absorbedByShield > 0 && shield?.kind === 'shielded') {
@@ -615,7 +616,7 @@ const damagePieceDetailed = (
         : piece.statuses.filter((status) => status.kind !== 'shielded'),
     }));
     next = enqueue(next, {
-      type: 'shield', targetId: pieceId, to: target.position, amount: absorbedByShield, effectId: 'commander-order-shield', durationMs: 260,
+      type: 'shield', targetId: pieceId, to: target.position, amount: absorbedByShield, effectId: 'commander-order-shield', durationMs: 260, retaliation,
     });
   }
   if (finalAmount <= 0) return { state: next, dealt: 0, healthBefore: target.currentHealth };
@@ -635,6 +636,7 @@ const damagePieceDetailed = (
   next = enqueue(next, {
     type: 'damage', targetId: pieceId, from: origin, to: target.position, amount: finalAmount, effectId,
     cardId: sourceCard?.id, faction: sourceCard?.faction, targetCardId: target.cardId, durationMs: 300,
+    retaliation, pieceHealth: { before: target.currentHealth, after: Math.max(0, target.currentHealth - finalAmount) },
   });
   if (target.currentHealth - finalAmount <= 0) {
     const owner = next.players[target.owner];
@@ -711,6 +713,7 @@ const damagePieceDetailed = (
         },
       );
     }
+    const destructionIndex = next.animations.length;
     next = enqueue(next, {
       type: 'destroy', targetId: pieceId, to: target.position, effectId: dyingDefinition?.vfx.deathEffect ?? 'card-destroy',
       cardId: target.cardId, targetCardId: target.cardId, faction: dyingDefinition?.faction, durationMs: 420,
@@ -769,6 +772,8 @@ const damagePieceDetailed = (
             ...(costDiscount > 0 ? { costDiscount } : {}),
           }],
         });
+        next = { ...next, animations: next.animations.map((event, index) =>
+          index === destructionIndex ? { ...event, renacerBonus: bonus } : event) };
       }
     }
     // Nigromante Oscuro: roba una carta por cada unidad aliada propia que muere.
@@ -2369,6 +2374,9 @@ export const playCard = (
       to: spellTargetPiece?.position,
       cardId: card.id, faction: card.faction, targetCardId: spellTargetPiece?.cardId,
       cast: { kind: 'spell', sourceId: card.id },
+      ...(paysOffering ? { spellPayment: { offering: offeringToll, judged: isUnderJudgement(next, playerId) } } : {}),
+      ...(sparkFace ? { sparkFace } : {}),
+      ...(card.faction === 'marea' ? { spellTide: tidePhase(next) } : {}),
       effectId: card.vfx.impactEffect ?? card.vfx.persistentEffect, durationMs: 420,
     });
     next = resolveSpell(next, playerId, card, target, paysOffering);
@@ -2731,6 +2739,10 @@ export const attackPiece = (
   next = enqueue(next, {
     type: 'attack', actorId: attackerId, targetId: defenderId,
     cardId: card.id, faction: card.faction, targetCardId: defender.cardId,
+    openingHealth: { attacker: attacker.currentHealth, defender: defender.currentHealth },
+    attackAbility: card.faction === 'fimbul' && card.effects.some((effect) =>
+      effect.kind === 'passive' && effect.id.startsWith('challenge-'))
+      && isChallenge(attacker, card, defender, pieceDefinition(defender)!, state) ? 'desafio' : undefined,
     from: attacker.position, to: defender.position, effectId: card.vfx.attackEffect, durationMs: 380,
   });
   const defenderPosition = defender.position;
@@ -2841,7 +2853,7 @@ export const attackPiece = (
   if ((card.range ?? 1) === 1 && defenderCard?.attack !== undefined) {
     const retaliation = Math.max(0, defenderCard.attack + defender.attackModifier +
       (defenderCard.type === 'unit' ? runoAttackBonus(next.players[defender.owner].runo ?? 0) : 0) + formationAttackBonus(next, defender));
-    next = damagePiece(next, attackerId, retaliation, defender.owner, defenderCard.vfx.impactEffect, defenderPosition, defenderCard);
+    next = damagePieceDetailed(next, attackerId, retaliation, defender.owner, defenderCard.vfx.impactEffect, defenderPosition, defenderCard, true).state;
   }
   next = applyOnAttackExtras(next, playerId, attackerId, card, amount, defenderId, defenderPosition);
   next = applyMalacharDrain(next, playerId);
@@ -3073,6 +3085,7 @@ export const attackNexus = (
   next = enqueue(next, {
     type: 'attack', actorId: attackerId, targetId: `${enemyId}-nexus`,
     from: attacker.position, cardId: card.id, faction: card.faction,
+    openingHealth: { attacker: attacker.currentHealth, defender: state.players[enemyId].nexusHealth },
     effectId: card.vfx.attackEffect, durationMs: 380,
   });
   const struck = damageNexus(next, enemyId, amount, playerId, attackerId, card);

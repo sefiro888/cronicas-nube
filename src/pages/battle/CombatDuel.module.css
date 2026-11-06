@@ -95,63 +95,11 @@
 }
 
 
-/* El daño entra como un sello grande que rebota; el escudo, en cian. */
-.damage {
-  position: absolute;
-  z-index: 3;
-  /* Tres rótulos comparten la carta (palabra, cifra y sello): cada uno en
-     su franja, porque juntos en el centro se tapaban y no se leía ninguno. */
-  top: 30%;
-  left: 50%;
-  min-width: 64px;
-  padding: 4px 14px;
-  border-radius: 40px;
-  color: #fff;
-  background: radial-gradient(circle at 50% 35%, #ff5a3c, #a8160d);
-  box-shadow: 0 0 0 3px #2a0b08, 0 0 34px rgba(255, 70, 40, 0.95);
-  font: 900 clamp(26px, 2.6vw, 36px) var(--display);
-  text-align: center;
-  transform: translate(-50%, -50%);
-  animation: damageSlam 520ms cubic-bezier(.2, 1.6, .4, 1) both;
-}
-.absorbed {
-  position: absolute;
-  z-index: 3;
-  top: 58%;
-  left: 50%;
-  padding: 3px 12px;
-  border-radius: 30px;
-  color: #062530;
-  background: #8fe9ff;
-  box-shadow: 0 0 22px rgba(143, 233, 255, 0.9);
-  font: 800 18px var(--display);
-  transform: translate(-50%, -50%);
-  animation: damageSlam 520ms cubic-bezier(.2, 1.6, .4, 1) both;
-}
-
 .fighter[data-hit] .cardWrap > article { animation: hitFlash 420ms ease-out, hitShake 460ms cubic-bezier(.36, .07, .19, .97); }
 .fighter[data-hit][data-heavy] .cardWrap > article { animation: hitFlash 520ms ease-out, hitShake 620ms cubic-bezier(.36, .07, .19, .97); }
 /* Destruida: la carta estalla en fragmentos (.shards) y queda su fantasma. */
 .fighter[data-destroyed] .cardWrap > article { animation: hitFlash 300ms ease-out, ghost 520ms ease-out 160ms forwards; }
 .fighter[data-destroyed] .glow { opacity: 0.2; animation: none; }
-.stamp {
-  position: absolute;
-  z-index: 4;
-  top: 66%;
-  left: 50%;
-  padding: 6px 16px;
-  border: 3px solid #ff5a3c;
-  border-radius: 6px;
-  color: #ffd8cf;
-  background: rgba(40, 6, 4, 0.82);
-  font: 900 clamp(16px, 1.5vw, 21px) var(--display);
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  transform: translate(-50%, -50%) rotate(-14deg);
-  animation: stamp 420ms cubic-bezier(.2, 1.5, .4, 1) both;
-}
-
-/* Habilidades: en reposo se leen; cuando actúan se encienden en oro. */
 .traits {
   display: grid;
   gap: 5px;
@@ -247,7 +195,7 @@
   100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 }
 @keyframes hitFlash {
-  0% { filter: brightness(2.4) saturate(0.4); }
+  0% { filter: brightness(1.18) saturate(.9); }
   100% { filter: none; }
 }
 @keyframes stamp {
@@ -437,22 +385,7 @@
   animation: shardFly 900ms cubic-bezier(.2, .7, .4, 1) 120ms both;
 }
 
-.hitWord {
-  position: absolute;
-  z-index: 5;
-  top: 8%;
-  left: 50%;
-  color: #fff3d6;
-  font: 900 clamp(18px, 1.8vw, 26px) var(--display);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  -webkit-text-stroke: 1px rgba(60, 10, 4, 0.8);
-  paint-order: stroke fill;
-  text-shadow: 0 0 14px var(--foe, #ff7a3a), 0 0 30px #ff5a3c, 0 3px 6px rgba(0, 0, 0, 0.9);
-  transform: translate(-50%, 0) rotate(-6deg);
-  animation: wordPop 700ms cubic-bezier(.2, 1.6, .4, 1) both;
-}
+
 
 @keyframes chargeRight {
   0% { transform: none; }
@@ -803,23 +736,6 @@
 }
 
 /* Contraataque: la defensora devuelve el golpe y se nota en la atacante. */
-.counterTag {
-  position: absolute;
-  z-index: 5;
-  bottom: -4%;
-  left: 50%;
-  padding: 2px 10px;
-  border-radius: 4px;
-  color: #fff;
-  background: linear-gradient(90deg, #8c1d12, #d4462c);
-  box-shadow: 0 0 16px rgba(255, 80, 50, 0.8);
-  font: 800 12px var(--display);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  transform: translateX(-50%);
-  animation: wordPop 600ms cubic-bezier(.2, 1.6, .4, 1) both;
-}
 .duel[data-counter][data-phase='clash'] .fighter[data-role='defender'] .cardWrap { animation-name: braceCounter; }
 
 /* Combo: crece y se calienta con cada golpe encadenado. */
@@ -896,3 +812,49 @@
   .hitWord { font-size: 15px; }
   .embers { display: none; }
 }
+/* La lectura del resultado queda en el pedestal y deja libre la ilustración. */
+.fighter { position: relative; z-index: 2; gap: 5px; }
+.tag { grid-template-columns: auto 1fr; align-items: center; column-gap: 7px; padding: 4px 10px; border: 1px solid color-mix(in srgb, var(--accent) 58%, #29231b); border-radius: 5px; background: linear-gradient(135deg, #322b23, #10141b 68%); box-shadow: 0 3px 12px #000b, inset 0 0 0 2px #08080a8c; }
+.tagSeal { grid-row: 1 / span 2; }
+.tag .role { font-size: clamp(13px, 1.15vw, 18px); letter-spacing: .12em; }
+.tag .owner { grid-column: 2; font-size: 9px; }
+.crossing { position: absolute; z-index: 1; inset: 32% clamp(150px, 16vw, 235px) auto; height: 26%; pointer-events: none; opacity: .87; }
+.returnStrike { position: absolute; inset: 15% 0 0; opacity: .82; }
+.outcome { display: flex; min-height: 36px; align-content: start; align-items: center; justify-content: center; flex-wrap: wrap; gap: 4px; max-width: 100%; }
+.outcome :is(.damage,.absorbed,.stamp,.counterTag,.hitWord,.lifeChange) { position: static; min-width: 0; padding: 3px 7px; transform: none; animation: outcomeRise 190ms ease-out both; border: 1px solid #b98a5877; border-radius: 4px; color: #f8ebd5; background: linear-gradient(#2d251e, #101317); box-shadow: 0 2px 7px #0008; font: 700 11px/1.15 var(--display); letter-spacing: 0; text-align: center; }
+.outcome .damage { color: #ffcfb6; border-color: #d68662; background: linear-gradient(#522d22, #271715); font-size: clamp(16px, 1.5vw, 23px); font-variant-numeric: tabular-nums; }
+.outcome .absorbed { color: #c5f2fb; border-color: #568a99; }
+.outcome .lifeChange { color: #fff3d2; font-variant-numeric: tabular-nums; }
+.outcome .stamp { color: #ffd9c9; border-color: #c68467; }
+.outcome .stamp[data-renacer] { color: #ffd781; border-color: #d9a247; }
+.outcome .counterTag { color: #cbe7ff; border-color: #7392aa; }
+.duel[data-attack-gesture='arrow'] .fighter[data-phase='clash'][data-role='attacker'] .cardWrap,
+.duel[data-attack-gesture='shot'] .fighter[data-phase='clash'][data-role='attacker'] .cardWrap,
+.duel[data-attack-gesture='bolt'] .fighter[data-phase='clash'][data-role='attacker'] .cardWrap { animation-name: recoilRelease; }
+.duel[data-static], .duel[data-static] * { animation: none !important; transition: none !important; }
+.duel[data-static] .fighter[data-destroyed] .cardWrap > article { filter: saturate(.48); }
+@keyframes recoilRelease { 0%,100% { transform: none; } 22% { transform: translateX(-7px) rotate(-2deg); } 42% { transform: translateX(-13px) rotate(-4deg); } 72% { transform: translateX(2px); } }
+@keyframes outcomeRise { from { opacity: .3; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@media (max-width: 760px) { .crossing { inset-inline: 24%; } .outcome { gap: 2px; } .outcome :is(.damage,.absorbed,.stamp,.counterTag,.hitWord,.lifeChange) { padding-inline: 4px; } }
+@media (prefers-reduced-motion: reduce) { .outcome :is(.damage,.absorbed,.stamp,.counterTag,.hitWord,.lifeChange) { animation: none; } }
+.duelAbility { position: absolute; top: 23%; left: 50%; z-index: 2; transform: translateX(-50%); padding: 4px 14px; border: 1px solid #6b9fb8; background: #101e29; color: #e1f6ff; border-radius: 4px; font: 700 13px var(--display); letter-spacing: .13em; text-transform: uppercase; }
+.fighter:has(.stamp[data-renacer]) .cardWrap > article { animation: emberReturn 430ms ease-in forwards; }
+@keyframes emberReturn { to { opacity: .42; filter: sepia(.72) saturate(1.4); transform: translateY(5px) scale(.93); } }
+
+/* Las listas y la rareza no alteran el eje vertical del choque. */
+@media (min-width: 761px) {
+  .fighter { grid-template-rows: 47px auto 64px; }
+  .fighter[data-rarity] .cardWrap > article { --card-width: clamp(9.5rem, 13vw, 12rem); }
+  .fighter .traits { position: absolute; top: calc(100% + 2px); }
+  .fighter .skip { position: absolute; top: calc(100% + 2px); }
+  .fighter:has(.skip) .traits { top: calc(100% + 22px); }
+}
+.contactSeal { position: absolute; z-index: 4; top: 42%; inset-inline-start: -16px; display: grid; place-items: center; width: 33px; height: 33px; border-radius: 50%; border: 1px solid var(--foe); background: #111925e8; box-shadow: 0 0 12px var(--foe); animation: outcomeRise 180ms ease-out both; }
+.fighter[data-role='attacker'] .contactSeal { inset-inline-start: auto; inset-inline-end: -16px; }
+.crossing [data-kind='strike'] path { stroke-width: 2.3; }
+
+.tagRarity { grid-column: 2; color: color-mix(in srgb, var(--accent) 52%, #f9e2ad); font: 700 8px/1 var(--display); text-transform: uppercase; letter-spacing: .12em; }
+.relicSeal { position: absolute; z-index: 2; top: 11%; left: 50%; transform: translateX(-50%); width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--accent); background: #151e22; box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 74%, transparent); }
+.monolith[data-hit] .relicSeal { animation: relicShock 420ms ease-out both; }
+@keyframes relicShock { 24% { transform: translateX(-50%) scale(1.16); box-shadow: 0 0 19px var(--accent); } }
+@media (prefers-reduced-motion: reduce) { .monolith[data-hit] .relicSeal { animation: none; } }

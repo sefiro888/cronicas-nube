@@ -4,6 +4,7 @@ import { FAMILY_LABELS, glossaryEntriesIn, KeywordGlyph, keywordIdentity, keywor
 import { CARD_BY_ID, FACTION_BY_ID, type PlayerId } from '../../game'
 import { spotlightHeading, type Spotlight } from '../../battle/presentation'
 import { durationLabel, impactHeadline, type ImpactChange } from '../../battle/castImpact'
+import { FactionBattleArt, factionBattleSignature } from './FactionBattleArt'
 import { withBase } from '../../utils/assets'
 import styles from './CastSpotlight.module.css'
 
@@ -68,6 +69,7 @@ function ChangeChip({ change }: { change: ImpactChange }) {
  */
 export function CastSpotlight({ spotlight, me, reducedMotion, onDismiss }: CastSpotlightProps) {
   const mine = spotlight.caster === me
+  const signature = factionBattleSignature(spotlight.card.faction)
   const accent = FACTION_BY_ID[spotlight.card.faction].accentColor
   const targetCard = spotlight.target?.cardId ? CARD_BY_ID[spotlight.target.cardId] : undefined
   const power = spotlight.kind === 'power'
@@ -99,6 +101,8 @@ export function CastSpotlight({ spotlight, me, reducedMotion, onDismiss }: CastS
       className={styles.overlay}
       data-side={mine ? 'own' : 'rival'}
       data-kind={spotlight.kind}
+      data-faction={spotlight.card.faction}
+      data-tide={spotlight.tide}
       data-rarity={spotlight.card.rarity}
       data-reduced-motion={reducedMotion || undefined}
       style={{ '--accent': accent, '--spotlight-ms': `${spotlight.durationMs}ms` } as CSSProperties}
@@ -137,6 +141,7 @@ export function CastSpotlight({ spotlight, me, reducedMotion, onDismiss }: CastS
       <div className={styles.stage} aria-hidden="true">
         <div className={styles.kicker}>
           <span className={styles.rule} />
+          <span className={styles.castSeal}><FactionBattleArt faction={spotlight.card.faction} kind="seal" reducedMotion={reducedMotion} /></span>
           <span>{heading}</span>
           <span className={styles.rule} />
         </div>
@@ -144,6 +149,7 @@ export function CastSpotlight({ spotlight, me, reducedMotion, onDismiss }: CastS
         <div className={styles.body}>
           <div className={styles.cardSlot}>
             <span className={styles.halo} />
+            <span className={styles.castCrest}><FactionBattleArt faction={spotlight.card.faction} kind="seal" reducedMotion={reducedMotion} /></span>
             <span className={styles.rays} />
             {!reducedMotion && (spotlight.card.rarity === 'mythic' || spotlight.card.rarity === 'rare' || power) && (
               <span className={styles.sparks}>
@@ -162,6 +168,19 @@ export function CastSpotlight({ spotlight, me, reducedMotion, onDismiss }: CastS
               <small>{power ? 'Poder de comandante' : CARD_TYPE_LABELS[spotlight.card.type]}</small>
             </header>
 
+            <div className={styles.castInscription}>
+              <FactionBattleArt faction={spotlight.card.faction} kind="spell" reducedMotion={reducedMotion} />
+              <span>{spotlight.tide ? spotlight.tide === 'high' ? 'Pleamar · Ola creciente' : 'Bajamar · Corriente de retorno' : signature.name}</span>
+            </div>
+            {(impact?.mandate || impact?.sun || spotlight.payment || spotlight.sparkFace) && <ul className={styles.castLedger}>
+              {spotlight.payment && <li>Ofrenda · −{spotlight.payment.offering} Vida{spotlight.payment.judged && spotlight.card.effects.some((effect) => effect.kind === 'judgement') ? ' · Juicio activo' : ''}</li>}
+              {spotlight.sparkFace && <li><span className={styles.sparkCoin} aria-hidden="true">✦</span> Chispa · {spotlight.sparkFace === 'cara' ? 'Cara' : 'Cruz'}</li>}
+              {impact?.mandate && <li>Mandato · {impact.mandate === 'free' ? 'Libre' : impact.mandate === me ? 'Tuyo' : 'Rival'}</li>}
+              {(['player', 'ai'] as const).map((id) => {
+                const counter = impact?.sun?.[id]
+                return counter ? <li key={id}>Cuenta del Sol · {id === me ? 'Tu bando' : 'Rival'} · {counter.before} → {counter.after}</li> : null
+              })}
+            </ul>}
             {headline && (
               <div className={styles.impact}>
                 <strong className={styles.impactHeadline}>{headline}</strong>
@@ -221,7 +240,8 @@ export function CastSpotlight({ spotlight, me, reducedMotion, onDismiss }: CastS
 
           {spotlight.target && (
             <div className={styles.targetColumn}>
-              <span className={styles.beam} />
+              <span className={styles.castRoute}><FactionBattleArt faction={spotlight.card.faction} kind="spell" reducedMotion={reducedMotion} /></span>
+              <span className={styles.castTargetSeal}><FactionBattleArt faction={spotlight.card.faction} kind="seal" reducedMotion={reducedMotion} /></span>
               <div className={styles.target}>
                 <span className={styles.targetLabel}>Objetivo</span>
                 {targetCard

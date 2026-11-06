@@ -506,6 +506,16 @@ export interface AnimationEvent {
   readonly cardId?: string;
   /** Conserva el material de la víctima aunque ya no esté en el tablero. */
   readonly targetCardId?: string;
+  /** Vida al abrir el duelo, antes de reproducir sus impactos. */
+  readonly openingHealth?: { readonly attacker: number; readonly defender: number };
+  readonly renacerBonus?: number;
+  readonly retaliation?: true;
+  readonly attackAbility?: 'desafio';
+  readonly spellPayment?: { readonly offering: number; readonly judged: boolean };
+  readonly sparkFace?: 'cara' | 'cruz';
+  readonly spellTide?: 'high' | 'low';
+  /** Vida de la pieza inmediatamente antes y después del impacto. */
+  readonly pieceHealth?: { readonly before: number; readonly after: number };
   /**
    * La presentación no debe adivinar la facción por palabras inglesas del
    * effectId: los impactos genéricos se comparten entre cartas muy distintas.

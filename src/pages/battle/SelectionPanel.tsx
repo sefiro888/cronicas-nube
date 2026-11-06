@@ -16,6 +16,7 @@ interface SelectionPanelProps {
   stats?: string
   /** Qué puede hacer el jugador ahora mismo con esta selección. */
   hint?: string
+  factionHint?: string
   /** Hechizo sin objetivo y pagable: se puede lanzar directamente desde aquí. */
   canCast: boolean
   onCast: () => void
@@ -26,6 +27,9 @@ interface SelectionPanelProps {
    */
   offering?: {
     readonly cost: number
+    readonly health: number
+    readonly rivalHealth: number
+    readonly checksJudgement: boolean
     readonly paying: boolean
     readonly affordable: boolean
     readonly onToggle: () => void
@@ -33,7 +37,7 @@ interface SelectionPanelProps {
 }
 
 /** Panel lateral derecho: detalle de la carta o unidad activa y la guía de acción. */
-export function SelectionPanel({ card, cost, heading, stats, hint, canCast, onCast, offering }: SelectionPanelProps) {
+export function SelectionPanel({ card, cost, heading, stats, hint, factionHint, canCast, onCast, offering }: SelectionPanelProps) {
   return (
     <section className={`${styles.panelSection} ${styles.context}`} data-empty={!card || undefined}>
       <span className={styles.panelLabel}>{heading}</span>
@@ -77,6 +81,15 @@ export function SelectionPanel({ card, cost, heading, stats, hint, canCast, onCa
           <small>{offering.affordable ? `${offering.cost} de Vida` : 'sin Vida suficiente'}</small>
         </button>
       )}
+      {offering?.affordable && (
+        <p className={styles.factionHint} role="status">
+          {offering.paying ? 'Al pagar' : 'Si pagas'}, tu Nexo pasa de {offering.health} a {offering.health - offering.cost} de Vida.
+          {offering.checksJudgement && (offering.health - offering.cost < offering.rivalHealth
+            ? offering.health < offering.rivalHealth ? ' Juicio ya se cumple.' : ' El pago cumple Juicio.'
+            : ' Con ese pago, Juicio sigue inactivo.')}
+        </p>
+      )}
+      {factionHint && <p className={styles.factionHint}>{factionHint}</p>}
       {hint && (
         <p key={hint} className={styles.actionHint} data-warning={hint.startsWith('No tienes') || undefined} role="status">
           {hint}

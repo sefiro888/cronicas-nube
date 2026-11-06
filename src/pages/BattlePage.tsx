@@ -1,11 +1,14 @@
 import { factionStageMusic, isFactionStage } from '../battle/scenarios/factionStages'
 import { cardFrameFor } from '../presentation/cardFrames'
 import { effectiveAttack } from '../game/fimbul'
+import { FactionPowers } from './battle/FactionPowers'
+import { tidePhase } from '../game/marea'
 import { EssenceSeal } from './battle/EssenceSeal'
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   CARD_BY_ID,
+  applyAction,
   createMatch,
   canTakeMulligan,
   COMMANDER_BY_ID,
@@ -477,6 +480,16 @@ export function BattlePage() {
     match && offeringBase !== undefined && canPayOffering(match, ME, offeringBase),
   )
   const offeringToll = match && offeringBase !== undefined ? offeringCost(match, ME, offeringBase) : 0
+  const hybrisClosingLoss = useMemo(() => {
+    if (!match || match.activePlayer !== ME || match.winner || !(match.players[ME].hybris || match.board.some(
+      (piece) => piece.owner === ME && CARD_BY_ID[piece.cardId]?.effects.some(
+        (effect) => effect.kind === 'passive' && effect.id === 'upkeep-gain-hybris',
+      ),
+    ))) return undefined
+    const result = applyAction({ ...match, animations: [] }, { type: 'end-turn', playerId: ME })
+    if (!result.ok) return undefined
+    return result.state.animations.find((event) => event.effectId === 'olimpo-hybris-backlash' && event.targetId === `${ME}-nexus`)?.amount
+  }, [match, ME])
   const offering = Boolean(selectedInstance && offeringFor === selectedInstance.instanceId && offeringAffordable)
   const commander = player ? COMMANDER_BY_ID[player.commanderId] : undefined
   const rivalCommander = rival ? COMMANDER_BY_ID[rival.commanderId] : undefined
@@ -1006,6 +1019,22 @@ export function BattlePage() {
         ? cardStatLine(selectedCard)
         : undefined
 
+  const tide = tidePhase(match)
+  const sunDamage = selectedCard?.effects.find((effect) => effect.kind === 'damage-all-enemies-by-sun-count')
+  const sunCount = player.sunCount ?? 0
+  let factionHint: string | undefined
+  if (!viewedBoardCard) {
+    if (attackPreview) factionHint = attackPreview.lines.join(' · ')
+    else if (selectedCard?.effects.some((effect) => effect.kind === 'tide')) {
+      factionHint = `Se resuelve en ${tide === 'high' ? 'Pleamar' : 'Bajamar'}. Consulta esa rama en la carta.`
+    } else if (selectedCard?.effects.some((effect) => effect.kind === 'mandate')) {
+      factionHint = `Rama de Mandato ${match.mandate === ME ? 'activa' : 'inactiva'} con el estado actual.`
+    } else if (sunDamage && !selectedCard?.effects.some((effect) => effect.kind === 'sacrifice')) {
+      const amount = Math.min(sunCount, sunDamage.cap ?? sunCount)
+      factionHint = `Cuenta del Sol · ${sunCount}. Inflige ${amount} de daño a cada unidad rival, antes de protecciones.`
+    }
+  }
+
   const actionHint = actionHintFor({
     finished: Boolean(match.winner),
     isMyTurn: match.activePlayer === ME,
@@ -1026,6 +1055,7 @@ export function BattlePage() {
       data-hand-collapsed={handTucked || player.hand.length === 0 || undefined}
       style={{ '--battle-accent': FACTION_BY_ID[commander?.faction ?? 'fury'].accentColor } as CSSProperties}>
       <header className={styles.topbar}>
+        {!photoMode && <FactionPowers match={match} me={ME} ownFaction={commander?.faction} rivalFaction={rivalCommander?.faction} />}
         <button
           className={styles.exit}
           onClick={() => {
@@ -1041,7 +1071,7 @@ export function BattlePage() {
           <span className={styles.exitLong}>← Abandonar batalla</span>
           <span className={styles.exitShort}>← Salir</span>
         </button>
-        <div className={styles.turn}>
+        <div className={styles.turn} data-testid="battle-turn">
           <strong>{match.activePlayer === ME ? 'Tu turno' : 'Turno rival'}</strong>
           <span>Turno {match.turn} · {PHASE_LABELS[match.phase] ?? match.phase}</span>
         </div>
@@ -1140,6 +1170,7 @@ export function BattlePage() {
             selectedPieceId={duelOnBoard?.attacker ?? store.selectedPieceId}
             validCells={validCells}
             movementHazards={movementHazards}
+            focusedHazard={hoveredCell ?? boardCursor.cell}
             cellIntent={selectedCard ? 'deploy' : 'move'}
             colorblindMode={preferences.colorblindMode}
             boardTextScale={preferences.boardTextScale}
@@ -1228,15 +1259,16 @@ export function BattlePage() {
           {/* El comandante habla: poder, golpe fuerte a su Nexo o victoria. */}
           {director.quote && !photoMode && COMMANDER_BY_ID[match.players[director.quote.owner].commanderId] && (
             <CommanderQuote
-              key={director.quote.key}
+              key={`frase-${director.quote.key}`}
               commander={COMMANDER_BY_ID[match.players[director.quote.owner].commanderId]!}
               text={director.quote.text}
+              duel={Boolean(director.exchange)}
               mine={director.quote.owner === ME}
             />
           )}
           {/* Respuesta: sello lateral con el tipo de reacción. */}
-          {director.reaction && !photoMode && (
-            <div key={director.reaction.key} className={styles.reaction} data-kind={director.reaction.kind} role="status">
+          {director.reaction && !director.exchange && !photoMode && (
+            <div key={`reaccion-${director.reaction.key}`} className={styles.reaction} data-kind={director.reaction.kind} role="status">
               <small>Respuesta</small>
               <strong>{director.reaction.title}</strong>
               <span>{director.reaction.detail}</span>
@@ -1244,7 +1276,7 @@ export function BattlePage() {
           )}
           {/* Reacción en cadena: crece y se calienta con cada muerte encadenada. */}
           {director.chain && !photoMode && (
-            <div key={director.chain.key} className={styles.chain} data-level={Math.min(director.chain.count, 5)} role="status">
+            <div key={`cadena-${director.chain.key}`} className={styles.chain} data-level={Math.min(director.chain.count, 5)} role="status">
               <span>¡Reacción en cadena!</span>
               <strong>×{director.chain.count}</strong>
             </div>
@@ -1255,6 +1287,7 @@ export function BattlePage() {
               me={ME}
               commanderIds={{ player: match.players.player.commanderId, ai: match.players.ai.commanderId }}
               nexusHealth={displayedNexusHealth}
+              reducedMotion={preferences.reducedMotion}
               nexusMaxHealth={nexusMaxHealth}
               holding={director.duelHolding}
               onSkip={director.dismissDuel}
@@ -1262,7 +1295,7 @@ export function BattlePage() {
             />
           )}
           {(resolvedImpact || director.eventBanner) && !director.exchange && (
-            <div key={resolvedImpact?.id ?? director.eventBanner} className={styles.eventBanner} data-kind={resolvedImpact?.tone === 'damage' ? 'damage' : director.eventBannerKind} role="status">
+            <div key={`resultado-${resolvedImpact?.id ?? director.eventBanner}`} className={styles.eventBanner} data-kind={resolvedImpact?.tone === 'damage' ? 'damage' : director.eventBannerKind} role="status">
               {resolvedImpact ? `${resolvedImpact.source} → ${resolvedImpact.target} · ${resolvedImpact.text}` : director.eventBanner}
             </div>
           )}
@@ -1379,8 +1412,12 @@ export function BattlePage() {
             hint={actionHint}
             canCast={canCastDirectly && selectedPlayable === true}
             onCast={playSelectedWithoutTarget}
+            factionHint={factionHint}
             offering={offeringBase === undefined ? undefined : {
               cost: offeringToll,
+              health: player.nexusHealth,
+              rivalHealth: rival.nexusHealth,
+              checksJudgement: Boolean(selectedCard?.effects.some((effect) => effect.kind === 'judgement')),
               paying: offering,
               affordable: offeringAffordable,
               onToggle: () => setOfferingFor(
@@ -1395,6 +1432,7 @@ export function BattlePage() {
             <HistoryLog entries={store.history} />
           </div>
           <div className={styles.turnDock}>
+            {hybrisClosingLoss !== undefined && <p className={styles.hybrisNotice}>Hybris · perderías {hybrisClosingLoss} de Vida al cerrar el turno</p>}
             {undoState && !room && turnState === 'ready' && (
               <button
                 className={styles.undoMove}

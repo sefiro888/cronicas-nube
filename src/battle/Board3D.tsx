@@ -113,6 +113,7 @@ interface Board3DProps {
   selectedPieceId?: string
   validCells: readonly Position[]
   movementHazards?: ReadonlyMap<string, MovementHazard>
+  focusedHazard?: Position
   /**
    * Qué significan las casillas iluminadas ahora mismo. Antes «mover aquí» y
    * «desplegar aquí» compartían el mismo azul, aunque son acciones distintas
@@ -1934,6 +1935,15 @@ function Scene(props: Board3DProps) {
             onHover={props.onCellHover}
           />
         )
+      })}
+      {!props.photoMode && props.focusedHazard && props.movementHazards?.get(cellKey(props.focusedHazard))?.losses.map((loss) => {
+        const piece = props.state.board.find((candidate) => candidate.instanceId === loss.pieceId)
+        if (!piece) return null
+        return <mesh key={loss.pieceId} position={[gridToWorldX(piece.position.x), 0.13, gridToWorldZ(piece.position.y)]}
+          rotation={[-Math.PI / 2, 0, 0]} raycast={() => null}>
+          <ringGeometry args={[0.39, 0.46, 32]} />
+          <meshBasicMaterial color={loss.dies ? '#ff7764' : '#ffe096'} transparent opacity={0.85} depthWrite={false} side={DoubleSide} />
+        </mesh>
       })}
       {props.cursorCell && <CursorMarker position={props.cursorCell} reducedMotion={props.reducedMotion} hazard={props.movementHazards?.get(cellKey(props.cursorCell))} />}
       {/* En la Caldera, la costura es un río de lava que parte el tablero. */}

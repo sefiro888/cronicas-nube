@@ -34,6 +34,8 @@ export interface CastImpact {
   readonly pieces: readonly ImpactedPiece[]
   /** Cambio de Vida de cada Nexo (negativo = daño). Solo los que cambian. */
   readonly nexus: Partial<Readonly<Record<PlayerId, number>>>
+  readonly mandate?: PlayerId | 'free'
+  readonly sun?: Partial<Readonly<Record<PlayerId, { readonly before: number; readonly after: number }>>>
 }
 
 const KEYWORD_TEXT: Readonly<Record<Keyword, { readonly label: string; readonly glossaryId: string }>> = {
@@ -117,7 +119,13 @@ export const castImpact = (before: MatchState, after: MatchState): CastImpact =>
     const delta = after.players[id].nexusHealth - before.players[id].nexusHealth
     if (delta !== 0) nexus[id] = delta
   }
-  return { pieces, nexus }
+  const sun: NonNullable<CastImpact['sun']> = Object.fromEntries((['player', 'ai'] as const).flatMap((id) => {
+    const previous = before.players[id].sunCount ?? 0
+    const current = after.players[id].sunCount ?? 0
+    return previous !== current ? [[id, { before: previous, after: current }]] : []
+  }))
+  const mandate = before.mandate !== after.mandate ? after.mandate ?? 'free' : undefined
+  return { pieces, nexus, ...(mandate ? { mandate } : {}), ...(Object.keys(sun).length ? { sun } : {}) }
 }
 
 /** Cuánto dura lo que hace una carta, leído de su texto. */
