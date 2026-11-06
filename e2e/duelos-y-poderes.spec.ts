@@ -1,3 +1,6 @@
+import { mkdir, writeFile } from 'node:fs/promises'
+import type { RootState } from '@react-three/fiber'
+import type { Mesh, ShaderMaterial } from 'three'
 import { expect, test, type Page } from '@playwright/test'
 import { CARD_BY_ID, STARTER_DECKS, createMatch, type BoardPiece, type FactionId, type GameAction, type MatchState } from '../src/game'
 import type { useMatchStore as MatchStoreHook } from '../src/store/match'
@@ -135,3 +138,72 @@ test('el duelo contra el Nexo conserva su Vida de apertura y muestra su pérdida
   await expect(nexus.locator('[data-faction-art="duna"]')).toBeVisible()
   await page.screenshot({ path: 'tools/captures/duelos-y-poderes/duelo-nexo-1366.png' })
 })
+
+const spellCases = [
+  { card: 'fuegos-de-artificio', faction: 'jade', source: 'fuente-jade', width: 1920, height: 1080, targets: 1, routes: 0, fireworks: true },
+  { card: 'resaca-subita', faction: 'marea', source: 'fuente-marea', width: 1366, height: 768, targets: 1, routes: 1, fireworks: false },
+  { card: 'invierno-de-fimbul', faction: 'fimbul', source: 'fuente-fimbul', width: 1366, height: 768, targets: 2, routes: 0, fireworks: false },
+] as const
+
+for (const sample of spellCases) {
+  test(`la coreografía de ${sample.card} sigue su efecto real`, async ({ page }) => {
+    await page.setViewportSize({ width: sample.width, height: sample.height })
+    const base = createMatch(deck(sample.faction), deck('tercios'), 819)
+    const fiber = fiberModuleUrl(page)
+    const module = await openBattle(page, {
+      ...base, turn: 4, phase: 'main', activePlayer: 'player', terrain: [],
+      players: {
+        player: {
+          ...base.players.player, mulliganTaken: true, hand: [{ cardId: sample.card, instanceId: 'hechizo' }],
+          resources: Array.from({ length: 4 }, (_, index) => ({
+            instanceId: `fuente-${index}`, cardId: sample.source, faction: sample.faction, exhausted: false,
+          })),
+        },
+        ai: { ...base.players.ai, mulliganTaken: true },
+      },
+      board: [
+        piece('objetivo', 'devoradora-del-inframundo', 'ai', 4),
+        { ...piece('otro', 'golem-azur', 'ai', 3), position: { x: 1, y: 3 } },
+        { ...piece('aliado', 'sabueso-brasa', 'player', 5), position: { x: 5, y: 5 } },
+      ],
+    }, sample.faction, 'tercios')
+    const url = await fiber
+    const shaderErrors: string[] = []
+    page.on('console', (message) => {
+      if (message.type() === 'error' && message.text().includes('Shader Error')) shaderErrors.push(message.text())
+    })
+    const result = await send(page, module, { type: 'play-card', playerId: 'player', cardInstanceId: 'hechizo',
+      target: sample.faction === 'fimbul' ? { kind: 'none' } : { kind: 'piece', pieceId: 'objetivo' } })
+    expect(result.ok, result.message).toBe(true)
+    const capture = await page.evaluate(async (url) => {
+      const { _roots } = await import(/* @vite-ignore */ url) as {
+        _roots: ReadonlyMap<HTMLCanvasElement, { store: { getState: () => RootState } }>
+      }
+      const canvas = document.querySelector<HTMLCanvasElement>('[data-testid="battle-board"] canvas')!
+      const state = _roots.get(canvas)?.store.getState()
+      if (!state) throw new Error('Falta el tablero de la batalla')
+      return new Promise<{ data: Record<string, unknown>; screenshot: string }>((resolve, reject) => {
+        const expires = performance.now() + 8000
+        const frame = () => {
+          const spell = state.scene.getObjectByName('coreografia-hechizo')
+          if (spell) {
+            // Se congela solo la muestra de la prueba, para capturar el mismo instante con cualquier GPU.
+            spell.traverse((object) => {
+              const material = (object as Mesh).material as ShaderMaterial | undefined
+              if (material?.uniforms?.progress) material.uniforms.progress.value = spell.userData.fireworks ? .75 : .66
+            })
+            state.gl.render(state.scene, state.camera)
+            resolve({ data: spell.userData, screenshot: canvas.toDataURL('image/png').split(',')[1]! })
+          } else if (performance.now() < expires) requestAnimationFrame(frame)
+          else reject(new Error('El hechizo no llegó al tablero'))
+        }
+        requestAnimationFrame(frame)
+      })
+    }, url)
+    expect(capture.data).toMatchObject({ faction: sample.faction, targets: sample.targets, routes: sample.routes, fireworks: sample.fireworks })
+    expect(shaderErrors).toEqual([])
+    const folder = 'tools/captures/coreografia-hechizos'
+    await mkdir(folder, { recursive: true })
+    await writeFile(`${folder}/${sample.card}-${sample.width}.png`, Buffer.from(capture.screenshot, 'base64'))
+  })
+}

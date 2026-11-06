@@ -3,7 +3,7 @@ import { useMemo, useRef } from 'react'
 import { AdditiveBlending, DoubleSide, MathUtils } from 'three'
 import type { Group, Mesh, MeshBasicMaterial, PointLight, Sprite } from 'three'
 import type { AnimationEvent, FactionId, Position } from '../game'
-import { CARD_BY_ID } from '../game'
+import { CARD_BY_ID, COMMANDER_BY_ID } from '../game'
 import {
   gridToWorldX as boardX,
   gridToWorldZ as boardZ,
@@ -17,10 +17,11 @@ import { attackKindFor, attackWeight } from './attackStyle'
 import { DeathFlourish, HitSpill } from './CreatureReactions'
 import { StepRipple } from './BattleSkies'
 import { RarityArrival } from './RarityArrival'
-import { Blessing, DrawCards, Fireball, FrostWave, HealingLight, PushWave, SkyJudgement, Storm } from './SpellStyles'
+import { Blessing, DrawCards, Fireball, FrostWave, HealingLight, PushWave, SkyJudgement } from './SpellStyles'
 import { spellKindFor } from './spellStyle'
 import { FactionSignature } from './FactionSignature'
-import { SPELL_CAST_STRETCH } from './eventTiming'
+import { SpellChoreography } from './SpellChoreography'
+import { spellChoreography } from './spellScene'
 import type { CastImpact } from './castImpact'
 import { ARRIVAL_LANDING } from './arrivalMotion'
 import { ImpactDebris, materialOf } from './ImpactDebris'
@@ -409,7 +410,7 @@ const rarityPower = (cardId?: string): number => RARITY_POWER[cardId ? CARD_BY_I
 
 function EventBody({ event, reducedMotion, impact }: EventEffectsProps) {
   const timing: TimedProps = { durationMs: event.durationMs, reducedMotion }
-  const tone = toneOf(event.effectId, event.faction)
+  const tone = toneOf(event.effectId, event.faction ?? (event.cast?.kind === 'power' ? COMMANDER_BY_ID[event.cast.sourceId]?.faction : undefined))
   const card = event.cardId ? CARD_BY_ID[event.cardId] : undefined
   switch (event.type) {
     case 'summon':
@@ -460,14 +461,16 @@ function EventBody({ event, reducedMotion, impact }: EventEffectsProps) {
       // Cada hechizo con su propia animación (ver spellStyle.ts). Los
       // objetivos salen de lo que la carta cambió de verdad en el tablero.
       if (event.cast && from) {
-        const targets = (impact?.pieces ?? []).map((piece) => [boardX(piece.position.x), boardZ(piece.position.y)] as const)
-        const aimed = targets.length > 0 ? targets : to ? [to] : []
-        const castMs = event.durationMs * SPELL_CAST_STRETCH
+        const scene = spellChoreography(event, impact)
+        const aimed = scene?.sites.map(({ at }) => at) ?? []
+        const castMs = event.durationMs
+        const kind = spellKindFor(event.cast.sourceId, event.cast.kind)
+        if (event.cast.sourceId === 'fuegos-de-artificio' || scene?.routes.length && kind === 'push') return null
         const props = { from, targets: aimed, tone, durationMs: castMs }
-        switch (spellKindFor(event.cast.sourceId, event.cast.kind)) {
+        switch (kind) {
           case 'fireball': return <Fireball {...props} />
-          case 'bolt': return aimed[0] ? <LightningBolt from={from} to={aimed[0]} tone={tone} durationMs={castMs} weight={0.6} /> : null
-          case 'storm': return <Storm {...props} />
+          case 'bolt': return scene?.primary ? <LightningBolt from={from} to={scene.primary} tone={tone} durationMs={castMs} weight={0.6} /> : null
+          case 'storm': return null
           case 'heal': return <HealingLight {...props} />
           case 'draw': return <DrawCards {...props} />
           case 'frost': return <FrostWave {...props} />
@@ -521,22 +524,11 @@ function EventBody({ event, reducedMotion, impact }: EventEffectsProps) {
 
 export function EventEffects(props: EventEffectsProps) {
   const { event, impact, reducedMotion } = props
-  const faction = event.faction ?? (event.cardId ? CARD_BY_ID[event.cardId]?.faction : undefined)
-  const origin = event.from ? [boardX(event.from.x), boardZ(event.from.y)] as const
-    : event.actorId ? NEXUS_POSITION[`${event.actorId}-nexus`] : undefined
-  const positions = impact?.pieces.length ? impact.pieces.map(({ position }) => position) : event.to ? [event.to] : []
-  const unique = [...new Map(positions.map((position) => [`${position.x},${position.y}`, position])).values()]
-  const cast = Boolean(event.cast) && event.type === 'spell' && !reducedMotion
+  const faction = event.faction ?? (event.cast?.kind === 'power' ? COMMANDER_BY_ID[event.cast.sourceId]?.faction : CARD_BY_ID[event.cardId ?? '']?.faction)
   return <>
     <EventBody {...props} />
-    {cast && faction && <>
-      {origin && <FactionSignature at={origin} faction={faction} mode="summon" durationMs={event.durationMs} />}
-      {unique.slice(0, 8).map(({ x, y }) => (
-        <FactionSignature key={`${x},${y}`} at={[boardX(x), boardZ(y)]} faction={faction} mode="hit" durationMs={event.durationMs} />
-      ))}
-      {event.targetId && NEXUS_POSITION[event.targetId] && (
-        <FactionSignature at={NEXUS_POSITION[event.targetId]!} faction={faction} mode="hit" durationMs={event.durationMs} />
-      )}
-    </>}
+    {event.type === 'spell' && event.cast && faction && (
+      <SpellChoreography event={event} impact={impact} faction={faction} reducedMotion={reducedMotion} />
+    )}
   </>
 }

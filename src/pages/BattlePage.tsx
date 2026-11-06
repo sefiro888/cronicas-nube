@@ -203,6 +203,8 @@ export function BattlePage() {
       presentationPace: preferences.presentationPace,
     }),
   } : undefined, [currentEvent, preferences.animationSpeed, preferences.reducedMotion, preferences.presentationPace])
+  const nextSpell = !preferences.reducedMotion && store.pendingAnimations.find(({ type, cast }) => type === 'spell' && cast)
+  const waitingSpell = nextSpell && !currentEvent?.cast ? store.castImpacts[nextSpell.id] : undefined
   const pendingCount = store.pendingAnimations.length
   const queueBusy = Boolean(currentEvent) || pendingCount > 0
 
@@ -1203,6 +1205,7 @@ export function BattlePage() {
             quality={preferences.graphicsQuality}
             scenario={scenario}
             activeEvent={visualEvent}
+            waitingSpell={waitingSpell}
             castImpact={visualEvent ? store.castImpacts[visualEvent.id] : undefined}
             threatFocus={queueBusy ? undefined : threatFocus}
             traitFx={traitFx}

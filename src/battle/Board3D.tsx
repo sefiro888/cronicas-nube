@@ -153,6 +153,7 @@ interface Board3DProps {
   activeEvent?: AnimationEvent
   /** A quién afectó la carta o poder de `activeEvent`, si es un lanzamiento. */
   castImpact?: CastImpact
+  waitingSpell?: CastImpact
   /** Unidad señalada y sus amenazas (flechas). */
   threatFocus?: ThreatFocus
   /** Animaciones de palabras clave que acaban de actuar. */
@@ -1857,6 +1858,8 @@ function Scene(props: Board3DProps) {
   const waitingSummons = useMemo(() => new Set((props.pendingEvents ?? EMPTY_EVENTS)
     .filter((event) => event.type === 'summon').map((event) => event.targetId)), [props.pendingEvents])
   const terminal = Boolean(props.state.winner) && !props.activeEvent && (props.pendingEvents?.length ?? 0) === 0
+  // La ficha espera el lanzamiento en su casilla de origen durante el primer plano de la carta.
+  const spellOrigins = new Map(props.waitingSpell?.pieces.flatMap(({ instanceId, movedFrom }) => movedFrom ? [[instanceId, movedFrom] as const] : []))
   return (
     <>
       {/* Todo el contenido jugable gira 180° cuando el invitado ('ai') mira la
@@ -1965,7 +1968,7 @@ function Scene(props: Board3DProps) {
           <BoardCard
             key={piece.instanceId}
             deploying={props.cellIntent === 'deploy' && props.validCells.length > 0}
-            piece={piece}
+            piece={spellOrigins.has(piece.instanceId) ? { ...piece, position: spellOrigins.get(piece.instanceId)! } : piece}
             runo={props.state.players[piece.owner].runo ?? 0}
             formationBonus={formationAttackBonus(props.state, piece)}
             selected={piece.instanceId === props.selectedPieceId}

@@ -27,6 +27,7 @@ export interface ImpactedPiece {
   readonly cardId: string
   readonly owner: PlayerId
   readonly position: Position
+  readonly movedFrom?: Position
   readonly changes: readonly ImpactChange[]
 }
 
@@ -70,6 +71,9 @@ const pieceChanges = (before: BoardPiece, after: BoardPiece): ImpactChange[] => 
   const attack = after.attackModifier - before.attackModifier
   if (attack > 0) changes.push({ label: `+${attack} Ataque`, tone: 'boon' })
   if (attack < 0) changes.push({ label: `−${-attack} Ataque`, tone: 'harm' })
+  const slow = (after.movementModifier ?? 0) - (before.movementModifier ?? 0)
+  if (slow > 0) changes.push({ label: `−${slow} Movimiento`, tone: 'control', glossaryId: 'movimiento' })
+  if (slow < 0) changes.push({ label: `+${-slow} Movimiento`, tone: 'boon', glossaryId: 'movimiento' })
   for (const keyword of after.grantedKeywords ?? []) {
     if (before.grantedKeywords?.includes(keyword)) continue
     const text = KEYWORD_TEXT[keyword]
@@ -78,6 +82,9 @@ const pieceChanges = (before: BoardPiece, after: BoardPiece): ImpactChange[] => 
   if (after.grantedPetardazo && !before.grantedPetardazo) changes.push({ label: '+Petardazo', tone: 'boon', glossaryId: 'petardazo' })
   if (after.grantedFormation && !before.grantedFormation) changes.push({ label: '+Formación', tone: 'boon', glossaryId: 'formacion' })
   if (after.grantedDischarge && !before.grantedDischarge) changes.push({ label: '+Descarga', tone: 'boon', glossaryId: 'descarga' })
+  const shieldAmount = (piece: BoardPiece) => piece.statuses.reduce((total, status) => total + (status.kind === 'shielded' ? status.amount : 0), 0)
+  const shieldLost = shieldAmount(before) - shieldAmount(after)
+  if (shieldLost > 0) changes.push({ label: `−${shieldLost} Escudo`, tone: 'control', glossaryId: 'escudo' })
   for (const status of after.statuses) {
     const previous = before.statuses.find((candidate) => candidate.kind === status.kind)
     // Un escudo que crece también cuenta; uno que ya estaba igual, no.
@@ -103,7 +110,8 @@ export const castImpact = (before: MatchState, after: MatchState): CastImpact =>
     }
     const changes = pieceChanges(previous, current)
     if (changes.length > 0) {
-      pieces.push({ instanceId: current.instanceId, cardId: current.cardId, owner: current.owner, position: current.position, changes })
+      pieces.push({ instanceId: current.instanceId, cardId: current.cardId, owner: current.owner, position: current.position,
+        ...(!samePlace(previous.position, current.position) ? { movedFrom: previous.position } : {}), changes })
     }
   }
   const beforeIds = new Set(before.board.map((piece) => piece.instanceId))

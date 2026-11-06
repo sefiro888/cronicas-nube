@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { STARTER_DECKS, createMatch, type BoardPiece, type MatchState } from '../game'
+import { STARTER_DECKS, createMatch, type AnimationEvent, type BoardPiece, type MatchState } from '../game'
+import { gridToWorld } from './grid/gridCoordinates'
+import { spellChoreography } from './spellScene'
 import { castImpact, durationLabel, impactHeadline } from './castImpact'
 
 const piece = (instanceId: string, owner: 'player' | 'ai', extra: Partial<BoardPiece> = {}): BoardPiece => ({
@@ -56,6 +58,23 @@ describe('castImpact', () => {
     expect(labels).toEqual({ a: ['−2 Vida'], b: ['Congelada'], c: ['Destruida'], d: ['Hundida'] })
     expect(impact.nexus).toEqual({ ai: -3 })
     expect(impactHeadline(impact, 'player')).toBe('Afecta a 4 unidades rivales · el Nexo rival −3')
+  })
+
+  it('conserva el origen y el destino del empuje y no marca una unidad intacta', () => {
+    const start = { x: 3, y: 4 }
+    const end = { x: 3, y: 2 }
+    const target = piece('objetivo', 'ai', { position: start })
+    const bystander = piece('intacta', 'player')
+    const cast: AnimationEvent = {
+      id: 'resaca', type: 'spell', actorId: 'player', to: start, durationMs: 420,
+    }
+    const before = withBoard([target, bystander])
+    const impact = castImpact(before, withBoard([{ ...target, position: end }, bystander]))
+    expect(spellChoreography(cast, impact)).toMatchObject({
+      sites: [{ at: gridToWorld(start), tone: 'neutral' }],
+      routes: [{ from: gridToWorld(start), to: gridToWorld(end) }],
+    })
+    expect(spellChoreography(cast, castImpact(before, before))?.sites).toEqual([])
   })
 
   it('no cuenta nada cuando el tablero no cambia', () => {

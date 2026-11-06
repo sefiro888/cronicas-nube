@@ -137,58 +137,6 @@ export function TargetZone({ targets, tone, durationMs, until = 0.42 }: { target
   )
 }
 
-/** Tormenta: del cielo cae un meteoro (o rayo) sobre cada objetivo, escalonados. */
-export function Storm({ from, targets, tone, durationMs }: SpellProps) {
-  const clock = useClock(durationMs)
-  const points = targets.length > 0 ? targets : [from]
-  const group = useRef<Group>(null)
-  const rings = useRef<Group>(null)
-  useFrame(() => {
-    const t = clock()
-    group.current?.children.forEach((child, index) => {
-      // Los meteoros esperan a que el aviso de zona se haya cerrado.
-      const start = 0.3 + (index / Math.max(1, points.length)) * 0.3
-      const k = phase(t, start, start + 0.18)
-      child.visible = k > 0 && k < 1
-      const target = points[index]!
-      child.position.set(target[0] + (1 - k) * 1.2, 0.4 + (1 - k) * 7, target[1] - (1 - k) * 0.8)
-    })
-    rings.current?.children.forEach((child, index) => {
-      const start = 0.3 + (index / Math.max(1, points.length)) * 0.3 + 0.18
-      const k = phase(t, start, start + 0.22)
-      child.visible = k > 0 && k < 1
-      child.scale.setScalar(0.3 + k * 1.8)
-      ;((child as Mesh).material as MeshBasicMaterial).opacity = (1 - k) * 0.85
-    })
-  })
-  return (
-    <>
-      <TargetZone targets={points} tone="#ff3a1f" durationMs={durationMs} until={0.36} />
-      <group ref={group}>
-        {points.map((_, index) => (
-          <group key={index} visible={false}>
-            <sprite scale={[0.55, 0.55, 1]}>
-              <spriteMaterial map={glowTexture('ember')} color="#fff2c0" transparent blending={AdditiveBlending} depthWrite={false} />
-            </sprite>
-            <mesh position={[0.35, 1.2, -0.25]} rotation={[0.35, 0, -0.3]}>
-              <cylinderGeometry args={[0.02, 0.16, 2.6, 8, 1, true]} />
-              <meshBasicMaterial color={tone} transparent opacity={0.55} blending={AdditiveBlending} depthWrite={false} side={DoubleSide} />
-            </mesh>
-          </group>
-        ))}
-      </group>
-      <group ref={rings}>
-        {points.map((target, index) => (
-          <mesh key={index} position={[target[0], 0.2, target[1]]} rotation={[-Math.PI / 2, 0, 0]} visible={false}>
-            <ringGeometry args={[0.32, 0.46, 36]} />
-            <meshBasicMaterial color={tone} transparent opacity={0} blending={AdditiveBlending} depthWrite={false} side={DoubleSide} />
-          </mesh>
-        ))}
-      </group>
-    </>
-  )
-}
-
 /** Curación: columna de luz verde sobre cada objetivo y destellos que suben. */
 export function HealingLight({ from, targets, durationMs }: SpellProps) {
   const clock = useClock(durationMs)
