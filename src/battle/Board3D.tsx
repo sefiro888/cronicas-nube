@@ -506,7 +506,7 @@ function useDeferredDecor(): boolean {
   return ready
 }
 
-const BoardCell = memo(function BoardCell({ position, valid, hazard, occupied, scorched, rubble, cover, breach, terrainStyle, floor, organicForest, own, deployRow, threatened, intent, colorblindMode, reducedMotion, onCell, onHover }: { position: Position; valid: boolean; hazard?: MovementHazard; occupied: boolean; scorched: boolean; rubble: boolean; cover: boolean; breach: boolean; terrainStyle: BoardTileStyle; floor?: string; organicForest: boolean; own: boolean; deployRow: boolean; threatened: boolean; intent: 'move' | 'deploy'; colorblindMode?: boolean; reducedMotion: boolean; onCell: (position: Position) => void; onHover?: (position?: Position) => void }) {
+const BoardCell = memo(function BoardCell({ position, valid, hazard, occupied, scorched, rubble, cover, breach, ruinAccent, terrainStyle, floor, organicForest, own, deployRow, threatened, intent, colorblindMode, reducedMotion, onCell, onHover }: { position: Position; valid: boolean; hazard?: MovementHazard; occupied: boolean; scorched: boolean; rubble: boolean; cover: boolean; breach: boolean; ruinAccent?: string; terrainStyle: BoardTileStyle; floor?: string; organicForest: boolean; own: boolean; deployRow: boolean; threatened: boolean; intent: 'move' | 'deploy'; colorblindMode?: boolean; reducedMotion: boolean; onCell: (position: Position) => void; onHover?: (position?: Position) => void }) {
   const [hovered, setHovered] = useState(false)
   useCursor(hovered && (valid || breach))
   const onClick = () => onCell(position)
@@ -577,7 +577,7 @@ const BoardCell = memo(function BoardCell({ position, valid, hazard, occupied, s
         <ringGeometry args={[TILE_SIZE * .61, TILE_SIZE * .72, 4]} />
         <meshBasicMaterial color={hovered ? '#fff3c3' : '#ffae43'} toneMapped={false} />
       </mesh>}
-      <TerrainMarks rubble={rubble} cover={cover} position={position} terrainStyle={terrainStyle} />
+      <TerrainMarks accent={ruinAccent} rubble={rubble} cover={cover} position={position} terrainStyle={terrainStyle} />
       {scorched && <ScorchMarks position={position} reducedMotion={reducedMotion} />}
     </mesh>
   )
@@ -1857,6 +1857,8 @@ function Scene(props: Board3DProps) {
   }, [props.state.board, props.localPlayerId])
   const ownDeployRow = props.localPlayerId === 'player' ? BOARD_SIZE - 1 : 0
   const terrainStyle = TERRAIN_STYLE[props.scenario as Exclude<ScenarioId, 'auto'>] ?? 'stone'
+  const homeFaction = factionForScenario(props.scenario)
+  const ruinAccent = homeFaction ? FACTION_BY_ID[homeFaction].accentColor : undefined
   const faction = factionForScenario(props.scenario)
   const floor = faction ? FACTION_FLOORS[faction] : undefined
 
@@ -1941,6 +1943,7 @@ function Scene(props: Board3DProps) {
             rubble={rubbleSet.has(key) && (!rupture?.to || key !== cellKey(rupture.to))}
             breach={!props.photoMode && breachSet.has(key)}
             cover={coverSet.has(key)}
+            ruinAccent={ruinAccent}
             terrainStyle={terrainStyle}
             floor={floor}
             organicForest={props.scenario === 'grove'}
@@ -2056,7 +2059,7 @@ function Scene(props: Board3DProps) {
         reducedMotion={props.reducedMotion}
         terminal={terminal}
       />
-      {rupture?.to && <ObstacleRupture key={`derrumbe-${rupture.id}`} event={rupture} position={rupture.to} terrainStyle={terrainStyle} reducedMotion={props.reducedMotion} />}
+      {rupture?.to && <ObstacleRupture accent={ruinAccent} key={`derrumbe-${rupture.id}`} event={rupture} position={rupture.to} terrainStyle={terrainStyle} reducedMotion={props.reducedMotion} />}
       {props.activeEvent && <EventEffects key={props.activeEvent.id} event={props.activeEvent} reducedMotion={props.reducedMotion} impact={props.castImpact} />}
       <FallenPieces
         event={props.activeEvent}

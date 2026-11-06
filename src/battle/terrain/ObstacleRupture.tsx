@@ -14,11 +14,12 @@ const accents: Record<BoardTileStyle, string> = {
 
 type Fragment = { mesh: Mesh; at: Vector3; angle: Euler }
 
-export function ObstacleRupture({ event, position, terrainStyle, reducedMotion }: {
+export function ObstacleRupture({ event, position, terrainStyle, reducedMotion, accent }: {
   event: AnimationEvent
   position: Position
   terrainStyle: BoardTileStyle
   reducedMotion: boolean
+  accent?: string
 }) {
   const root = useRef<Group>(null)
   const body = useRef<Group>(null)
@@ -28,7 +29,7 @@ export function ObstacleRupture({ event, position, terrainStyle, reducedMotion }
   const light = useRef<PointLight>(null)
   const started = useRef<number | undefined>(undefined)
   const fragments = useRef<Fragment[]>([])
-  const color = accents[terrainStyle]
+  const color = accent ?? accents[terrainStyle]
   const x = position.x - (event.from?.x ?? position.x)
   const z = position.y - (event.from?.y ?? position.y)
   useFrame(({ clock }) => {
@@ -80,7 +81,7 @@ export function ObstacleRupture({ event, position, terrainStyle, reducedMotion }
     })
   })
   return <group ref={root} name="derrumbe-obstaculo" position={[gridToWorldX(position.x), 0, gridToWorldZ(position.y)]}>
-    <group ref={body}><TerrainMarks rubble cover={false} position={position} terrainStyle={terrainStyle} /></group>
+    <group ref={body}><TerrainMarks accent={accent} rubble cover={false} position={position} terrainStyle={terrainStyle} /></group>
     <group ref={shards}>
       {Array.from({ length: 23 }, (_, index) => (
         <mesh key={index} visible={false} raycast={() => null}>

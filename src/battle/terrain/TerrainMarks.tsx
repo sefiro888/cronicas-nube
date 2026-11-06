@@ -1011,7 +1011,7 @@ const barrierProfiles = {
   forest:    { mesh: 'timber', texture: barkTexture, color: '#846c48', edge: '#bbcc78', height: .49 },
 } as const
 
-function RuinCrest({ style, position }: { style: BoardTileStyle; position: Position }) {
+function RuinCrest({ style, position, accent }: { style: BoardTileStyle; position: Position; accent?: string }) {
   const profile = barrierProfiles[style]
   const map = profile.texture()
   return <group rotation={[0, (vary(position, 213) - .5) * .65, 0]}>
@@ -1033,7 +1033,7 @@ function RuinCrest({ style, position }: { style: BoardTileStyle; position: Posit
           </mesh>
           <mesh position={[0, height * .60, .108]} rotation={[0, 0, Math.PI / 4]}>
             <ringGeometry args={[.038, .053, 4]} />
-            <meshBasicMaterial color={profile.edge} toneMapped={false} />
+            <meshBasicMaterial color={accent ?? profile.edge} toneMapped={false} />
           </mesh>
         </>}
       </group>
@@ -1050,17 +1050,19 @@ export const TerrainMarks = memo(function TerrainMarks({
   cover,
   position,
   terrainStyle,
+  accent,
 }: {
   rubble: boolean
   cover: boolean
   position: Position
   terrainStyle: BoardTileStyle
+  accent?: string
 }) {
   const look = TERRAIN_LOOK[terrainStyle]
   if (rubble) {
     return (
-      <group position={[0, 0.065, 0]} scale={[1.19, 1.35, 1.19]}>
-        <RuinCrest style={terrainStyle} position={position} />
+      <group name="ruina-bloqueante" position={[0, 0.065, 0]} scale={[1.19, 1.35, 1.19]}>
+        <RuinCrest style={terrainStyle} position={position} accent={accent} />
         <mesh position={[0, .025, 0]} rotation={[0, Math.PI / 4, 0]} receiveShadow>
           <cylinderGeometry args={[.32, .37, .062, 6]} />
           <meshStandardMaterial color={look.rubble} roughness={look.rough} flatShading />
