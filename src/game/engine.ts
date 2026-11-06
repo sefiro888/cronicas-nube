@@ -2750,7 +2750,7 @@ const breakObstacle = (state: MatchState, action: Extract<GameAction, { type: 'b
     ...next, terrain: next.terrain.filter((tile) => tile.kind !== 'rubble' || distance(tile.position, position) !== 0),
   }, {
     type: 'obstacle-break', actorId: attackerId, cardId: attacker.cardId, faction: pieceDefinition(attacker)?.faction,
-    from: attacker.position, to: position, durationMs: 900,
+    from: attacker.position, to: position, durationMs: 1100,
   }));
 };
 

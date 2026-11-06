@@ -30,6 +30,7 @@ export function ObstacleRupture({ event, position, terrainStyle, reducedMotion, 
   const light = useRef<PointLight>(null)
   const flare = useRef<Sprite>(null)
   const started = useRef<number | undefined>(undefined)
+  const contactShown = useRef(false)
   const fragments = useRef<Fragment[]>([])
   const color = accent ?? accents[terrainStyle]
   const x = position.x - (event.from?.x ?? position.x)
@@ -37,7 +38,13 @@ export function ObstacleRupture({ event, position, terrainStyle, reducedMotion, 
   useFrame(({ clock }) => {
     started.current ??= clock.elapsedTime
     const contact = OBSTACLE_CONTACT
-    const t = reducedMotion ? .54 : Math.min(1, (clock.elapsedTime - started.current) * 1000 / event.durationMs)
+    let t = reducedMotion ? .54 : Math.min(1, (clock.elapsedTime - started.current) * 1000 / event.durationMs)
+    // En el primer uso WebGL puede compilar materiales entre dos cuadros.
+    // Si salta por encima del impacto, mostramos al menos su pose de contacto.
+    if (t >= contact && !contactShown.current) {
+      contactShown.current = true
+      t = Math.min(t, .59)
+    }
     const burst = Math.max(0, (t - contact) / (1 - contact))
     if (root.current) root.current.userData.ruptureProgress = t
     if (body.current) {
