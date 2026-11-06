@@ -18,6 +18,7 @@ import {
   handCardBlockReason,
   handCardCostDetails,
   getValidAttacks,
+  getBreakableObstacles,
   getValidDeploymentPositions,
   getValidMoves,
   mulliganOpeningHand,
@@ -452,6 +453,10 @@ export function BattlePage() {
     () => (match && selectedPiece ? getValidMoves(match, selectedPiece.instanceId) : []),
     [match, selectedPiece],
   )
+  const breakableObstacles = useMemo(
+    () => match && selectedPiece ? getBreakableObstacles(match, selectedPiece.instanceId) : [],
+    [match, selectedPiece],
+  )
   const attacks = useMemo(
     () => (match && selectedPiece
       ? getValidAttacks(match, selectedPiece.instanceId)
@@ -647,7 +652,7 @@ export function BattlePage() {
         continue
       }
       const options = getValidAttacks(match, piece.instanceId)
-      if (options.pieceIds.length > 0 || options.canAttackNexus) ready.add(piece.instanceId)
+      if (options.pieceIds.length > 0 || options.canAttackNexus || getBreakableObstacles(match, piece.instanceId).length > 0) ready.add(piece.instanceId)
     }
     return ready
   }, [match, ME])
@@ -796,6 +801,10 @@ export function BattlePage() {
       if (doAction({ type: 'play-card', playerId: ME, cardInstanceId: selectedInstance.instanceId, position, target: { kind: 'none' }, offering })) finishSelection()
       return
     }
+    if (selectedPiece && breakableObstacles.some((cell) => cell.x === position.x && cell.y === position.y)) {
+      if (doAction({ type: 'break-obstacle', playerId: ME, attackerId: selectedPiece.instanceId, position })) finishSelection()
+      return
+    }
     if (selectedPiece && moves.some((cell) => cell.x === position.x && cell.y === position.y)) {
       if (doAction({ type: 'move', playerId: ME, pieceId: selectedPiece.instanceId, to: position })) finishSelection()
       return
@@ -804,7 +813,7 @@ export function BattlePage() {
     if (selectedPiece && selectedPiece.owner === ME && match?.activePlayer === ME) {
       useMatchStore.setState({ message: moves.length > 0 ? 'No puede ir ahí: elige una de las casillas resaltadas.' : 'Esta unidad ya no puede moverse este turno.' })
     }
-  }, [photoMode, selectedInstance, selectedCard, selectedPiece, moves, attacks, doAction, finishSelection, ME, offering, match])
+  }, [photoMode, selectedInstance, selectedCard, selectedPiece, moves, attacks, breakableObstacles, doAction, finishSelection, ME, offering, match])
 
   const onPiece = useCallback((pieceId: string) => {
     if (photoMode || !match) return
@@ -1225,6 +1234,7 @@ export function BattlePage() {
             localPlayerId={ME}
             selectedPieceId={duelOnBoard?.attacker ?? store.selectedPieceId}
             validCells={validCells}
+            breakableObstacles={breakableObstacles}
             movementHazards={movementHazards}
             focusedHazard={hoveredCell ?? boardCursor.cell}
             cellIntent={selectedCard ? 'deploy' : 'move'}
@@ -1259,6 +1269,8 @@ export function BattlePage() {
           {/* Voz del cursor de teclado para lectores de pantalla: el tablero 3D
               es un lienzo WebGL, así que su contenido no existe como texto. */}
           <p className={styles.srOnly} role="status" aria-live="polite">{boardCursor.announcement}</p>
+          {!photoMode && !queueBusy && !inspected && breakableObstacles.some((cell) => cell.x === focusedCell?.x && cell.y === focusedCell.y) &&
+            <div className={styles.breachHint} role="status"><strong>Romper obstáculo</strong><span>Gasta el ataque · Abre el paso de un golpe</span></div>}
           {!photoMode && !queueBusy && !inspected && <MovementHazardWarning hazards={movementHazards} focused={hoveredCell ?? boardCursor.cell} />}
           {director.banner && !photoMode && (
             <TurnBanner

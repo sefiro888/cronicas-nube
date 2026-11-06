@@ -47,6 +47,7 @@ import { BOARD_TILE_VARIANTS, boardTileNormal, boardTileRoughness, boardTileText
 import styles from './Board3D.module.css'
 import { BoardDrift } from './BoardDrift'
 import { TerrainMarks } from './terrain/TerrainMarks'
+import { ObstacleRupture } from './terrain/ObstacleRupture'
 import { CardFrameTrim, CardPlinth, CardSurfaceWear, CardWard } from './CardFinish'
 import { RitualSeal } from './RitualSeal'
 import { NexusFractures } from './NexusFractures'
@@ -112,6 +113,7 @@ interface Board3DProps {
   localPlayerId: PlayerId
   selectedPieceId?: string
   validCells: readonly Position[]
+  breakableObstacles?: readonly Position[]
   movementHazards?: ReadonlyMap<string, MovementHazard>
   focusedHazard?: Position
   /**
@@ -504,9 +506,9 @@ function useDeferredDecor(): boolean {
   return ready
 }
 
-const BoardCell = memo(function BoardCell({ position, valid, hazard, occupied, scorched, rubble, cover, terrainStyle, floor, organicForest, own, deployRow, threatened, intent, colorblindMode, reducedMotion, onCell, onHover }: { position: Position; valid: boolean; hazard?: MovementHazard; occupied: boolean; scorched: boolean; rubble: boolean; cover: boolean; terrainStyle: BoardTileStyle; floor?: string; organicForest: boolean; own: boolean; deployRow: boolean; threatened: boolean; intent: 'move' | 'deploy'; colorblindMode?: boolean; reducedMotion: boolean; onCell: (position: Position) => void; onHover?: (position?: Position) => void }) {
+const BoardCell = memo(function BoardCell({ position, valid, hazard, occupied, scorched, rubble, cover, breach, terrainStyle, floor, organicForest, own, deployRow, threatened, intent, colorblindMode, reducedMotion, onCell, onHover }: { position: Position; valid: boolean; hazard?: MovementHazard; occupied: boolean; scorched: boolean; rubble: boolean; cover: boolean; breach: boolean; terrainStyle: BoardTileStyle; floor?: string; organicForest: boolean; own: boolean; deployRow: boolean; threatened: boolean; intent: 'move' | 'deploy'; colorblindMode?: boolean; reducedMotion: boolean; onCell: (position: Position) => void; onHover?: (position?: Position) => void }) {
   const [hovered, setHovered] = useState(false)
-  useCursor(hovered && valid)
+  useCursor(hovered && (valid || breach))
   const onClick = () => onCell(position)
   const zone = own ? 'own' : 'enemy'
   // Desplegar se marca en verde y mover en azul: son acciones distintas y
@@ -551,7 +553,7 @@ const BoardCell = memo(function BoardCell({ position, valid, hazard, occupied, s
       position={[boardX(position.x), 0, boardZ(position.y)]}
       receiveShadow
       castShadow
-      userData={{ validCell: valid }}
+      userData={{ validCell: valid, breakableObstacle: breach, cell: position }}
       onClick={(event) => { event.stopPropagation(); onClick() }}
       onPointerEnter={() => { setHovered(true); onHover?.(position) }}
       onPointerLeave={() => { setHovered(false); onHover?.(undefined) }}
@@ -571,6 +573,10 @@ const BoardCell = memo(function BoardCell({ position, valid, hazard, occupied, s
         <meshBasicMaterial color={validColor} transparent opacity={0.32} depthWrite={false} toneMapped={false} />
       </mesh>}
       {hazard && <MovementHazardMarker hazard={hazard} surfaceY={height / 2 + .016} />}
+      {breach && <mesh position={[0, .108, 0]} rotation={[-Math.PI / 2, 0, Math.PI / 4]} raycast={() => null}>
+        <ringGeometry args={[TILE_SIZE * .61, TILE_SIZE * .72, 4]} />
+        <meshBasicMaterial color={hovered ? '#fff3c3' : '#ffae43'} toneMapped={false} />
+      </mesh>}
       <TerrainMarks rubble={rubble} cover={cover} position={position} terrainStyle={terrainStyle} />
       {scorched && <ScorchMarks position={position} reducedMotion={reducedMotion} />}
     </mesh>
@@ -1797,6 +1803,8 @@ function Scene(props: Board3DProps) {
   const decorReady = useDeferredDecor()
   // Conjuntos O(1) precalculados una vez por cambio de estado: evitan el
   // barrido .some() por cada una de las 64 casillas en cada render.
+  const breachSet = useMemo(() => new Set(props.breakableObstacles?.map(cellKey)), [props.breakableObstacles])
+  const rupture = props.activeEvent?.type === 'obstacle-break' ? props.activeEvent : undefined
   const validSet = useMemo(() => new Set(props.validCells.map(cellKey)), [props.validCells])
   const occupiedSet = useMemo(() => new Set(props.state.board.map((piece) => cellKey(piece.position))), [props.state.board])
   const scorchedSet = useMemo(
@@ -1805,8 +1813,11 @@ function Scene(props: Board3DProps) {
   )
   // Terreno del mapa: parte fija del campo, no un efecto pasajero.
   const rubbleSet = useMemo(
-    () => new Set(props.state.terrain.filter((tile) => tile.kind === 'rubble').map((tile) => cellKey(tile.position))),
-    [props.state.terrain],
+    () => new Set([
+      ...props.state.terrain.filter((tile) => tile.kind === 'rubble').map((tile) => cellKey(tile.position)),
+      ...(props.pendingEvents ?? EMPTY_EVENTS).flatMap((event) => event.type === 'obstacle-break' && event.to ? [cellKey(event.to)] : []),
+    ]),
+    [props.state.terrain, props.pendingEvents],
   )
   const coverSet = useMemo(
     () => new Set(props.state.terrain.filter((tile) => tile.kind === 'cover').map((tile) => cellKey(tile.position))),
@@ -1927,7 +1938,8 @@ function Scene(props: Board3DProps) {
             hazard={props.photoMode ? undefined : props.movementHazards?.get(key)}
             occupied={occupiedSet.has(key)}
             scorched={scorchedSet.has(key)}
-            rubble={rubbleSet.has(key)}
+            rubble={rubbleSet.has(key) && (!rupture?.to || key !== cellKey(rupture.to))}
+            breach={!props.photoMode && breachSet.has(key)}
             cover={coverSet.has(key)}
             terrainStyle={terrainStyle}
             floor={floor}
@@ -2044,6 +2056,7 @@ function Scene(props: Board3DProps) {
         reducedMotion={props.reducedMotion}
         terminal={terminal}
       />
+      {rupture?.to && <ObstacleRupture key={`derrumbe-${rupture.id}`} event={rupture} position={rupture.to} terrainStyle={terrainStyle} reducedMotion={props.reducedMotion} />}
       {props.activeEvent && <EventEffects key={props.activeEvent.id} event={props.activeEvent} reducedMotion={props.reducedMotion} impact={props.castImpact} />}
       <FallenPieces
         event={props.activeEvent}

@@ -74,7 +74,7 @@ export const impulsesForEvent = (
   if (!event) return map
   const pieceAt = (id?: string) => board.find((candidate) => candidate.instanceId === id)
 
-  if (event.type === 'attack' && event.actorId) {
+  if ((event.type === 'attack' || event.type === 'obstacle-break') && event.actorId) {
     const attacker = pieceAt(event.actorId)
     if (attacker) {
       const from = { x: gridToWorldX(attacker.position.x), z: gridToWorldZ(attacker.position.y) }
@@ -82,7 +82,7 @@ export const impulsesForEvent = (
         ? { x: gridToWorldX(event.to.x), z: gridToWorldZ(event.to.y) }
         : { x: 0, z: nexusWorldZ(attacker.owner === 'player' ? 'ai' : 'player') }
       const { dx, dz } = direction(from.x, from.z, to.x, to.z)
-      const kind = (CARD_BY_ID[attacker.cardId]?.range ?? 1) > 1 ? 'release' : 'lunge'
+      const kind = event.type === 'attack' && (CARD_BY_ID[attacker.cardId]?.range ?? 1) > 1 ? 'release' : 'lunge'
       map.set(attacker.instanceId, { key: event.id, kind, dx, dz, durationMs: event.durationMs })
     }
   }

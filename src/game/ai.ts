@@ -7,6 +7,7 @@ import {
   applyAction,
   effectiveCost,
   getValidAttacks,
+  getBreakableObstacles,
   getValidDeploymentPositions,
   getValidMoves,
   spellNeedsPiece,
@@ -685,6 +686,12 @@ export const chooseBaselineAiAction = (
     if (piece.movedThisTurn) continue;
     const move = chooseMove(state, piece.instanceId, me);
     if (move) return { type: 'move', playerId: me, pieceId: piece.instanceId, to: move };
+  }
+  // Abrir una ruta es útil cuando ya no hay un ataque ni un avance mejores.
+  for (const piece of pieces) {
+    const forward = getBreakableObstacles(state, piece.instanceId)
+      .find((cell) => Math.abs(cell.y - nexusRow(rivalOf(me))) < Math.abs(piece.position.y - nexusRow(rivalOf(me))));
+    if (forward) return { type: 'break-obstacle', playerId: me, attackerId: piece.instanceId, position: forward };
   }
   return endTurn;
 };

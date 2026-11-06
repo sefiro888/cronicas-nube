@@ -449,15 +449,20 @@ const queueDecision = (state: MatchState, owner: PlayerId, sourceCardId: string,
 const ignoresGuards = (definition: CardDefinition): boolean =>
   definition.effects.some((effect) => effect.kind === 'passive' && effect.id === 'unblockable-ghost');
 
-const canAttackPiece = (state: MatchState, attacker: BoardPiece, defender: BoardPiece): boolean => {
+const canSpendAttack = (state: MatchState, attacker: BoardPiece): boolean => {
   if (state.players[attacker.owner].attacksForbiddenThisTurn) return false;
   const definition = pieceDefinition(attacker);
   if (!definition || definition.type !== 'unit' || attacker.owner !== state.activePlayer) return false;
-  if (attacker.owner === defender.owner || attacker.attackedThisTurn || isFrozen(state, attacker)) return false;
+  if (attacker.attackedThisTurn || isFrozen(state, attacker)) return false;
   if (isStunned(state, attacker)) return false;
   if (attacker.enteredOnTurn === state.turn && !definition.keywords.includes('swift-strike') && !attacker.formationMarch) return false;
   if (isPacified(state, attacker)) return false;
-  if (blockedByLowHybris(state, attacker)) return false;
+  return !blockedByLowHybris(state, attacker);
+};
+
+const canAttackPiece = (state: MatchState, attacker: BoardPiece, defender: BoardPiece): boolean => {
+  if (attacker.owner === defender.owner || !canSpendAttack(state, attacker)) return false;
+  const definition = pieceDefinition(attacker)!;
   // Guardia: si hay Guardias enemigos adyacentes, el objetivo debe ser uno de ellos (salvo incorpóreos).
   const guards = adjacentEnemyGuards(state, attacker);
   if (guards.size > 0 && !guards.has(defender.instanceId) && !ignoresGuards(definition)) return false;
@@ -475,14 +480,8 @@ const canAttackPiece = (state: MatchState, attacker: BoardPiece, defender: Board
 };
 
 const canAttackEnemyNexus = (state: MatchState, attacker: BoardPiece): boolean => {
-  if (state.players[attacker.owner].attacksForbiddenThisTurn) return false;
-  const definition = pieceDefinition(attacker);
-  if (!definition || definition.type !== 'unit' || attacker.owner !== state.activePlayer) return false;
-  if (attacker.attackedThisTurn || isFrozen(state, attacker)) return false;
-  if (isStunned(state, attacker)) return false;
-  if (attacker.enteredOnTurn === state.turn && !definition.keywords.includes('swift-strike') && !attacker.formationMarch) return false;
-  if (isPacified(state, attacker)) return false;
-  if (blockedByLowHybris(state, attacker)) return false;
+  if (!canSpendAttack(state, attacker)) return false;
+  const definition = pieceDefinition(attacker)!;
   // Guardia: no se puede golpear el Nexo mientras un Guardia enemigo esté adyacente (salvo incorpóreos).
   if (adjacentEnemyGuards(state, attacker).size > 0 && !ignoresGuards(definition)) return false;
   const enemy = opponentOf(attacker.owner);
@@ -2728,6 +2727,33 @@ const computeAttackAmount = (
   return defender && pieceDefinition(defender)?.type === 'structure' && card.effects.some((effect) => effect.kind === 'passive' && effect.id === 'double-structure-damage') ? total * 2 : total;
 };
 
+export const getBreakableObstacles = (state: MatchState, pieceId: string): readonly Position[] => {
+  const attacker = state.board.find((piece) => piece.instanceId === pieceId);
+  if (!attacker || state.phase !== 'main' || state.pendingSpark || state.pendingDecisions?.length
+    || !canSpendAttack(state, attacker) || hasKeyword(attacker, 'flying')) return [];
+  const card = pieceDefinition(attacker)!;
+  if (card.attack === undefined || (adjacentEnemyGuards(state, attacker).size > 0 && !ignoresGuards(card))) return [];
+  return state.terrain.filter((tile) => tile.kind === 'rubble' && distance(attacker.position, tile.position) === 1)
+    .map((tile) => tile.position);
+};
+
+const breakObstacle = (state: MatchState, action: Extract<GameAction, { type: 'break-obstacle' }>): ActionResult => {
+  const error = validateTurn(state, action.playerId);
+  if (error) return error;
+  const { position, attackerId } = action;
+  const attacker = state.board.find((piece) => piece.instanceId === attackerId);
+  if (!attacker || attacker.owner !== action.playerId || !getBreakableObstacles(state, attackerId).some((cell) => distance(cell, position) === 0)) {
+    return fail(state, 'cannot-attack', 'Elige una ruina adyacente con una unidad terrestre que pueda atacar.');
+  }
+  const next = updatePiece(state, attackerId, (piece) => ({ ...piece, attackedThisTurn: true }));
+  return success(enqueue({
+    ...next, terrain: next.terrain.filter((tile) => tile.kind !== 'rubble' || distance(tile.position, position) !== 0),
+  }, {
+    type: 'obstacle-break', actorId: attackerId, cardId: attacker.cardId, faction: pieceDefinition(attacker)?.faction,
+    from: attacker.position, to: position, durationMs: 900,
+  }));
+};
+
 export const attackPiece = (
   state: MatchState,
   playerId: PlayerId,
@@ -3814,6 +3840,8 @@ export const applyAction = (state: MatchState, action: GameAction): ActionResult
       return playCard(state, action.playerId, action.cardInstanceId, action.position, action.target, action.offering);
     case 'move':
       return movePiece(state, action.playerId, action.pieceId, action.to);
+    case 'break-obstacle':
+      return breakObstacle(state, action);
     case 'attack-piece':
       return attackPiece(state, action.playerId, action.attackerId, action.defenderId);
     case 'attack-nexus':
