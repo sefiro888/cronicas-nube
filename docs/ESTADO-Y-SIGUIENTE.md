@@ -1,5 +1,19 @@
 # Estado del proyecto y por dónde seguir
 
+## Revisión conjunta de batalla
+
+Rama de revisión: `codex/revision-conjunta-batalla`, creada desde `main`.
+Reúne hechizos emblemáticos y formas del Nexo, ruinas destructibles y ajuste
+del ritmo Cinemático. Una unidad terrestre puede gastar su ataque en
+derribar una ruina ortogonal adyacente y cruzar después si conserva su
+movimiento. Las coberturas siguen funcionando como protección a distancia.
+Las señales ámbar identifican la ruina alcanzable y el derrumbe se sincroniza
+con el contacto de la ficha. La crónica registra que queda libre el paso.
+
+La [auditoría de ritmo, IA y equilibrio](AUDITORIA-RITMO-IA.md) incluye
+las mediciones, la comparación antes/después y un protocolo para las
+partidas humanas que quedan pendientes.
+
 ## Cola de la siguiente etapa
 
 El propietario pidió incorporar los indicadores de facción al trabajo futuro y renovar la lista tras las 32 mejoras integradas. La [nueva cola de 100 mejoras](COLA-100-MEJORAS-SIGUIENTE-ETAPA.md) detalla las 19 facciones, el ritmo de batalla y los prototipos de mapas, IA y modos. La numeración de esa cola es independiente de la original.

@@ -22,6 +22,9 @@ Ofrenda pagada y resultados de Chispa conservan 5 s. También conservan su
 duración la invocación y el impacto al Nexo. La animación sobre el tablero
 consume el mismo reloj que la cola.
 
+Medición de referencia en un AMD Ryzen AI 7 350. Los tiempos del informe son
+presupuestos de presentación, no cronometrajes de una sesión humana.
+
 ## Tiempo de decisión
 
 Medición en Node en el equipo de desarrollo, con 20 posiciones sintéticas por
@@ -60,6 +63,20 @@ directo de la muestra corta, Samsara ganó 8/8 frente a Goblins con ambas
 versiones. La prueba aislada de la pasiva de robo de Samsara redujo sus
 victorias contra Arcano de 11/12 a 3/12, pero contra Goblins siguió en 12/12.
 El resultado depende del rival. No se han cambiado cartas ni mazos.
+
+### Repetición con las ruinas destructibles
+
+En la rama conjunta, al repetir los mismos 264 pares, la IA anterior y la
+táctica obtuvieron respectivamente **21 y 38** victorias con Tercios, **16 y
+23** con Marea, **38 y 34** con Duna, y **0 y 3** con Goblins. Abrir rutas
+cambia algunos resultados y el efecto de la IA táctica varía por mazo.
+Los cuatro cruces mantuvieron cero acciones rechazadas.
+
+La matriz de 19 facciones, con tres semillas y los dos asientos, produjo
+1026 partidas de IA contra IA. Samsara ganó 101 de 108 partidas resueltas
+(94 %) y Goblins 1 de 107 (1 %). Esta matriz usa el simulador de turnos
+enteros de referencia, distinto del A/B paso a paso. Sirve para confirmar los
+extremos que merecen partidas humanas.
 
 ### Prueba humana pendiente
 

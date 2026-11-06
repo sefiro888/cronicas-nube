@@ -46,7 +46,20 @@ for (const [width, height, scenario] of [[1920, 1080, 'caldera'], [1366, 768, 'a
     await page.keyboard.press('ArrowUp')
     await page.keyboard.press('Enter')
     await expect.poll(async () => (await model()).selected).toBe('lobo')
-    await page.keyboard.press('ArrowRight')
+    const mouseTarget = width === 1920 ? await page.evaluate(async (world) => {
+      const { _roots } = await import(world) as { _roots: ReadonlyMap<HTMLCanvasElement, { store: { getState(): RootState } }> }
+      const canvas = document.querySelector<HTMLCanvasElement>('[data-testid="battle-board"] canvas')!
+      const state = _roots.get(canvas)?.store.getState()
+      if (!state) throw new Error('No se encontró el tablero.')
+      const cell = state.scene.getObjectsByProperty('type', 'Mesh').find((object) =>
+        object.userData.breakableObstacle && object.userData.cell?.x === 5 && object.userData.cell?.y === 5)
+      if (!cell) throw new Error('La losa rompible no está marcada.')
+      const point = cell.getWorldPosition(cell.position.clone()).project(state.camera)
+      const bounds = canvas.getBoundingClientRect()
+      return { x: bounds.left + (point.x + 1) * bounds.width / 2, y: bounds.top + (1 - point.y) * bounds.height / 2 }
+    }, world) : undefined
+    if (mouseTarget) await page.mouse.move(mouseTarget.x, mouseTarget.y)
+    else await page.keyboard.press('ArrowRight')
     await expect(page.getByText('Romper obstáculo', { exact: true })).toBeVisible()
     await page.screenshot({ path: `tools/captures/obstaculos/objetivo-${width}.png` })
     await page.evaluate(async ({ world, module }) => {
@@ -55,7 +68,7 @@ for (const [width, height, scenario] of [[1920, 1080, 'caldera'], [1366, 768, 'a
       const canvas = document.querySelector<HTMLCanvasElement>('[data-testid="battle-board"] canvas')!
       const scene = _roots.get(canvas)?.store.getState()
       if (!scene) throw new Error('No se encontró el tablero para observar el impacto.')
-      const audit = { event: false, model: false, shot: '' }
+      const audit = { event: false, model: false, progress: 0, shot: '' }
       Object.assign(window, { obstacleAudit: audit })
       const expires = performance.now() + 8000
       const observe = () => {
@@ -64,6 +77,7 @@ for (const [width, height, scenario] of [[1920, 1080, 'caldera'], [1366, 768, 'a
         const effect = scene.scene.getObjectByName('derrumbe-obstaculo')
         audit.model ||= Boolean(effect)
         if (effect && Number(effect.userData.ruptureProgress) >= .51) {
+          audit.progress = Number(effect.userData.ruptureProgress)
           scene.gl.render(scene.scene, scene.camera)
           audit.shot = canvas.toDataURL('image/png').split(',')[1]!
           return
@@ -72,17 +86,20 @@ for (const [width, height, scenario] of [[1920, 1080, 'caldera'], [1366, 768, 'a
       }
       requestAnimationFrame(observe)
     }, { world, module })
-    await page.keyboard.press('Enter')
-    const impact = () => page.evaluate(() => (window as unknown as { obstacleAudit: { event: boolean; model: boolean; shot: string } }).obstacleAudit)
+    if (mouseTarget) await page.mouse.click(mouseTarget.x, mouseTarget.y)
+    else await page.keyboard.press('Enter')
+    const impact = () => page.evaluate(() => (window as unknown as { obstacleAudit: { event: boolean; model: boolean; progress: number; shot: string } }).obstacleAudit)
     await expect.poll(async () => {
       const { event, model, shot } = await impact()
       return { event, model, captured: Boolean(shot) }
     }, { timeout: 9_000 }).toEqual({ event: true, model: true, captured: true })
     const folder = 'tools/captures/obstaculos'
-    await writeFile(`${folder}/derrumbe-${width}.png`, Buffer.from((await impact()).shot, 'base64'))
+    const captured = await impact()
+    expect(captured.progress, 'La captura debe mostrar el impacto antes de que desaparezcan los fragmentos.').toBeLessThan(.94)
+    await writeFile(`${folder}/derrumbe-${width}.png`, Buffer.from(captured.shot, 'base64'))
     await expect.poll(async () => (await model()).playing).toBe(false)
     expect(await model()).toMatchObject({ tile: undefined, piece: { attackedThisTurn: true } })
-    await page.keyboard.press('ArrowLeft')
+    if (!mouseTarget) await page.keyboard.press('ArrowLeft')
     await page.keyboard.press('Enter')
     await page.keyboard.press('ArrowRight')
     await page.keyboard.press('Enter')
