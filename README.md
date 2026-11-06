@@ -246,6 +246,12 @@ En esta revisión documental del **30 de octubre** se ejecutaron nuevamente
 todos correctos sobre la copia de trabajo. No se repitió Playwright: esta entrega
 solo cambia documentación y no valida como terminados los prototipos locales.
 
+Desde el 6 de noviembre de 2026, esta copia utiliza el proyecto independiente
+`cawihzwnibqxrplkhpbm` de Supabase para sus salas privadas. La configuración
+del cliente incluye únicamente la URL y la clave publicable; no necesita la
+contraseña de la base de datos ni una clave secreta. Las salas actuales usan
+Realtime (presencia y mensajes), sin requerir tablas nuevas.
+
 El multijugador permite configurar `VITE_SUPABASE_URL` y
 `VITE_SUPABASE_ANON_KEY` en `.env.local` o en el entorno de compilación.
 Usa la clave pública/anon de cliente, nunca credenciales de servicio. El código
