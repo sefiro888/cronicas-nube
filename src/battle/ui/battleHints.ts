@@ -52,6 +52,7 @@ export interface ActionHintContext {
   readonly moveCount: number
   readonly canAttackPiece: boolean
   readonly canAttackNexus: boolean
+  readonly canBreakObstacle?: boolean
 }
 
 /**
@@ -83,6 +84,10 @@ export const actionHintFor = (context: ActionHintContext): string | undefined =>
     if (frozen) return 'Unidad congelada: no puede actuar este turno.'
     const canMove = context.moveCount > 0
     const canAttack = context.canAttackPiece || context.canAttackNexus
+    if (context.canBreakObstacle) {
+      const actions = [canMove && 'Azul: mover', canAttack && 'Dorado: atacar', 'Ámbar: romper obstáculo']
+      return actions.filter(Boolean).join(' · ') + '.'
+    }
     if (canMove && canAttack) return 'Casillas azules: mover · Objetivos dorados: atacar.'
     if (canMove) return 'Elige una casilla azul para mover.'
     if (canAttack) return 'Elige un objetivo dorado para atacar.'

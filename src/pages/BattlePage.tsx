@@ -1113,6 +1113,7 @@ export function BattlePage() {
     moveCount: moves.length,
     canAttackPiece: attacks.pieceIds.length > 0,
     canAttackNexus: attacks.canAttackNexus,
+    canBreakObstacle: breakableObstacles.length > 0,
   })
 
   return (

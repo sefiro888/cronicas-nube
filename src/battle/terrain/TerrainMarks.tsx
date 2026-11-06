@@ -530,6 +530,22 @@ function MarbleBalustrade({ position, look }: { position: Position; look: Look }
   const alto = 0.26 + vary(position, 11) * 0.05
   return (
     <group position={[0, 0, COVER_Z]}>
+      {[-.41, .41].map((x) => (
+        <group key={x} position={[x, 0, 0]}>
+          <mesh position={[0, alto * .48, 0]} castShadow receiveShadow>
+            <boxGeometry args={[.102, alto, .138]} />
+            <meshStandardMaterial map={marble} bumpMap={marble} bumpScale={.035} color="#a99786" roughness={.72} />
+          </mesh>
+          <mesh position={[0, alto + .018, 0]} rotation={[0, Math.PI / 4, 0]} castShadow>
+            <coneGeometry args={[.077, .061, 4]} />
+            <meshStandardMaterial color="#bf9450" roughness={.35} metalness={.65} />
+          </mesh>
+        </group>
+      ))}
+      <mesh position={[0, alto, .058]}>
+        <boxGeometry args={[.78, .014, .009]} />
+        <meshStandardMaterial color="#b38a48" roughness={.4} metalness={.5} />
+      </mesh>
       {/* Zócalo y pasamanos: los dos cilindros van TUMBADOS, y para eso hace
           falta el giro de PI/2 en Z — en Three.js un cilindro nace vertical. */}
       {[0.02, alto].map((y, index) => (
