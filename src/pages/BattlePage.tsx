@@ -37,10 +37,12 @@ import {
 } from '../game'
 import { Board3D } from '../battle/Board3D'
 import { previewMovementHazard, type MovementHazard } from '../game/movementHazard'
+import { previewFactionSpell } from '../battle/ui/factionSpellPreview'
+import type { PreviewVerdict } from '../battle/ui/battleHints'
 import { MovementHazardWarning } from './battle/MovementHazardWarning'
 import { useAiTurn } from '../battle/hooks/useAiTurn'
 import { useCardDrag } from '../battle/hooks/useCardDrag'
-import { useBoardCursor } from '../battle/hooks/useBoardCursor'
+import { cellName, useBoardCursor } from '../battle/hooks/useBoardCursor'
 import { useEventDirector } from '../battle/hooks/useEventDirector'
 import { eventDuration } from '../battle/eventTiming'
 import { useMatchRecorder } from '../battle/hooks/useMatchRecorder'
@@ -853,6 +855,36 @@ export function BattlePage() {
     onNexus,
   })
 
+  const focusedCell = hoveredCell ?? boardCursor.cell
+  const spellAim = aimedTargetId ?? (boardCursor.cell && match?.board.find(
+    ({ position }) => position.x === boardCursor.cell?.x && position.y === boardCursor.cell.y,
+  )?.instanceId)
+  const factionPreview = useMemo(() => {
+    if (!match || !selectedCard || !selectedInstance || !selectedPlayable || queueBusy || !cursorEnabled || match.activePlayer !== ME) return undefined
+    const deployment = focusedCell && deployCells.find(({ x, y }) => x === focusedCell.x && y === focusedCell.y)
+    const target = spellAim && spellTargets.includes(spellAim) ? spellAim : undefined
+    return previewFactionSpell(match, ME, selectedInstance.instanceId, selectedCard.id, deployment, target)
+  }, [match, selectedCard, selectedInstance, selectedPlayable, queueBusy, cursorEnabled, ME, focusedCell, deployCells, spellAim, spellTargets])
+  const focusedMovement = !queueBusy && cursorEnabled && focusedCell ? movementHazards.get(`${focusedCell.x},${focusedCell.y}`) : undefined
+  const pieceVerdicts = useMemo(() => {
+    const verdicts = new Map<string, readonly PreviewVerdict[]>()
+    for (const loss of focusedMovement?.losses ?? []) {
+      verdicts.set(loss.pieceId, [{
+        tone: loss.dies ? 'kill' : 'hurt',
+        title: loss.dies ? 'Cae al mover' : loss.losesFormation ? 'Pierde Formación' : 'Pierde apoyo',
+        detail: `${loss.dies && loss.losesFormation ? 'Pierde Formación · ' : ''}−${loss.amount} Vida`,
+      }])
+    }
+    if (factionPreview?.kind === 'freeze' && factionPreview.targetId) {
+      verdicts.set(factionPreview.targetId, [{ tone: 'freeze', title: `Congelación · ${factionPreview.turns} turnos` }])
+    } else if (factionPreview?.kind === 'push') {
+      const end = factionPreview.route.at(-1)
+      verdicts.set(factionPreview.targetId, [{ tone: 'sink', title: end ? `Empuje → ${cellName(end)}` : 'No se desplaza',
+        detail: end ? `${factionPreview.route.length} de ${factionPreview.limit} casillas${factionPreview.falls ? ' · Cae' : ''}` : undefined }])
+    }
+    return verdicts
+  }, [focusedMovement, factionPreview])
+
   /**
    * Aviso de acciones sin usar. Ceder el turno con una unidad parada, con
    * Esencia de sobra o sin haber jugado la fuente del turno es el despiste más
@@ -1035,6 +1067,14 @@ export function BattlePage() {
   let factionHint: string | undefined
   if (!viewedBoardCard) {
     if (attackPreview) factionHint = attackPreview.lines.join(' · ')
+    else if (factionPreview?.kind === 'push') {
+      const end = factionPreview.route.at(-1)
+      factionHint = end ? `${factionPreview.name} retrocede ${factionPreview.route.length} de ${factionPreview.limit} casillas hasta ${cellName(end)}.`
+        : `${factionPreview.name} permanece en ${cellName(factionPreview.origin)}.`
+    } else if (factionPreview?.kind === 'freeze') {
+      factionHint = factionPreview.targetId ? `Mandato · congela a ${factionPreview.name} durante ${factionPreview.turns} turnos.`
+        : 'Mandato · en este despliegue ninguna unidad recibe Congelación.'
+    }
     else if (selectedCard?.effects.some((effect) => effect.kind === 'tide')) {
       factionHint = `Se resuelve en ${tide === 'high' ? 'Pleamar' : 'Bajamar'}. Consulta esa rama en la carta.`
     } else if (selectedCard?.id === 'dragon-del-rio-amarillo') {
@@ -1199,6 +1239,8 @@ export function BattlePage() {
             onHoverPiece={onHoverPiece}
             onHoverNexus={onHoverNexus}
             attackPreview={attackPreview}
+            pieceVerdicts={pieceVerdicts}
+            pushPreview={factionPreview?.kind === 'push' ? factionPreview : undefined}
             photoMode={photoMode}
             reducedMotion={preferences.reducedMotion}
             renderPaused={Boolean(inspected || scryOpen || howToOpen || glossaryOpen || confirmAbandon || match.pendingSpark || match.pendingDecisions?.length || canTakeMulligan(match, ME))}

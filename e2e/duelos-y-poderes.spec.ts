@@ -262,3 +262,54 @@ for (const sample of spellCases) {
     await writeFile(`${folder}/${sample.card}-${sample.width}.png`, Buffer.from(capture.screenshot, 'base64'))
   })
 }
+
+for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
+  test(`Jade muestra a quién congela y conserva el contador a ${width}`, async ({ page }) => {
+    await page.setViewportSize({ width, height })
+    const base = createMatch(deck('jade'), deck('tercios'), 41)
+    const module = await openBattle(page, {
+      ...base, phase: 'main', turn: 4, mandate: 'player', terrain: [],
+      players: {
+        player: { ...base.players.player, hand: [{ cardId: 'dragon-del-rio-amarillo', instanceId: 'hechizo' }], mulliganTaken: true,
+          resources: Array.from({ length: 6 }, (_, i) => ({ instanceId: `fuente-${i}`, cardId: 'fuente-jade', faction: 'jade', exhausted: false })) },
+        ai: { ...base.players.ai, mulliganTaken: true },
+      },
+      board: [
+        piece('fuerte', 'el-gran-capitan', 'ai', 3),
+        { ...piece('débil', 'rodelero', 'ai', 3), position: { x: 1, y: 3 } },
+      ],
+    }, 'jade', 'tercios')
+    await page.getByRole('button', { name: /^Dragón del Río Amarillo\./ }).click()
+    await page.keyboard.press('ArrowUp')
+    await expect(page.getByText('Congelación · 2 turnos', { exact: true })).toBeVisible()
+    await expect(page.getByText(/Mandato · congela a El gran capitán durante 2 turnos/i)).toBeVisible()
+    await page.screenshot({ path: `tools/captures/duelos-y-poderes/prevision-jade-${width}.png` })
+    const result = await send(page, module, { type: 'play-card', playerId: 'player', cardInstanceId: 'hechizo', position: { x: 3, y: 7 }, target: { kind: 'none' } })
+    expect(result.ok, result.message).toBe(true)
+    await expect(page.getByLabel('Congelada · 2 turnos', { exact: true })).toBeVisible()
+  })
+
+  test(`Marea señala el destino real de un empuje acortado a ${width}`, async ({ page }) => {
+    await page.setViewportSize({ width, height })
+    const base = createMatch(deck('marea'), deck('tercios'), 43)
+    const module = await openBattle(page, {
+      ...base, phase: 'main', turn: 4, terrain: [],
+      players: {
+        player: { ...base.players.player, hand: [{ cardId: 'resaca-subita', instanceId: 'hechizo' }], mulliganTaken: true,
+          resources: [{ instanceId: 'fuente', cardId: 'fuente-marea', faction: 'marea', exhausted: false }] },
+        ai: { ...base.players.ai, mulliganTaken: true },
+      },
+      board: [piece('propia', 'oraculo-de-las-mareas', 'player', 5), piece('objetivo', 'rodelero', 'ai', 4), piece('bloqueo', 'rodelero', 'ai', 2)],
+    }, 'marea', 'tercios')
+    await page.getByRole('button', { name: /^Resaca Súbita\./ }).click()
+    await page.keyboard.press('ArrowUp')
+    await page.keyboard.press('ArrowUp')
+    await expect(page.getByText('Empuje → D4', { exact: true })).toBeVisible()
+    await expect(page.getByText(/Rodelero retrocede 1 de 2 casillas hasta D4/)).toBeVisible()
+    await page.screenshot({ path: `tools/captures/duelos-y-poderes/prevision-marea-${width}.png` })
+    const result = await send(page, module, { type: 'play-card', playerId: 'player', cardInstanceId: 'hechizo', target: { kind: 'piece', pieceId: 'objetivo' } })
+    expect(result.ok, result.message).toBe(true)
+    const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('cronicas-nexo-match')!).state.match as MatchState)
+    expect(saved.board.find((unit) => unit.instanceId === 'objetivo')?.position).toEqual({ x: 3, y: 3 })
+  })
+}

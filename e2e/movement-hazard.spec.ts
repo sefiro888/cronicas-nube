@@ -40,6 +40,7 @@ for (const [scenario, width, height] of cases) {
     const warning = page.getByTestId('movement-hazard-warning');
     await expect(warning).toContainText('Este movimiento mata a tu unidad');
     await expect(warning).toContainText('pierde Formación');
+    await expect(page.getByText('Cae al mover', { exact: true })).toBeVisible();
     const bounds = await warning.boundingBox();
     expect(bounds!.x).toBeGreaterThanOrEqual(0);
     expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width);
