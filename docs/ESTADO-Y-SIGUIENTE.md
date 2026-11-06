@@ -1,5 +1,23 @@
 # Estado del proyecto y por dónde seguir
 
+## Supabase independiente — 6 de noviembre de 2026
+
+Rama `codex/supabase-independiente`, creada desde `main` (`f70e624`).
+El cliente apunta al proyecto `cawihzwnibqxrplkhpbm`, creado por el propietario
+para esta copia. Se conserva la posibilidad de sobrescribir la configuración
+con variables de entorno. No se usa ni guarda la contraseña de base de datos.
+
+Verificación: dos clientes reales suscritos a Supabase, presencia y mensajes
+en ambos sentidos; dos contextos de navegador a 1920 × 1080 y 1366 × 768
+crean y unen sala y cargan estados coincidentes de batalla. No constituye
+una prueba de partida completa ni de reconexión durante todos los efectos.
+805 pruebas unitarias correctas (6 omitidas), compilación y lint correctos;
+las tres pruebas de `decks-inspect.spec.ts` pasan, incluida la pantalla online.
+Capturas locales en `tools/captures/supabase-lobby-0.png` y `-1.png`.
+
+Pendiente integrar y publicar esta rama para que GitHub Pages use el proyecto
+nuevo. No se modificó `magicfable` ni el proyecto Supabase anterior.
+
 ## Cola de la siguiente etapa
 
 El propietario pidió incorporar los indicadores de facción al trabajo futuro y renovar la lista tras las 32 mejoras integradas. La [nueva cola de 100 mejoras](COLA-100-MEJORAS-SIGUIENTE-ETAPA.md) detalla las 19 facciones, el ritmo de batalla y los prototipos de mapas, IA y modos. La numeración de esa cola es independiente de la original.

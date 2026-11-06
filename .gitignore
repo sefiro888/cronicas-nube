@@ -7,9 +7,8 @@ test-results/
 .DS_Store
 *.log
 
-# Claves de Supabase: la anon/publishable key es segura de exponer en el
-# cliente, pero no debe vivir en el historial de git — se inyecta en CI
-# como secreto de GitHub Actions (ver .github/workflows) y aquí en local.
+# Configuración local: puede contener secretos y no se versiona. La clave
+# publicable del cliente sí está en supabaseClient.ts; nunca claves secretas.
 .env
 .env.local
 

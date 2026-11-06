@@ -14,8 +14,9 @@ import { createClient } from '@supabase/supabase-js'
  * ese momento el multijugador no puede conectar y hay que apuntar a uno nuevo
  * sin tener que tocar el código.
  */
-const DEFAULT_URL = 'https://xdtwomgdegrbswxygqwy.supabase.co'
-const DEFAULT_ANON_KEY = 'sb_publishable_bim10G61dr6E-TdOkPnJCQ_VG371UVm'
+// Proyecto independiente de cronicas-nube: no comparte salas con el juego original.
+const DEFAULT_URL = 'https://cawihzwnibqxrplkhpbm.supabase.co'
+const DEFAULT_ANON_KEY = 'sb_publishable_Kp0bGsixsk-w3UEX1rz3Tw__5e_rFCP'
 
 export const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL ?? DEFAULT_URL
 export const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY ?? DEFAULT_ANON_KEY
