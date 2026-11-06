@@ -1,3 +1,4 @@
+import { BATTLE_TACTICAL_BUDGET, planTacticalAction, tacticalValue, type TacticalBudget } from './aiTactics';
 import { distanceToCenter, distanceToEnemyNexusRow, nexusRow } from './board';
 import { CARD_BY_ID } from './cards';
 import { canPayOffering, offeringCost, offeringOf } from './duna';
@@ -205,7 +206,7 @@ const actionForCard = (state: MatchState, instance: CardInstance, me: PlayerId):
   return { type: 'play-card', playerId: me, cardInstanceId: instance.instanceId, target, ...offering };
 };
 
-const chooseCardAction = (state: MatchState, skipped: ReadonlySet<string>, me: PlayerId): GameAction | undefined => {
+const chooseCardAction = (state: MatchState, skipped: ReadonlySet<string>, me: PlayerId, expired?: () => boolean): GameAction | undefined => {
   const faction = seatFaction(state, me);
   let baseline: number | undefined;
   const candidates = state.players[me].hand
@@ -224,8 +225,10 @@ const chooseCardAction = (state: MatchState, skipped: ReadonlySet<string>, me: P
     );
     if (displaces) {
       if (!planManaPayment(state.players[me].resources, effectiveCost(state, me, candidate.card)).payable) continue;
-      baseline ??= positionalValue(state, me);
-      const plan = chooseDisplacement(state, candidate.instance, candidate.card, me, baseline);
+      if (expired?.()) continue;
+      baseline ??= positionalValue(state, me, expired);
+      if (expired?.()) continue;
+      const plan = chooseDisplacement(state, candidate.instance, candidate.card, me, baseline, expired);
       if (plan) plans.push({ action: plan.action, score: cardScore(candidate.card, faction) + plan.value });
       continue;
     }
@@ -305,13 +308,14 @@ const tradeValue = (state: MatchState, attacker: BoardPiece, defender: BoardPiec
  * Es una cota conservadora: las amenazas se miran por separado, sin planear
  * combinaciones de varias unidades ni las cartas de la mano rival.
  */
-const nextNexusThreat = (state: MatchState, me: PlayerId): number => {
+const nextNexusThreat = (state: MatchState, me: PlayerId, expired?: () => boolean): number => {
   const ended = applyAction(state, { type: 'end-turn', playerId: me });
   if (!ended.ok) return 0;
   const next = ended.state;
   if (next.phase === 'finished') return next.winner === me ? -1000 : 1000;
   let damage = 0;
   for (const piece of next.board) {
+    if (expired?.()) break;
     if (piece.owner === me || CARD_BY_ID[piece.cardId]?.type !== 'unit') continue;
     const nexusDamage = (positioned: MatchState): number => {
       if (!getValidAttacks(positioned, piece.instanceId).canAttackNexus) return 0;
@@ -322,6 +326,7 @@ const nextNexusThreat = (state: MatchState, me: PlayerId): number => {
     };
     let best = nexusDamage(next);
     for (const to of getValidMoves(next, piece.instanceId)) {
+      if (expired?.()) break;
       const moved = applyAction(next, { type: 'move', playerId: piece.owner, pieceId: piece.instanceId, to });
       if (moved.ok) best = Math.max(best, nexusDamage(moved.state));
     }
@@ -332,10 +337,11 @@ const nextNexusThreat = (state: MatchState, me: PlayerId): number => {
   return damage * 4 + (damage >= next.players[me].nexusHealth ? 1000 : 0);
 };
 
-const positionalValue = (state: MatchState, me: PlayerId): number => {
+const positionalValue = (state: MatchState, me: PlayerId, expired?: () => boolean): number => {
   if (state.phase === 'finished') return state.winner === me ? 10000 : -10000;
   let value = (state.players[me].nexusHealth - state.players[rivalOf(me)].nexusHealth) * 4;
   for (const piece of state.board) {
+    if (expired?.()) break;
     value += pieceValue(piece) * (piece.owner === me ? 1 : -1);
     if (piece.owner !== me) {
       // Un empuje que aún no evita daño compra distancia para turnos futuros,
@@ -353,7 +359,7 @@ const positionalValue = (state: MatchState, me: PlayerId): number => {
     }
     value += best;
   }
-  return value - nextNexusThreat(state, me);
+  return value - nextNexusThreat(state, me, expired);
 };
 
 const chooseDisplacement = (
@@ -362,6 +368,7 @@ const chooseDisplacement = (
   card: CardDefinition,
   me: PlayerId,
   baseline: number,
+  expired?: () => boolean,
 ): { action: GameAction; value: number } | undefined => {
   const targets: SpellTarget[] = spellNeedsPiece(card)
     ? validSpellTargets(state, me, card)
@@ -370,10 +377,12 @@ const chooseDisplacement = (
     : [{ kind: 'none' }];
   let best: { action: GameAction; value: number } | undefined;
   for (const target of targets) {
+    if (expired?.()) break;
     const action: GameAction = { type: 'play-card', playerId: me, cardInstanceId: instance.instanceId, target };
     const result = applyAction(state, action);
     if (!result.ok) continue;
-    const value = positionalValue(result.state, me) - baseline;
+    const value = positionalValue(result.state, me, expired) - baseline;
+    if (expired?.()) break;
     // No gastar una carta contra un inmune, un borde o una atracción que
     // solo acerca al rival al Nexo. El motor sigue permitiendo esas jugadas.
     if (value > 0 && (!best || value > best.value)) best = { action, value };
@@ -591,7 +600,7 @@ const chooseBoardAction = (state: MatchState, me: PlayerId): GameAction | undefi
   return best?.action ?? skip;
 };
 
-const chooseSparkAction = (state: MatchState, me: PlayerId): GameAction | undefined => {
+const chooseSparkAction = (state: MatchState, me: PlayerId, tactical = false): GameAction | undefined => {
   const pending = state.pendingSpark;
   if (!pending || pending.owner !== me) return undefined;
   const instance = state.players[me].hand.find((card) => card.instanceId === pending.cardInstanceId);
@@ -601,7 +610,11 @@ const chooseSparkAction = (state: MatchState, me: PlayerId): GameAction | undefi
   for (const face of [...new Set(pending.faces)]) {
     const resolved = { ...card, effects: sparkEffects(card.effects, face) };
     const targets = card.type === 'instant' ? validSpellTargets(state, me, resolved) : [];
-    const options: SpellTarget[] = targets.length ? targets.map((piece) => ({ kind: 'piece', pieceId: piece.instanceId })) : [{ kind: 'none' }];
+    // Una cara sin objetivo legal se puede consumir sin blanco. El motor
+    // distingue un objetivo ausente de una selección explícita inválida.
+    const options: (SpellTarget | undefined)[] = targets.length
+      ? targets.map((piece) => ({ kind: 'piece', pieceId: piece.instanceId }))
+      : [undefined];
     for (const target of options) {
       const action: GameAction = { type: 'choose-spark', playerId: me, face, target };
       const result = applyAction(state, action);
@@ -609,17 +622,19 @@ const chooseSparkAction = (state: MatchState, me: PlayerId): GameAction | undefi
       const next = result.state;
       const material = next.board.reduce((sum, piece) => sum + ((CARD_BY_ID[piece.cardId]?.attack ?? 0) * 2 + piece.currentHealth) * (piece.owner === me ? 1 : -1), 0);
       const value = next.winner ? (next.winner === me ? 1e6 : -1e6) : material + (next.players[me].nexusHealth - next.players[rivalOf(me)].nexusHealth) * 3 + (next.players[me].hand.length - next.players[rivalOf(me)].hand.length) * 2;
-      if (!best || value > best.value) best = { action, value };
+      const score = tactical ? tacticalValue(next, me) : value;
+      if (!best || score > best.value) best = { action, value: score };
     }
   }
   return best?.action;
 };
 
-export const chooseNextAiAction = (
+export const chooseBaselineAiAction = (
   state: MatchState,
   skippedCardIds: ReadonlySet<string> = new Set(),
   difficulty: AiDifficulty = 'normal',
   me: PlayerId = 'ai',
+  expired?: () => boolean,
 ): GameAction => {
   const endTurn: GameAction = { type: 'end-turn', playerId: me };
   if (state.activePlayer !== me || state.phase === 'finished') return endTurn;
@@ -636,7 +651,7 @@ export const chooseNextAiAction = (
   const powerAction = choosePowerAction(state, me);
   if (powerAction) return powerAction;
 
-  const cardAction = chooseCardAction(state, skippedCardIds, me);
+  const cardAction = chooseCardAction(state, skippedCardIds, me, expired);
   if (cardAction) return cardAction;
 
   // En difícil el combate se decide mirando el tablero entero de una vez y
@@ -672,6 +687,33 @@ export const chooseNextAiAction = (
     if (move) return { type: 'move', playerId: me, pieceId: piece.instanceId, to: move };
   }
   return endTurn;
+};
+
+/** La simulación A/B usa esta misma entrada con un límite de nodos fijo. */
+export const chooseNextAiAction = (
+  state: MatchState,
+  skipped: ReadonlySet<string> = new Set(),
+  difficulty: AiDifficulty = 'normal',
+  me: PlayerId = 'ai',
+  budget: TacticalBudget = BATTLE_TACTICAL_BUDGET,
+): GameAction => {
+  const faction = seatFaction(state, me);
+  const scoped = difficulty !== 'easy' && (faction === 'tercios' || faction === 'marea' || faction === 'duna' || faction === 'goblins');
+  const started = performance.now();
+  const timeout = scoped ? budget.maxMs : undefined;
+  const fallback = chooseBaselineAiAction(state, skipped, difficulty, me,
+    timeout === undefined ? undefined : () => performance.now() - started >= timeout * .5);
+  if (difficulty === 'easy' || state.winner || state.activePlayer !== me || state.pendingDecisions?.length) return fallback;
+  if (faction === 'goblins' && state.pendingSpark) return chooseSparkAction(state, me, true) ?? fallback;
+  if (state.pendingSpark || (faction !== 'tercios' && faction !== 'marea' && faction !== 'duna' && faction !== 'goblins')) return fallback;
+  if (fallback.type === 'play-resource' || fallback.type === 'commander-power') return fallback;
+  const card = fallback.type === 'play-card' ? CARD_BY_ID[state.players[me].hand.find((item) => item.instanceId === fallback.cardInstanceId)?.cardId ?? ''] : undefined;
+  if (card?.effects.some((effect) => effect.kind === 'spark')) return fallback;
+  if (faction === 'duna' && (!card || (offeringOf(card) === undefined && !card.effects.some((effect) => effect.kind === 'judgement')))) return fallback;
+  if (!state.board.length && faction !== 'duna') return fallback;
+  return planTacticalAction(state, me, faction, skipped, fallback, timeout === undefined ? budget : {
+    ...budget, maxMs: Math.max(0, timeout - (performance.now() - started)),
+  });
 };
 
 /** Runs a complete, bounded and deterministic AI turn, always yielding control when possible. */

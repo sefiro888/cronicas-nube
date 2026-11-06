@@ -42,7 +42,9 @@ export const useAiTurn = (options: AiTurnOptions): { reset: () => void } => {
     if (!enabled) return
     const current = useMatchStore.getState().match
     if (!current || current.activePlayer !== 'ai' || current.winner || blocked) return
-    const timer = window.setTimeout(() => {
+    const delay = Math.max(140, delayMs / 3)
+    let timer: number
+    const step = () => {
       const stateNow = useMatchStore.getState()
       const matchNow = stateNow.match
       if (!matchNow || matchNow.activePlayer !== 'ai' || matchNow.winner) return
@@ -57,6 +59,9 @@ export const useAiTurn = (options: AiTurnOptions): { reset: () => void } => {
         stateNow.setMessage(undefined)
         if (action.type === 'play-card' || action.type === 'play-resource') {
           skipped.current.add(action.cardInstanceId)
+          // Al rechazarse una carta no llegan eventos ni cambia el turno.
+          // La siguiente consulta necesita su propio tick para poder probar otra.
+          timer = window.setTimeout(step, delay)
         } else {
           const forced = stateNow.dispatch({ type: 'end-turn', playerId: 'ai' })
           if (!forced) stateNow.setMessage(undefined)
@@ -68,7 +73,8 @@ export const useAiTurn = (options: AiTurnOptions): { reset: () => void } => {
         skipped.current = new Set()
       }
       stateNow.setAiThinking(false)
-    }, Math.max(140, delayMs / 3))
+    }
+    timer = window.setTimeout(step, delay)
     return () => window.clearTimeout(timer)
   }, [activePlayer, turn, winner, blocked, delayMs, difficulty, pendingCount, enabled, pendingSpark, pendingDecisions])
 
