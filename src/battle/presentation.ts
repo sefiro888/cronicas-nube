@@ -12,7 +12,7 @@ export type PresentationPace = 'cinematic' | 'normal' | 'fast'
 export const PRESENTATION_PACES: readonly PresentationPace[] = ['cinematic', 'normal', 'fast']
 
 export const PACE_LABELS: Readonly<Record<PresentationPace, { readonly name: string; readonly hint: string }>> = {
-  cinematic: { name: 'Cinemático', hint: 'Cada carta lanzada se muestra en grande y los golpes se ven despacio.' },
+  cinematic: { name: 'Cinemático', hint: 'Cartas en grande, golpes pausados y más tiempo para jugadas decisivas.' },
   normal: { name: 'Normal', hint: 'Cartas en grande más breves y combates a velocidad original.' },
   fast: { name: 'Rápido', hint: 'Solo se presentan las cartas del rival, y por poco tiempo.' },
 }
@@ -26,8 +26,8 @@ export const PACE_LABELS: Readonly<Record<PresentationPace, { readonly name: str
  */
 const PACE_SCALE: Readonly<Record<PresentationPace, Partial<Record<AnimationEvent['type'], number>>>> = {
   cinematic: {
-    attack: 2.1, damage: 1.9, destroy: 2, 'nexus-damage': 1.9,
-    spell: 1.6, summon: 2.4, move: 1.2, shield: 1.4, freeze: 1.4,
+    attack: 1.7, damage: 1.4, destroy: 1.65, 'nexus-damage': 1.9,
+    spell: 1.6, summon: 2.4, move: 1, shield: 1.15, freeze: 1.2,
   },
   normal: {},
   fast: { attack: 0.75, damage: 0.75, destroy: 0.75, spell: 0.75, summon: 0.75, move: 0.8 },
@@ -37,10 +37,8 @@ export const paceScale = (pace: PresentationPace | undefined, type: AnimationEve
   PACE_SCALE[pace ?? 'normal'][type] ?? 1
 
 /**
- * Cuánto se queda la carta en el centro antes de resolverse. Cinco segundos
- * en cinemático, propia y rival por igual: es lo que pidió el propietario
- * tras probar 1,9/2,9 s, que no daban para leer una carta con texto largo.
- * Siempre se puede cerrar antes con un clic.
+ * Conservamos los cinco segundos en Cinemático para las jugadas que más
+ * necesitan lectura. Los lanzamientos breves devuelven antes el control.
  */
 const SPOTLIGHT_MS: Readonly<Record<PresentationPace, { readonly own: number; readonly rival: number }>> = {
   cinematic: { own: 5000, rival: 5000 },
@@ -48,8 +46,8 @@ const SPOTLIGHT_MS: Readonly<Record<PresentationPace, { readonly own: number; re
   fast: { own: 0, rival: 1500 },
 }
 
-export const spotlightDuration = (pace: PresentationPace | undefined, mine: boolean, animationSpeed = 1): number => {
-  const base = SPOTLIGHT_MS[pace ?? 'normal'][mine ? 'own' : 'rival']
+export const spotlightDuration = (pace: PresentationPace | undefined, mine: boolean, animationSpeed = 1, extended = true): number => {
+  const base = pace === 'cinematic' && !extended ? 3200 : SPOTLIGHT_MS[pace ?? 'normal'][mine ? 'own' : 'rival']
   // La velocidad de animación acorta, pero nunca por debajo de lo que se tarda
   // en leer un nombre: a ×2 la carta rival seguía visible menos de un segundo.
   return base === 0 ? 0 : Math.max(800, base / Math.max(1, animationSpeed))
@@ -144,7 +142,10 @@ export const spotlightFor = (
   const caster = event.actorId as PlayerId
   if (caster !== 'player' && caster !== 'ai') return undefined
   const mine = caster === me
-  const durationMs = spotlightDuration(options.pace, mine, options.animationSpeed)
+  const source = CARD_BY_ID[event.cast.sourceId]
+  const extended = event.cast.kind === 'power' || source?.rarity === 'mythic' || (source?.rules.length ?? 0) >= 130
+    || event.sparkFace !== undefined || Boolean(event.spellPayment?.offering)
+  const durationMs = spotlightDuration(options.pace, mine, options.animationSpeed, extended)
   if (durationMs <= 0) return undefined
   if (event.cast.kind === 'power') {
     const card = powerCard(event.cast.sourceId)
@@ -155,7 +156,7 @@ export const spotlightFor = (
       target: targetFor(event, caster, me), durationMs, impact: options.impact,
     }
   }
-  const card = CARD_BY_ID[event.cast.sourceId]
+  const card = source
   if (!card) return undefined
   return {
     eventId: event.id, kind: event.cast.kind, caster, card, target: targetFor(event, caster, me),
@@ -179,7 +180,7 @@ export const spotlightHeading = (spotlight: Pick<Spotlight, 'kind' | 'caster'>, 
  * cada uno haría la partida eterna. Lo justo para leer quién contra quién y
  * qué habilidades entran en juego.
  */
-const DUEL_INTRO_MS: Readonly<Record<PresentationPace, number>> = { cinematic: 1800, normal: 900, fast: 0 }
+const DUEL_INTRO_MS: Readonly<Record<PresentationPace, number>> = { cinematic: 1450, normal: 900, fast: 0 }
 
 export const duelIntroDuration = (pace: PresentationPace | undefined, animationSpeed = 1): number => {
   const base = DUEL_INTRO_MS[pace ?? 'normal']
