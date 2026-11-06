@@ -183,9 +183,22 @@ describe('rótulo de combate', () => {
     const shielded: BoardPiece = { ...enemyUnit(unit.id), instanceId: 'defensor', statuses: [{ kind: 'shielded', amount: 2 }] }
     let exchange = openExchange(attack, 'ai', [shielded])!
     expect(combatTraits(exchange.defender, 'defender').find((trait) => trait.id === 'shield')?.active).toBe(false)
-    exchange = foldExchange(exchange, { id: 's', type: 'shield', targetId: 'defensor', amount: 2, durationMs: 260 })
+    exchange = foldExchange(exchange, { id: 's', type: 'shield', targetId: 'defensor', amount: 2, effectId: 'commander-order-shield', durationMs: 260 })
     const shield = combatTraits(exchange.defender, 'defender').find((trait) => trait.id === 'shield')!
     expect(shield).toMatchObject({ active: true, label: 'Escudo 2' })
+  })
+
+  it('conserva la Vida de apertura y distingue escudo concedido, absorción y contraataque real', () => {
+    let exchange = openExchange({ ...attack, openingHealth: { attacker: 4, defender: 5 } }, 'ai')!
+    const shield: AnimationEvent = { id: 'escudo', type: 'shield', targetId: 'defensor', amount: 2, durationMs: 260 }
+    expect(foldExchange(exchange, { ...shield, effectId: 'commander-order-aura' })).toBe(exchange)
+    exchange = foldExchange(exchange, { ...shield, effectId: 'commander-order-shield' })
+    expect(exchange.defender).toMatchObject({ absorbed: 2, health: { before: 5, after: 5 } })
+    exchange = foldExchange(exchange, { id: 'golpe', type: 'damage', targetId: 'defensor', amount: 2, pieceHealth: { before: 5, after: 3 }, durationMs: 300 })
+    exchange = foldExchange(exchange, { id: 'vuelta', type: 'damage', targetId: 'atacante', amount: 4, retaliation: true, pieceHealth: { before: 4, after: 0 }, durationMs: 300 })
+    exchange = foldExchange(exchange, { id: 'renacer', type: 'destroy', targetId: 'atacante', renacerBonus: 2, durationMs: 420 })
+    expect(exchange.defender).toMatchObject({ damage: 2, health: { before: 5, after: 3 } })
+    expect(exchange.attacker).toMatchObject({ countered: true, health: { before: 4, after: 0 }, destroyed: true, renacer: 2 })
   })
 
   it('Perforar y Vínculo vital se encienden cuando actúan', () => {
@@ -200,6 +213,8 @@ describe('rótulo de combate', () => {
     if (linker) {
       let exchange = openExchange({ ...attack, cardId: linker.id }, 'ai')!
       exchange = foldExchange(exchange, { id: 'h', type: 'damage', targetId: 'defensor', amount: 3, durationMs: 1 })
+      expect(combatTraits(exchange.attacker, 'attacker').find((trait) => trait.id === 'lifelink')?.active).toBe(false)
+      exchange = foldExchange(exchange, { id: 'cura', type: 'spell', actorId: 'ai', cardId: linker.id, effectId: 'vinculo-vital', amount: 2, durationMs: 180 })
       expect(combatTraits(exchange.attacker, 'attacker').find((trait) => trait.id === 'lifelink')?.active).toBe(true)
     }
     expect(piercer ?? linker).toBeDefined()

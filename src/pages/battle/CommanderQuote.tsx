@@ -8,11 +8,12 @@ import styles from './CommanderQuote.module.css'
  * propio abajo a la izquierda, el rival arriba a la derecha). Entra con un
  * pequeño rebote y se va solo; no tapa el centro del tablero.
  */
-export function CommanderQuote({ commander, text, mine }: { commander: CommanderDefinition; text: string; mine: boolean }) {
+export function CommanderQuote({ commander, text, mine, duel }: { commander: CommanderDefinition; text: string; mine: boolean; duel?: boolean }) {
   return (
     <div
       className={styles.quote}
       data-side={mine ? 'own' : 'rival'}
+      data-duel={duel || undefined}
       style={{ '--accent': FACTION_BY_ID[commander.faction].accentColor } as CSSProperties}
       role="status"
       aria-live="polite"

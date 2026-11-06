@@ -113,6 +113,7 @@ interface Board3DProps {
   selectedPieceId?: string
   validCells: readonly Position[]
   movementHazards?: ReadonlyMap<string, MovementHazard>
+  focusedHazard?: Position
   /**
    * Qué significan las casillas iluminadas ahora mismo. Antes «mover aquí» y
    * «desplegar aquí» compartían el mismo azul, aunque son acciones distintas
@@ -138,6 +139,8 @@ interface Board3DProps {
   onHoverPiece?: (pieceId?: string) => void
   onHoverNexus?: (playerId?: PlayerId) => void
   /** Objetivo (ficha o Nexo) sobre el que mostrar la vista previa, con sus líneas de texto ya redactadas. */
+  pieceVerdicts?: ReadonlyMap<string, readonly PreviewVerdict[]>
+  pushPreview?: { readonly origin: Position; readonly route: readonly Position[] }
   attackPreview?: { readonly targetId: string; readonly attackerId?: string; readonly lines: readonly string[]; readonly target?: readonly PreviewVerdict[]; readonly attacker?: readonly PreviewVerdict[] }
   /** Hay una carta en la mano siendo arrastrada: la cámara no debe orbitar. */
   dragging?: boolean
@@ -152,6 +155,7 @@ interface Board3DProps {
   activeEvent?: AnimationEvent
   /** A quién afectó la carta o poder de `activeEvent`, si es un lanzamiento. */
   castImpact?: CastImpact
+  waitingSpell?: CastImpact
   /** Unidad señalada y sus amenazas (flechas). */
   threatFocus?: ThreatFocus
   /** Animaciones de palabras clave que acaban de actuar. */
@@ -775,7 +779,7 @@ interface HopPath {
 
 /** Icono de cada veredicto de la previsión. */
 const VERDICT_ICON: Readonly<Record<PreviewVerdict['tone'], string>> = {
-  kill: '☠', hurt: '♥', counterKill: '☠', counter: '↩', safe: '✓', sink: '≈', pierce: '➶', nexus: '◆', lethal: '☠',
+  freeze: '❄', kill: '☠', hurt: '♥', counterKill: '☠', counter: '↩', safe: '✓', sink: '≈', pierce: '➶', nexus: '◆', lethal: '☠',
 }
 
 /**
@@ -815,7 +819,7 @@ const preferredPiece = (event: ThreeEvent<MouseEvent | PointerEvent>): string | 
   return first
 }
 
-const BoardCard = memo(function BoardCard({ deploying = false, piece, runo, formationBonus, selected, targetable, ready, active, mine, crowded, stackSafe, onPiece, onInspect, onHover, previewLines, reducedMotion, impulse, impact, arrival, waiting }: { deploying?: boolean; piece: BoardPiece; runo: number; formationBonus: number; selected: boolean; targetable: boolean; ready: boolean; active: boolean; mine: boolean; crowded: boolean; stackSafe: boolean; onPiece: (pieceId: string) => void; onInspect?: (cardId: string, pieceId?: string) => void; onHover?: (pieceId?: string) => void; previewLines?: readonly PreviewVerdict[]; reducedMotion: boolean; impulse?: Impulse; impact?: AnimationEvent; arrival?: AnimationEvent; waiting: boolean }) {
+const BoardCard = memo(function BoardCard({ deploying = false, piece, turn, runo, formationBonus, selected, targetable, ready, active, mine, crowded, stackSafe, onPiece, onInspect, onHover, previewLines, reducedMotion, impulse, impact, arrival, waiting }: { deploying?: boolean; piece: BoardPiece; turn: number; runo: number; formationBonus: number; selected: boolean; targetable: boolean; ready: boolean; active: boolean; mine: boolean; crowded: boolean; stackSafe: boolean; onPiece: (pieceId: string) => void; onInspect?: (cardId: string, pieceId?: string) => void; onHover?: (pieceId?: string) => void; previewLines?: readonly PreviewVerdict[]; reducedMotion: boolean; impulse?: Impulse; impact?: AnimationEvent; arrival?: AnimationEvent; waiting: boolean }) {
   const card = CARD_BY_ID[piece.cardId]
   const displayedAttack = Math.max(0, (card?.attack ?? 0) + piece.attackModifier + (card?.type === 'unit' ? runoAttackBonus(runo) : 0) + formationBonus)
   const factionFrame = cardFrameFor(card?.faction)
@@ -882,7 +886,9 @@ const BoardCard = memo(function BoardCard({ deploying = false, piece, runo, form
     // la ficha (Vida, estados...) que reconstruya `piece` sin mover nada.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [piece.position.x, piece.position.y, reducedMotion])
-  const frozen = piece.statuses.some((status) => status.kind === 'frozen')
+  const frost = piece.statuses.find((status) => status.kind === 'frozen')
+  const frostTurns = frost ? Math.max(0, Math.ceil((frost.expiresOnTurn - turn) / 2)) : 0
+  const frozen = frostTurns > 0
   const stunned = piece.statuses.some((status) => status.kind === 'stunned')
   const cursed = piece.statuses.some((status) => status.kind === 'cursed')
   const infected = piece.statuses.some((status) => status.kind === 'infected')
@@ -1212,7 +1218,7 @@ const BoardCard = memo(function BoardCard({ deploying = false, piece, runo, form
             la palabra clave: la unidad no podía atacar y nada lo indicaba. */}
         {(frozen || stunned || shielded > 0 || cursed || infected || spent) && (
           <div className={styles.cardStatuses}>
-            {frozen && <span className={styles.frozenStat} title="Congelada: no puede mover ni atacar">❄</span>}
+            {frozen && <span className={styles.frozenStat} aria-label={`Congelada · ${frostTurns} ${frostTurns === 1 ? 'turno' : 'turnos'}`} title="Congelada: no puede mover ni atacar">❄ {frostTurns} t</span>}
             {stunned && <span className={styles.stunnedStat} title="Aturdida: no puede atacar este turno (sí moverse)">✷</span>}
             {shielded > 0 && <span className={styles.shieldStat} title={`Escudo: absorbe ${shielded} de daño`}>⛨ {shielded}</span>}
             {cursed && <span className={styles.cursedStat} title="Maldita: pierde Vida al final de cada turno">☠</span>}
@@ -1856,6 +1862,8 @@ function Scene(props: Board3DProps) {
   const waitingSummons = useMemo(() => new Set((props.pendingEvents ?? EMPTY_EVENTS)
     .filter((event) => event.type === 'summon').map((event) => event.targetId)), [props.pendingEvents])
   const terminal = Boolean(props.state.winner) && !props.activeEvent && (props.pendingEvents?.length ?? 0) === 0
+  // La ficha espera el lanzamiento en su casilla de origen durante el primer plano de la carta.
+  const spellOrigins = new Map(props.waitingSpell?.pieces.flatMap(({ instanceId, movedFrom }) => movedFrom ? [[instanceId, movedFrom] as const] : []))
   return (
     <>
       {/* Todo el contenido jugable gira 180° cuando el invitado ('ai') mira la
@@ -1935,6 +1943,31 @@ function Scene(props: Board3DProps) {
           />
         )
       })}
+      {!props.photoMode && props.focusedHazard && props.movementHazards?.get(cellKey(props.focusedHazard))?.losses.map((loss) => {
+        const piece = props.state.board.find((candidate) => candidate.instanceId === loss.pieceId)
+        if (!piece) return null
+        return <mesh key={loss.pieceId} position={[gridToWorldX(piece.position.x), 0.13, gridToWorldZ(piece.position.y)]}
+          rotation={[-Math.PI / 2, 0, 0]} raycast={() => null}>
+          <ringGeometry args={[0.39, 0.46, 32]} />
+          <meshBasicMaterial color={loss.dies ? '#ff7764' : '#ffe096'} transparent opacity={0.85} depthWrite={false} side={DoubleSide} />
+        </mesh>
+      })}
+      {!props.photoMode && props.pushPreview?.route.map((cell, index, route) => {
+        const previous = route[index - 1] ?? props.pushPreview!.origin
+        const last = index === route.length - 1
+        return <group key={cellKey(cell)} position={[boardX(cell.x), .15, boardZ(cell.y)]}>
+          <mesh rotation={[-Math.PI / 2, 0, 0]} raycast={() => null}>
+            <ringGeometry args={last ? [.28, .37, 32] : [.19, .23, 24]} />
+            <meshBasicMaterial color={last ? '#bffff0' : '#64eddd'} transparent opacity={.9} depthWrite={false} />
+          </mesh>
+          {[-.34, .34].map((edge) => (
+            <mesh key={edge} position={[edge, 0, (boardZ(previous.y) - boardZ(cell.y)) / 2]} rotation={[-Math.PI / 2, 0, 0]} raycast={() => null}>
+              <planeGeometry args={[.055, .72]} />
+              <meshBasicMaterial color="#80ffea" transparent opacity={.88} depthWrite={false} />
+            </mesh>
+          ))}
+        </group>
+      })}
       {props.cursorCell && <CursorMarker position={props.cursorCell} reducedMotion={props.reducedMotion} hazard={props.movementHazards?.get(cellKey(props.cursorCell))} />}
       {/* En la Caldera, la costura es un río de lava que parte el tablero. */}
       {props.scenario === 'caldera' ? <Suspense fallback={<Midline terrainStyle={terrainStyle} />}><LavaRiver reducedMotion={props.reducedMotion} /></Suspense> : <Midline terrainStyle={terrainStyle} />}
@@ -1955,7 +1988,8 @@ function Scene(props: Board3DProps) {
           <BoardCard
             key={piece.instanceId}
             deploying={props.cellIntent === 'deploy' && props.validCells.length > 0}
-            piece={piece}
+            piece={spellOrigins.has(piece.instanceId) ? { ...piece, position: spellOrigins.get(piece.instanceId)! } : piece}
+            turn={props.state.turn}
             runo={props.state.players[piece.owner].runo ?? 0}
             formationBonus={formationAttackBonus(props.state, piece)}
             selected={piece.instanceId === props.selectedPieceId}
@@ -1969,7 +2003,7 @@ function Scene(props: Board3DProps) {
             onInspect={props.onInspectPiece}
             onHover={props.onHoverPiece}
             previewLines={props.attackPreview?.targetId === piece.instanceId ? props.attackPreview.target
-              : props.attackPreview?.attackerId === piece.instanceId ? props.attackPreview.attacker : undefined}
+              : props.attackPreview?.attackerId === piece.instanceId ? props.attackPreview.attacker : props.pieceVerdicts?.get(piece.instanceId)}
             reducedMotion={props.reducedMotion}
             impulse={impulses.get(piece.instanceId)}
             impact={props.activeEvent?.targetId === piece.instanceId ? props.activeEvent : undefined}

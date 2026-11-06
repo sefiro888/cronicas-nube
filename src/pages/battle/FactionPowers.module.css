@@ -1,0 +1,11 @@
+.powers { position: absolute; inset: calc(100% + 3px) 0 auto; margin-inline: auto; width: max-content; max-width: min(66vw, 730px); z-index: 1; display: flex; gap: 5px; overflow-x: auto; scrollbar-width: thin; padding: 2px 5px 3px; }
+.power { display: inline-flex; flex: none; align-items: center; gap: 5px; min-height: 25px; padding: 1px 8px; border: 1px solid color-mix(in srgb, var(--seal) 58%, #25221b); border-radius: 5px; background: linear-gradient(145deg, #28241d, #0b1017 72%); color: #e4dbcb; font: 600 11px/1.1 var(--display); white-space: nowrap; box-shadow: inset 0 0 0 1px #0009, 0 2px 5px #0008; }
+.power svg { width: 17px; height: 17px; }
+.power small { color: #c8b9a0; font: 700 9px/1 system-ui, sans-serif; text-transform: uppercase; }
+.power strong { color: color-mix(in srgb, var(--seal) 66%, white); font-variant-numeric: tabular-nums; animation: reveal .38s ease-out both; }
+@keyframes reveal { from { opacity: .42; } to { opacity: 1; } }
+@media (max-width: 760px) { .powers { max-width: 94vw; } }
+@media (prefers-reduced-motion: reduce) { .power strong { animation: none; } }
+:global([data-motion='reduced']) .power strong { animation: none; }
+.power[data-mandate='own'] { border-inline-start: 3px solid #89d6aa; }
+.power[data-mandate='rival'] { border-inline-end: 3px solid #efab79; }

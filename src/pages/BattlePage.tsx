@@ -1,11 +1,14 @@
 import { factionStageMusic, isFactionStage } from '../battle/scenarios/factionStages'
 import { cardFrameFor } from '../presentation/cardFrames'
 import { effectiveAttack } from '../game/fimbul'
+import { FactionPowers } from './battle/FactionPowers'
+import { tidePhase } from '../game/marea'
 import { EssenceSeal } from './battle/EssenceSeal'
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   CARD_BY_ID,
+  applyAction,
   createMatch,
   canTakeMulligan,
   COMMANDER_BY_ID,
@@ -34,10 +37,12 @@ import {
 } from '../game'
 import { Board3D } from '../battle/Board3D'
 import { previewMovementHazard, type MovementHazard } from '../game/movementHazard'
+import { previewFactionSpell } from '../battle/ui/factionSpellPreview'
+import type { PreviewVerdict } from '../battle/ui/battleHints'
 import { MovementHazardWarning } from './battle/MovementHazardWarning'
 import { useAiTurn } from '../battle/hooks/useAiTurn'
 import { useCardDrag } from '../battle/hooks/useCardDrag'
-import { useBoardCursor } from '../battle/hooks/useBoardCursor'
+import { cellName, useBoardCursor } from '../battle/hooks/useBoardCursor'
 import { useEventDirector } from '../battle/hooks/useEventDirector'
 import { eventDuration } from '../battle/eventTiming'
 import { useMatchRecorder } from '../battle/hooks/useMatchRecorder'
@@ -74,6 +79,7 @@ import { evaluateDailyChallenge } from '../store/dailyChallenge'
 import { withBase } from '../utils/assets'
 import { AI_GAP_SCALE, PACE_LABELS, PRESENTATION_PACES } from '../battle/presentation'
 import { TYPE_LABELS } from '../utils/cardLabels'
+import { BattlePlate } from './battle/BattlePlate'
 import { CastSpotlight } from './battle/CastSpotlight'
 import { NEXUS_DANGER_RATIO } from '../battle/NexusCrown'
 import { CombatDuel } from './battle/CombatDuel'
@@ -190,13 +196,17 @@ export function BattlePage() {
 
   const match = store.match
   const currentEvent = store.currentEvent
-  const resolvedImpact = currentEvent && store.resolvedEffects.find(({ id }) => id === currentEvent.id)
+  const cue = currentEvent?.id.split(REPLAY_MARK)[0]
+  const resolvedPlates = cue ? store.resolvedEffects.filter(({ id, cueId }) => id === cue || cueId === cue) : []
+  const resolvedImpact = resolvedPlates[0]
   const visualEvent = useMemo(() => currentEvent ? {
     ...currentEvent, durationMs: eventDuration(currentEvent, {
       animationSpeed: preferences.animationSpeed, reducedMotion: preferences.reducedMotion,
       presentationPace: preferences.presentationPace,
     }),
   } : undefined, [currentEvent, preferences.animationSpeed, preferences.reducedMotion, preferences.presentationPace])
+  const nextSpell = !preferences.reducedMotion && store.pendingAnimations.find(({ type, cast }) => type === 'spell' && cast)
+  const waitingSpell = nextSpell && !currentEvent?.cast ? store.castImpacts[nextSpell.id] : undefined
   const pendingCount = store.pendingAnimations.length
   const queueBusy = Boolean(currentEvent) || pendingCount > 0
 
@@ -235,8 +245,13 @@ export function BattlePage() {
   // cuando el golpe se ve caer, no antes.
   const displayedNexusHealth = useMemo(() => {
     const pending = (owner: PlayerId) => store.pendingAnimations
-      .filter((event) => event.type === 'nexus-damage' && event.targetId === `${owner}-nexus` && !event.id.includes(REPLAY_MARK))
-      .reduce((total, event) => total + (event.amount ?? 0), 0)
+      .filter((event) => event.targetId === `${owner}-nexus` && !event.id.includes(REPLAY_MARK))
+      .reduce((total, event) => {
+        const amount = event.amount ?? 0
+        if (event.type === 'nexus-damage') return total + amount
+        if (event.effectId === 'nexo-curacion' || event.effectId === 'vinculo-vital') return total - amount
+        return total
+      }, 0)
     return {
       player: (store.match?.players.player.nexusHealth ?? 0) + pending('player'),
       ai: (store.match?.players.ai.nexusHealth ?? 0) + pending('ai'),
@@ -259,8 +274,10 @@ export function BattlePage() {
   // Escenario efectivo: con «Según tu facción» lo decide el mazo con el que
   // juegas, y si no, manda la elección manual. Se lee del propio MatchState y
   // no del jugador, que se deriva más abajo.
+  const routeRun = useAdventure((state) => state.run)
+  const routeScenario = isAdventureMatch && routeRun?.kind === 'route' && routeRun.battleSeed === match?.seed ? routeRun.routeNode : undefined
   const scenario = resolveScenario(
-    preferences.scenario,
+    routeScenario ?? preferences.scenario,
     match ? COMMANDER_BY_ID[match.players[ME].commanderId]?.faction : undefined,
   )
   // Capa ambiental generativa del escenario activo (se apaga sola al salir).
@@ -477,6 +494,16 @@ export function BattlePage() {
     match && offeringBase !== undefined && canPayOffering(match, ME, offeringBase),
   )
   const offeringToll = match && offeringBase !== undefined ? offeringCost(match, ME, offeringBase) : 0
+  const hybrisClosingLoss = useMemo(() => {
+    if (!match || match.activePlayer !== ME || match.winner || !(match.players[ME].hybris || match.board.some(
+      (piece) => piece.owner === ME && CARD_BY_ID[piece.cardId]?.effects.some(
+        (effect) => effect.kind === 'passive' && effect.id === 'upkeep-gain-hybris',
+      ),
+    ))) return undefined
+    const result = applyAction({ ...match, animations: [] }, { type: 'end-turn', playerId: ME })
+    if (!result.ok) return undefined
+    return result.state.animations.find((event) => event.effectId === 'olimpo-hybris-backlash' && event.targetId === `${ME}-nexus`)?.amount
+  }, [match, ME])
   const offering = Boolean(selectedInstance && offeringFor === selectedInstance.instanceId && offeringAffordable)
   const commander = player ? COMMANDER_BY_ID[player.commanderId] : undefined
   const rivalCommander = rival ? COMMANDER_BY_ID[rival.commanderId] : undefined
@@ -830,6 +857,36 @@ export function BattlePage() {
     onNexus,
   })
 
+  const focusedCell = hoveredCell ?? boardCursor.cell
+  const spellAim = aimedTargetId ?? (boardCursor.cell && match?.board.find(
+    ({ position }) => position.x === boardCursor.cell?.x && position.y === boardCursor.cell.y,
+  )?.instanceId)
+  const factionPreview = useMemo(() => {
+    if (!match || !selectedCard || !selectedInstance || !selectedPlayable || queueBusy || !cursorEnabled || match.activePlayer !== ME) return undefined
+    const deployment = focusedCell && deployCells.find(({ x, y }) => x === focusedCell.x && y === focusedCell.y)
+    const target = spellAim && spellTargets.includes(spellAim) ? spellAim : undefined
+    return previewFactionSpell(match, ME, selectedInstance.instanceId, selectedCard.id, deployment, target)
+  }, [match, selectedCard, selectedInstance, selectedPlayable, queueBusy, cursorEnabled, ME, focusedCell, deployCells, spellAim, spellTargets])
+  const focusedMovement = !queueBusy && cursorEnabled && focusedCell ? movementHazards.get(`${focusedCell.x},${focusedCell.y}`) : undefined
+  const pieceVerdicts = useMemo(() => {
+    const verdicts = new Map<string, readonly PreviewVerdict[]>()
+    for (const loss of focusedMovement?.losses ?? []) {
+      verdicts.set(loss.pieceId, [{
+        tone: loss.dies ? 'kill' : 'hurt',
+        title: loss.dies ? 'Cae al mover' : loss.losesFormation ? 'Pierde Formación' : 'Pierde apoyo',
+        detail: `${loss.dies && loss.losesFormation ? 'Pierde Formación · ' : ''}−${loss.amount} Vida`,
+      }])
+    }
+    if (factionPreview?.kind === 'freeze' && factionPreview.targetId) {
+      verdicts.set(factionPreview.targetId, [{ tone: 'freeze', title: `Congelación · ${factionPreview.turns} turnos` }])
+    } else if (factionPreview?.kind === 'push') {
+      const end = factionPreview.route.at(-1)
+      verdicts.set(factionPreview.targetId, [{ tone: 'sink', title: end ? `Empuje → ${cellName(end)}` : 'No se desplaza',
+        detail: end ? `${factionPreview.route.length} de ${factionPreview.limit} casillas${factionPreview.falls ? ' · Cae' : ''}` : undefined }])
+    }
+    return verdicts
+  }, [focusedMovement, factionPreview])
+
   /**
    * Aviso de acciones sin usar. Ceder el turno con una unidad parada, con
    * Esencia de sobra o sin haber jugado la fuente del turno es el despiste más
@@ -1006,6 +1063,34 @@ export function BattlePage() {
         ? cardStatLine(selectedCard)
         : undefined
 
+  const tide = tidePhase(match)
+  const sunDamage = selectedCard?.effects.find((effect) => effect.kind === 'damage-all-enemies-by-sun-count')
+  const sunCount = player.sunCount ?? 0
+  let factionHint: string | undefined
+  if (!viewedBoardCard) {
+    if (attackPreview) factionHint = attackPreview.lines.join(' · ')
+    else if (factionPreview?.kind === 'push') {
+      const end = factionPreview.route.at(-1)
+      factionHint = end ? `${factionPreview.name} retrocede ${factionPreview.route.length} de ${factionPreview.limit} casillas hasta ${cellName(end)}.`
+        : `${factionPreview.name} permanece en ${cellName(factionPreview.origin)}.`
+    } else if (factionPreview?.kind === 'freeze') {
+      factionHint = factionPreview.targetId ? `Mandato · congela a ${factionPreview.name} durante ${factionPreview.turns} turnos.`
+        : 'Mandato · en este despliegue ninguna unidad recibe Congelación.'
+    }
+    else if (selectedCard?.effects.some((effect) => effect.kind === 'tide')) {
+      factionHint = `Se resuelve en ${tide === 'high' ? 'Pleamar' : 'Bajamar'}. Consulta esa rama en la carta.`
+    } else if (selectedCard?.id === 'dragon-del-rio-amarillo') {
+      factionHint = match.mandate === ME
+        ? 'Con Mandato · al entrar intenta congelar 2 turnos a la unidad enemiga con más Ataque.'
+        : 'Sin Mandato · el Dragón entra sin congelar.'
+    } else if (selectedCard?.effects.some((effect) => effect.kind === 'mandate')) {
+      factionHint = `Rama de Mandato ${match.mandate === ME ? 'activa' : 'inactiva'} con el estado actual.`
+    } else if (sunDamage && !selectedCard?.effects.some((effect) => effect.kind === 'sacrifice')) {
+      const amount = Math.min(sunCount, sunDamage.cap ?? sunCount)
+      factionHint = `Cuenta del Sol · ${sunCount}. Inflige ${amount} de daño a cada unidad rival, antes de protecciones.`
+    }
+  }
+
   const actionHint = actionHintFor({
     finished: Boolean(match.winner),
     isMyTurn: match.activePlayer === ME,
@@ -1026,6 +1111,7 @@ export function BattlePage() {
       data-hand-collapsed={handTucked || player.hand.length === 0 || undefined}
       style={{ '--battle-accent': FACTION_BY_ID[commander?.faction ?? 'fury'].accentColor } as CSSProperties}>
       <header className={styles.topbar}>
+        {!photoMode && <FactionPowers match={match} me={ME} ownFaction={commander?.faction} rivalFaction={rivalCommander?.faction} />}
         <button
           className={styles.exit}
           onClick={() => {
@@ -1041,7 +1127,7 @@ export function BattlePage() {
           <span className={styles.exitLong}>← Abandonar batalla</span>
           <span className={styles.exitShort}>← Salir</span>
         </button>
-        <div className={styles.turn}>
+        <div className={styles.turn} data-testid="battle-turn">
           <strong>{match.activePlayer === ME ? 'Tu turno' : 'Turno rival'}</strong>
           <span>Turno {match.turn} · {PHASE_LABELS[match.phase] ?? match.phase}</span>
         </div>
@@ -1070,7 +1156,7 @@ export function BattlePage() {
               </span>
             </div>
           </div>
-          <div className={styles.nexusOrb} title="Vida del Nexo rival"><GameIcon name="health" />{rival.nexusHealth}</div>
+          <div className={styles.nexusOrb} title="Vida del Nexo rival"><GameIcon name="health" />{displayedNexusHealth[RIVAL]}</div>
         </button>
           <div className={styles.battleTools}>
       <button
@@ -1140,6 +1226,7 @@ export function BattlePage() {
             selectedPieceId={duelOnBoard?.attacker ?? store.selectedPieceId}
             validCells={validCells}
             movementHazards={movementHazards}
+            focusedHazard={hoveredCell ?? boardCursor.cell}
             cellIntent={selectedCard ? 'deploy' : 'move'}
             colorblindMode={preferences.colorblindMode}
             boardTextScale={preferences.boardTextScale}
@@ -1154,12 +1241,15 @@ export function BattlePage() {
             onHoverPiece={onHoverPiece}
             onHoverNexus={onHoverNexus}
             attackPreview={attackPreview}
+            pieceVerdicts={pieceVerdicts}
+            pushPreview={factionPreview?.kind === 'push' ? factionPreview : undefined}
             photoMode={photoMode}
             reducedMotion={preferences.reducedMotion}
             renderPaused={Boolean(inspected || scryOpen || howToOpen || glossaryOpen || confirmAbandon || match.pendingSpark || match.pendingDecisions?.length || canTakeMulligan(match, ME))}
             quality={preferences.graphicsQuality}
             scenario={scenario}
             activeEvent={visualEvent}
+            waitingSpell={waitingSpell}
             castImpact={visualEvent ? store.castImpacts[visualEvent.id] : undefined}
             threatFocus={queueBusy ? undefined : threatFocus}
             traitFx={traitFx}
@@ -1228,15 +1318,16 @@ export function BattlePage() {
           {/* El comandante habla: poder, golpe fuerte a su Nexo o victoria. */}
           {director.quote && !photoMode && COMMANDER_BY_ID[match.players[director.quote.owner].commanderId] && (
             <CommanderQuote
-              key={director.quote.key}
+              key={`frase-${director.quote.key}`}
               commander={COMMANDER_BY_ID[match.players[director.quote.owner].commanderId]!}
               text={director.quote.text}
+              duel={Boolean(director.exchange)}
               mine={director.quote.owner === ME}
             />
           )}
           {/* Respuesta: sello lateral con el tipo de reacción. */}
-          {director.reaction && !photoMode && (
-            <div key={director.reaction.key} className={styles.reaction} data-kind={director.reaction.kind} role="status">
+          {director.reaction && !director.exchange && !photoMode && (
+            <div key={`reaccion-${director.reaction.key}`} className={styles.reaction} data-kind={director.reaction.kind} role="status">
               <small>Respuesta</small>
               <strong>{director.reaction.title}</strong>
               <span>{director.reaction.detail}</span>
@@ -1244,7 +1335,7 @@ export function BattlePage() {
           )}
           {/* Reacción en cadena: crece y se calienta con cada muerte encadenada. */}
           {director.chain && !photoMode && (
-            <div key={director.chain.key} className={styles.chain} data-level={Math.min(director.chain.count, 5)} role="status">
+            <div key={`cadena-${director.chain.key}`} className={styles.chain} data-level={Math.min(director.chain.count, 5)} role="status">
               <span>¡Reacción en cadena!</span>
               <strong>×{director.chain.count}</strong>
             </div>
@@ -1255,16 +1346,25 @@ export function BattlePage() {
               me={ME}
               commanderIds={{ player: match.players.player.commanderId, ai: match.players.ai.commanderId }}
               nexusHealth={displayedNexusHealth}
+              reducedMotion={preferences.reducedMotion}
               nexusMaxHealth={nexusMaxHealth}
               holding={director.duelHolding}
               onSkip={director.dismissDuel}
               combo={director.combo?.key === director.exchange.key ? director.combo.count : undefined}
             />
           )}
-          {(resolvedImpact || director.eventBanner) && !director.exchange && (
-            <div key={resolvedImpact?.id ?? director.eventBanner} className={styles.eventBanner} data-kind={resolvedImpact?.tone === 'damage' ? 'damage' : director.eventBannerKind} role="status">
-              {resolvedImpact ? `${resolvedImpact.source} → ${resolvedImpact.target} · ${resolvedImpact.text}` : director.eventBanner}
+          {resolvedImpact && !photoMode && !director.spotlight && (
+            <div className={styles.liveEffect} data-duel={Boolean(director.exchange) || undefined} role="status" aria-live="polite">
+              {resolvedPlates.slice(0, 2).map((effect) => (
+                <BattlePlate key={`${currentEvent?.id}-${effect.id}`} label={effect.label ?? effect.text}
+                  detail={[effect.source, effect.target === effect.source ? undefined : effect.target,
+                    effect.label && effect.label !== effect.text ? effect.text : undefined].filter(Boolean).join(' · ')}
+                  metric={effect.metric} keyword={effect.keyword} faction={effect.faction} active />
+              ))}
             </div>
+          )}
+          {!resolvedImpact && director.eventBanner && !director.exchange && !photoMode && (
+            <div key={director.eventBanner} className={styles.eventBanner} data-kind={director.eventBannerKind} role="status">{director.eventBanner}</div>
           )}
           {director.nexusFlash && <div className={styles.nexusFlash} data-who={director.nexusFlash} aria-hidden="true" />}
           {queueBusy && pendingCount >= 2 && (
@@ -1347,7 +1447,7 @@ export function BattlePage() {
           <section className={styles.panelSection}>
             <div className={styles.lifeRow}>
               <span>Vida del Nexo</span>
-              <span key={player.nexusHealth} className={styles.life}><GameIcon name="health" /> {player.nexusHealth}</span>
+              <span key={displayedNexusHealth[ME]} className={styles.life}><GameIcon name="health" /> {displayedNexusHealth[ME]}</span>
             </div>
             <div className={styles.deckCounters}>
               <div className={styles.counter}><strong key={player.deck.length}>{player.deck.length}</strong><span>Mazo</span></div>
@@ -1379,8 +1479,12 @@ export function BattlePage() {
             hint={actionHint}
             canCast={canCastDirectly && selectedPlayable === true}
             onCast={playSelectedWithoutTarget}
+            factionHint={factionHint}
             offering={offeringBase === undefined ? undefined : {
               cost: offeringToll,
+              health: player.nexusHealth,
+              rivalHealth: rival.nexusHealth,
+              checksJudgement: Boolean(selectedCard?.effects.some((effect) => effect.kind === 'judgement')),
               paying: offering,
               affordable: offeringAffordable,
               onToggle: () => setOfferingFor(
@@ -1395,6 +1499,7 @@ export function BattlePage() {
             <HistoryLog entries={store.history} />
           </div>
           <div className={styles.turnDock}>
+            {hybrisClosingLoss !== undefined && <p className={styles.hybrisNotice}>Hybris · perderías {hybrisClosingLoss} de Vida al cerrar el turno</p>}
             {undoState && !room && turnState === 'ready' && (
               <button
                 className={styles.undoMove}

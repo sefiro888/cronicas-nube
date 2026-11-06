@@ -741,3 +741,21 @@
   .termText small { display: none; }
   .powerName { font-size: 26px; }
 }
+.castSeal { display: inline-grid; place-items: center; }
+.castCrest, .castTargetSeal { position: absolute; z-index: 3; display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid color-mix(in srgb, var(--accent) 62%, #2b2520); border-radius: 50%; background: radial-gradient(circle at 35% 25%, #332b23, #101219 74%); box-shadow: 0 2px 8px #000b; pointer-events: none; }
+.castCrest { inset: auto -11px -9px auto; }
+.castTargetSeal { top: -14px; right: -8px; }
+.castInscription { display: grid; grid-template-columns: minmax(42px, .7fr) minmax(0, 1fr); align-items: center; min-height: 28px; gap: 7px; padding: 3px 6px; border-bottom: 1px solid color-mix(in srgb, var(--accent) 36%, transparent); color: color-mix(in srgb, var(--accent) 55%, white); font: 700 11px var(--display); }
+.castInscription svg { height: 24px; }
+.castLedger { padding: 0; margin: 4px 0; list-style: none; color: #ffdf9d; font: 700 12px/1.4 var(--display); }
+.sparkCoin { display: inline-grid; width: 18px; height: 18px; place-items: center; border: 1px solid #d3aa53; border-radius: 50%; background: #3c2a16; color: #ffecb2; animation: revealCoin 400ms ease-out both; }
+@keyframes revealCoin { from { transform: rotateY(180deg) scale(.7); } to { transform: none; } }
+.overlay[data-reduced-motion] .sparkCoin { animation: none; }
+@media (prefers-reduced-motion: reduce) { .sparkCoin { animation: none; } }
+
+.castRoute { width: clamp(28px, 6vw, 90px); height: 30px; }
+@media (max-width: 760px) { .castRoute { display: none; } }
+.overlay[data-tide='low'] .castInscription svg { transform: scaleY(-1); }
+.overlay[data-tide='high'] .castInscription svg { transform: scaleY(1.32); }
+.impactPlates { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 4px; }
+.impactPlates > span { max-width: 100%; }

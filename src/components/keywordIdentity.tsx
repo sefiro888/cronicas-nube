@@ -68,6 +68,17 @@ const GLYPHS = {
 export type GlyphId = keyof typeof GLYPHS
 
 const IDENTITY: Readonly<Record<string, KeywordIdentity>> = {
+  'vida-combate': { glyph: 'heart', color: '#ff917c', family: 'defensa' },
+  contraataque: { glyph: 'blade', color: '#8ed5ff', family: 'ataque' },
+  impacto: { glyph: 'sword', color: '#ff866b', family: 'ataque' },
+  curacion: { glyph: 'heart', color: '#89f0b2', family: 'defensa' },
+  movimiento: { glyph: 'target', color: '#69dced', family: 'control' },
+  robo: { glyph: 'card', color: '#a9beff', family: 'recurso' },
+  invocacion: { glyph: 'star', color: '#f6cb7d', family: 'magia' },
+  conjuro: { glyph: 'spiral', color: '#c39aff', family: 'magia' },
+  baja: { glyph: 'skull', color: '#fb9b81', family: 'ataque' },
+  maldicion: { glyph: 'eye', color: '#dca0f7', family: 'control' },
+
   esencia: { glyph: 'drop', color: '#7ad7ff', family: 'recurso' },
   ofrenda: { glyph: 'drop', color: '#ff6b5a', family: 'faccion' },
   juicio: { glyph: 'scale', color: '#f2c45a', family: 'faccion' },

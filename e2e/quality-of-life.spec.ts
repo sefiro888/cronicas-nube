@@ -22,7 +22,7 @@ test('la tecla E finaliza el turno como el botón', async ({ page }) => {
     }))
   })
   await enterBattle(page)
-  const banner = page.locator('header > div:nth-child(2) > strong')
+  const banner = page.getByTestId('battle-turn').locator('strong')
   await expect(banner).toHaveText('Tu turno')
   await page.keyboard.press('e')
   await expect(banner).toHaveText('Turno rival', { timeout: 10_000 })
@@ -142,7 +142,7 @@ test('el rival elegido en «Jugar» es contra quien se acaba peleando', async ({
 test('ceder el turno con acciones sin usar avisa antes de cederlo', async ({ page }) => {
   test.setTimeout(90_000)
   await enterBattle(page, 1311657807)
-  const banner = page.locator('header > div:nth-child(2) > strong')
+  const banner = page.getByTestId('battle-turn').locator('strong')
   await expect(banner).toHaveText('Tu turno')
   // En el turno 1 siempre queda al menos la fuente de Esencia por jugar.
   await page.keyboard.press('e')

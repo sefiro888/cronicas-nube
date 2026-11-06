@@ -1694,7 +1694,7 @@ const fimbulCards: readonly CardDefinition[] = [
   defineCard({
     id: 'serpiente-del-mundo', name: 'Serpiente del Mundo', faction: 'fimbul', type: 'unit', subtype: 'Dragón',
     rarity: 'mythic', cost: factionCost('fimbul', 2, 4), attack: 8, health: 6, range: 2, movement: 1,
-    rules: 'Al entrar en juego, inflige 3 de daño a todas las unidades, incluidas las tuyas.',
+    rules: 'Al entrar en juego, inflige 3 de daño a todas las demás unidades, aliadas y enemigas.',
     flavor: 'Rodea el mundo y se muerde la cola. El día que suelte, se acaba.',
     keywords: [], collectorNumber: 161, aiTags: ['finisher', 'area-damage'], unique: true,
     effects: [{ kind: 'damage-all-enemies', amount: 3, includeAllies: true }],

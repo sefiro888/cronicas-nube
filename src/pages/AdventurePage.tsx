@@ -5,6 +5,7 @@ import { FACTION_BY_ID } from '../game/factions'
 import type { MatchState } from '../game/types'
 import {
   ADVENTURE_BOSSES,
+  ATLAS_ROUTE,
   adventureCommanderName,
   bossById,
   campaignChapters,
@@ -16,12 +17,14 @@ import { useAdventure } from '../store/adventure'
 import { useMatchStore } from '../store/match'
 import { usePreferences } from '../store/preferences'
 import { withBase } from '../utils/assets'
+import { AdventureRoute } from './AdventureRoute'
 import styles from './AdventurePage.module.css'
 
 const MODE_NAMES = {
   campaign: 'Crónicas de facción',
   boss: 'Guardianes del Nexo',
   series: 'Duelo al mejor de tres',
+  route: 'Ruta del sello partido',
 } as const
 
 export function AdventurePage() {
@@ -31,7 +34,7 @@ export function AdventurePage() {
   const [opponentId, setOpponentId] = useState(
     STARTER_DECKS.find((deck) => deck.id !== selectedDeck)?.id ?? STARTER_DECKS[0]!.id,
   )
-  const [mode, setMode] = useState<AdventureKind>('campaign')
+  const [mode, setMode] = useState<AdventureKind>(() => useAdventure.getState().run?.kind === 'route' ? 'route' : 'campaign')
   const [bossId, setBossId] = useState<BossId>('corazon-caldera')
   const adventure = useAdventure()
   const deck = STARTER_DECKS.find((entry) => entry.id === deckId) ?? STARTER_DECKS[0]!
@@ -40,13 +43,14 @@ export function AdventurePage() {
   const progress = adventure.campaignProgress[deck.faction] ?? 0
   const boss = bossById(bossId)!
   const run = adventure.run
+  const routeDeck = mode === 'route' && run?.kind === 'route' && run.status !== 'complete' ? run.playerDeckId : undefined
   const currentChapter =
     run?.kind === 'campaign' ? campaignChapters(run.faction)[run.chapter] : undefined
 
   const enter = () => {
     const current = useAdventure.getState().run
     if (!current) return
-    usePreferences.getState().setSelectedDeck(current.playerDeckId)
+    if (current.kind !== 'route') usePreferences.getState().setSelectedDeck(current.playerDeckId)
     const existing = useMatchStore.getState().match
     if (
       current.status === 'fighting' &&
@@ -82,7 +86,7 @@ export function AdventurePage() {
           ✧ Entrar al laboratorio sin rival
         </Link>
       </header>
-      {run && (
+      {run && run.kind !== 'route' && (
         <section className={styles.active} aria-label="Aventura en curso">
           <div>
             <span className={styles.eyebrow}>{MODE_NAMES[run.kind]}</span>
@@ -147,7 +151,7 @@ export function AdventurePage() {
           </button>
         ))}
       </div>
-      <section className={styles.setup}>
+      <section className={styles.setup} data-route={mode === 'route' || undefined}>
         <div className={styles.identity}>
           <img src={withBase(commander.art.webp)} alt={commander.art.alt} />
           <div>
@@ -159,7 +163,7 @@ export function AdventurePage() {
         <div className={styles.configuration}>
           <label>
             Tu expedición
-            <select value={deck.id} onChange={(event) => setDeckId(event.target.value)}>
+            <select value={routeDeck ?? deck.id} disabled={Boolean(routeDeck)} onChange={(event) => setDeckId(event.target.value)}>
               {STARTER_DECKS.map((entry) => (
                 <option key={entry.id} value={entry.id}>
                   {entry.name}
@@ -210,7 +214,7 @@ export function AdventurePage() {
               Progreso de esta facción: {progress} / 3 capítulos. Los capítulos superados pueden
               repetirse. Cada combate se gana destruyendo el Nexo rival.
             </p>
-          ) : (
+          ) : mode !== 'route' && (
             <button disabled={Boolean(run && run.status !== 'complete')} onClick={() => start()}>
               Preparar {mode === 'boss' ? 'desafío' : 'serie'}
             </button>
@@ -220,6 +224,7 @@ export function AdventurePage() {
           )}
         </div>
       </section>
+      {mode === 'route' && <AdventureRoute run={run} deckId={deck.id} onEnter={enter} />}
       {mode === 'campaign' && (
         <ol className={styles.chapters}>
           {chapters.map((chapter) => (
@@ -278,7 +283,7 @@ export function AdventureBattlePanel({
           ? `Serie · ${run.wins} — ${run.losses} · Combate ${run.round}`
           : run.kind === 'campaign'
             ? `Crónica ${FACTION_BY_ID[run.faction].name} · Capítulo ${run.chapter + 1}/3`
-            : boss?.name}
+            : run.kind === 'route' && run.routeNode ? ATLAS_ROUTE[run.routeNode].title : boss?.name}
       </strong>
       {boss && (
         <span>
@@ -287,7 +292,7 @@ export function AdventureBattlePanel({
       )}
       {match.winner && !queueBusy && (
         <button onClick={() => navigate('/adventures')}>
-          {run.status === 'complete'
+          {run.kind === 'route' ? 'Volver al mapa' : run.status === 'complete'
             ? 'Ver desenlace'
             : run.status === 'lost' && run.kind !== 'series'
               ? 'Volver a la crónica'

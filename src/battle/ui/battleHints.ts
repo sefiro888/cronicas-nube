@@ -116,7 +116,7 @@ export const attackNexusPreviewLines = (preview: AttackNexusPreview): readonly s
  * ficha dice lo que le va a pasar con un sello de color propio, y la
  * atacante también avisa del contragolpe sin tener que leer la otra.
  */
-export type VerdictTone = 'kill' | 'hurt' | 'counterKill' | 'counter' | 'safe' | 'sink' | 'pierce' | 'nexus' | 'lethal'
+export type VerdictTone = 'freeze' | 'kill' | 'hurt' | 'counterKill' | 'counter' | 'safe' | 'sink' | 'pierce' | 'nexus' | 'lethal'
 
 export interface PreviewVerdict {
   readonly tone: VerdictTone

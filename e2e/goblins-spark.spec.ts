@@ -19,6 +19,7 @@ for (const [width, height] of [[1920, 1080], [1366, 768], [390, 844]] as const) 
       localStorage.setItem('cronicas-nexo-match', JSON.stringify({ state: { match, history: [], matchLog: [], healthHistory: [], startedAtMs: Date.now(), elapsedSeconds: 0 }, version: 2 }));
     }, { ...rolled.state, animations: [] });
     await page.goto('/battle');
+    await expect(page.getByTestId('battle-intro')).toBeHidden({ timeout: 15000 });
     const dialog = page.getByRole('dialog', { name: 'Resolver Chispa' });
     await expect(dialog).toBeVisible({ timeout: 25000 });
     const bounds = await dialog.boundingBox();
@@ -33,6 +34,10 @@ for (const [width, height] of [[1920, 1080], [1366, 768], [390, 844]] as const) 
     await expect(dialog).toBeVisible();
     await dialog.getByRole('button', { name: `Resolver ${face}`, exact: true }).click();
     await expect(dialog).toBeHidden();
+    const spell = page.getByTestId('cast-spotlight');
+    await expect(spell).toContainText(`Chispa · ${face === 'cara' ? 'Cara' : 'Cruz'}`);
+    await expect(spell.locator('[data-faction-art="goblins"][data-kind="spell"]').first()).toBeVisible();
+    await page.screenshot({ path: `tools/captures/duelos-y-poderes/chispa-${width}.png` });
     const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('cronicas-nexo-match')!).state.match);
     expect(saved.pendingSpark).toBeUndefined();
     expect(saved.players.player.hand).toHaveLength(0);

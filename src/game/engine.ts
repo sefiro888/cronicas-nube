@@ -576,6 +576,7 @@ const damagePieceDetailed = (
    */
   origin?: Position,
   sourceCard?: CardDefinition,
+  retaliation?: true,
 ): DamageOutcome => {
   const target = state.board.find((piece) => piece.instanceId === pieceId);
   if (!target || amount <= 0) return { state, dealt: 0, healthBefore: target?.currentHealth ?? 0 };
@@ -603,7 +604,7 @@ const damagePieceDetailed = (
       : state;
   if (reducedBy > 0) {
     next = enqueue(next, {
-      type: 'shield', targetId: pieceId, to: target.position, amount: reducedBy, effectId: 'water-shield', durationMs: 260,
+      type: 'shield', targetId: pieceId, to: target.position, amount: reducedBy, effectId: 'water-shield', durationMs: 260, retaliation,
     });
   }
   if (absorbedByShield > 0 && shield?.kind === 'shielded') {
@@ -615,7 +616,7 @@ const damagePieceDetailed = (
         : piece.statuses.filter((status) => status.kind !== 'shielded'),
     }));
     next = enqueue(next, {
-      type: 'shield', targetId: pieceId, to: target.position, amount: absorbedByShield, effectId: 'commander-order-shield', durationMs: 260,
+      type: 'shield', targetId: pieceId, to: target.position, amount: absorbedByShield, effectId: 'commander-order-shield', durationMs: 260, retaliation,
     });
   }
   if (finalAmount <= 0) return { state: next, dealt: 0, healthBefore: target.currentHealth };
@@ -635,6 +636,7 @@ const damagePieceDetailed = (
   next = enqueue(next, {
     type: 'damage', targetId: pieceId, from: origin, to: target.position, amount: finalAmount, effectId,
     cardId: sourceCard?.id, faction: sourceCard?.faction, targetCardId: target.cardId, durationMs: 300,
+    retaliation, pieceHealth: { before: target.currentHealth, after: Math.max(0, target.currentHealth - finalAmount) },
   });
   if (target.currentHealth - finalAmount <= 0) {
     const owner = next.players[target.owner];
@@ -711,6 +713,7 @@ const damagePieceDetailed = (
         },
       );
     }
+    const destructionIndex = next.animations.length;
     next = enqueue(next, {
       type: 'destroy', targetId: pieceId, to: target.position, effectId: dyingDefinition?.vfx.deathEffect ?? 'card-destroy',
       cardId: target.cardId, targetCardId: target.cardId, faction: dyingDefinition?.faction, durationMs: 420,
@@ -769,6 +772,8 @@ const damagePieceDetailed = (
             ...(costDiscount > 0 ? { costDiscount } : {}),
           }],
         });
+        next = { ...next, animations: next.animations.map((event, index) =>
+          index === destructionIndex ? { ...event, renacerBonus: bonus } : event) };
       }
     }
     // Nigromante Oscuro: roba una carta por cada unidad aliada propia que muere.
@@ -867,6 +872,7 @@ const damageNexus = (
   sourceId: PlayerId,
   actorId: string,
   card: CardDefinition,
+  piercing?: true,
 ): { readonly state: MatchState; readonly lethal: boolean } => {
   if (amount <= 0) return { state, lethal: false };
   const target = state.players[targetId];
@@ -884,7 +890,7 @@ const damageNexus = (
     stats: { ...source.stats, damageDealt: source.stats.damageDealt + amount },
   });
   next = enqueue(next, {
-    type: 'nexus-damage', actorId, targetId: `${targetId}-nexus`, amount,
+    type: 'nexus-damage', actorId, targetId: `${targetId}-nexus`, amount, piercing,
     cardId: card.id, faction: card.faction,
     effectId: card.vfx.impactEffect ?? `${card.faction}-nexus-impact`, durationMs: 440,
   });
@@ -924,7 +930,7 @@ const addStatus = (
     ...piece,
     statuses: [...piece.statuses.filter((status) => status.kind !== 'frozen'), { kind: 'frozen', expiresOnTurn }],
   }));
-  next = enqueue(next, { type: 'freeze', targetId: pieceId, to: target.position, effectId: 'freeze-lock', durationMs: 360 });
+  next = enqueue(next, { type: 'freeze', targetId: pieceId, to: target.position, effectId: 'freeze-lock', statusTurns: Math.max(1, duration), durationMs: 360 });
   return next;
 };
 
@@ -973,14 +979,19 @@ const applyOrenToll = (state: MatchState, playerId: PlayerId): MatchState => {
 };
 
 /** Cura el Nexo propio sin superar el máximo del comandante. */
-const healNexus = (state: MatchState, playerId: PlayerId, amount: number): MatchState => {
+const healNexus = (state: MatchState, playerId: PlayerId, amount: number, lifelink?: { card: CardDefinition; from: Position }): MatchState => {
   if (amount <= 0) return state;
   const player = state.players[playerId];
   const maximum = COMMANDER_BY_ID[player.commanderId]?.nexusHealth ?? 35;
   const healed = Math.min(maximum, player.nexusHealth + amount);
   const next = withPlayer(state, playerId, { ...player, nexusHealth: healed });
   // Con el Nexo ya al máximo no hay cura de verdad, así que Orén no cobra.
-  return healed > player.nexusHealth ? applyOrenToll(next, playerId) : next;
+  if (healed <= player.nexusHealth) return next;
+  return applyOrenToll(enqueue(next, {
+    type: 'spell', actorId: playerId, targetId: `${playerId}-nexus`, amount: healed - player.nexusHealth,
+    effectId: lifelink ? 'vinculo-vital' : 'nexo-curacion', cardId: lifelink?.card.id,
+    faction: lifelink?.card.faction, from: lifelink?.from, durationMs: 180,
+  }), playerId);
 };
 
 /**
@@ -1249,7 +1260,7 @@ const resolveSpell = (
       }));
       next = enqueue(next, {
         type: 'freeze', targetId: targetPiece.instanceId, to: targetPiece.position,
-        effectId: 'stun-daze', durationMs: 300,
+        effectId: 'stun-daze', statusTurns: 1, durationMs: 300,
       });
       next = applySialuDraw(next, caster, targetPiece.instanceId);
     } else if (effect.kind === 'passive' && effect.id === 'target-shield' && targetPiece?.owner === caster) {
@@ -1611,7 +1622,10 @@ const resolveEntryEffects = (
       }
     } else if (effect.kind === 'damage-all-enemies') {
       for (const target of next.board.filter(
-        (candidate) => (candidate.owner !== piece.owner || effect.includeAllies) && pieceDefinition(candidate)?.type === 'unit',
+        (candidate) =>
+          candidate.instanceId !== piece.instanceId &&
+          (candidate.owner !== piece.owner || effect.includeAllies) &&
+          pieceDefinition(candidate)?.type === 'unit',
       )) {
         next = damagePiece(next, target.instanceId, effect.amount, piece.owner, card.vfx.impactEffect, undefined, card);
       }
@@ -1638,7 +1652,7 @@ const resolveEntryEffects = (
           ],
         }));
         next = enqueue(next, {
-          type: 'freeze', targetId: victim.instanceId, to: victim.position, effectId: 'stun-daze', durationMs: 300,
+          type: 'freeze', targetId: victim.instanceId, to: victim.position, effectId: 'stun-daze', statusTurns: 1, durationMs: 300,
         });
         next = applySialuDraw(next, piece.owner, victim.instanceId);
       }
@@ -2369,6 +2383,9 @@ export const playCard = (
       to: spellTargetPiece?.position,
       cardId: card.id, faction: card.faction, targetCardId: spellTargetPiece?.cardId,
       cast: { kind: 'spell', sourceId: card.id },
+      ...(paysOffering ? { spellPayment: { offering: offeringToll, judged: isUnderJudgement(next, playerId) } } : {}),
+      ...(sparkFace ? { sparkFace } : {}),
+      ...(card.faction === 'marea' ? { spellTide: tidePhase(next) } : {}),
       effectId: card.vfx.impactEffect ?? card.vfx.persistentEffect, durationMs: 420,
     });
     next = resolveSpell(next, playerId, card, target, paysOffering);
@@ -2731,6 +2748,10 @@ export const attackPiece = (
   next = enqueue(next, {
     type: 'attack', actorId: attackerId, targetId: defenderId,
     cardId: card.id, faction: card.faction, targetCardId: defender.cardId,
+    openingHealth: { attacker: attacker.currentHealth, defender: defender.currentHealth },
+    attackAbility: card.faction === 'fimbul' && card.effects.some((effect) =>
+      effect.kind === 'passive' && effect.id.startsWith('challenge-'))
+      && isChallenge(attacker, card, defender, pieceDefinition(defender)!, state) ? 'desafio' : undefined,
     from: attacker.position, to: defender.position, effectId: card.vfx.attackEffect, durationMs: 380,
   });
   const defenderPosition = defender.position;
@@ -2744,7 +2765,7 @@ export const attackPiece = (
   // Vínculo vital: el Nexo propio se cura por el daño que llegó de verdad, no
   // por el anunciado — escudos y reducciones lo recortan antes.
   if (hit.dealt > 0 && hasLifelink(next, attacker, playerId)) {
-    next = healNexus(next, playerId, hit.dealt);
+    next = healNexus(next, playerId, hit.dealt, { card, from: defenderPosition });
   }
   // Plaga — Contagio: si la defensora sobrevive al golpe, queda Infectada
   // (propio o por el aura de la Médica de la Peste). Si el golpe la mata,
@@ -2764,7 +2785,7 @@ export const attackPiece = (
   const overkill = hit.dealt - hit.healthBefore;
   if (overkill > 0 && hasKeyword(attacker, 'pierce')) {
     const enemyId = opponentOf(playerId);
-    const pierced = damageNexus(next, enemyId, overkill, playerId, attackerId, card);
+    const pierced = damageNexus(next, enemyId, overkill, playerId, attackerId, card, true);
     next = pierced.state;
     if (card.faction === 'olimpo') next = applyHybrisGain(next, playerId, attackerId);
     if (pierced.lethal) {
@@ -2828,7 +2849,7 @@ export const attackPiece = (
       ],
     }));
     next = enqueue(next, {
-      type: 'freeze', targetId: defenderId, to: defenderPosition, effectId: 'stun-daze', durationMs: 300,
+      type: 'freeze', targetId: defenderId, to: defenderPosition, effectId: 'stun-daze', statusTurns: 1, durationMs: 300,
     });
     next = applySialuDraw(next, playerId, defenderId);
   }
@@ -2841,7 +2862,7 @@ export const attackPiece = (
   if ((card.range ?? 1) === 1 && defenderCard?.attack !== undefined) {
     const retaliation = Math.max(0, defenderCard.attack + defender.attackModifier +
       (defenderCard.type === 'unit' ? runoAttackBonus(next.players[defender.owner].runo ?? 0) : 0) + formationAttackBonus(next, defender));
-    next = damagePiece(next, attackerId, retaliation, defender.owner, defenderCard.vfx.impactEffect, defenderPosition, defenderCard);
+    next = damagePieceDetailed(next, attackerId, retaliation, defender.owner, defenderCard.vfx.impactEffect, defenderPosition, defenderCard, true).state;
   }
   next = applyOnAttackExtras(next, playerId, attackerId, card, amount, defenderId, defenderPosition);
   next = applyMalacharDrain(next, playerId);
@@ -3073,6 +3094,7 @@ export const attackNexus = (
   next = enqueue(next, {
     type: 'attack', actorId: attackerId, targetId: `${enemyId}-nexus`,
     from: attacker.position, cardId: card.id, faction: card.faction,
+    openingHealth: { attacker: attacker.currentHealth, defender: state.players[enemyId].nexusHealth },
     effectId: card.vfx.attackEffect, durationMs: 380,
   });
   const struck = damageNexus(next, enemyId, amount, playerId, attackerId, card);
@@ -3080,7 +3102,7 @@ export const attackNexus = (
   if (amount > 0 && card.faction === 'olimpo') next = applyHybrisGain(next, playerId, attackerId);
   // Vínculo vital: golpear el Nexo enemigo también cura el propio.
   if (amount > 0 && hasLifelink(next, attacker, playerId)) {
-    next = healNexus(next, playerId, amount);
+    next = healNexus(next, playerId, amount, { card, from: attacker.position });
   }
   next = applyOnAttackExtras(next, playerId, attackerId, card, amount);
   if (struck.lethal) {

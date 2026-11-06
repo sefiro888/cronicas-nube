@@ -6,6 +6,7 @@ import { SCENARIO_ATLAS, SCENARIO_ENVIRONMENTS, type SceneId } from '../battle/s
 import { resolveScenario } from '../battle/scenarioForFaction'
 import { usePreferences } from '../store/preferences'
 import { SCENARIO_MOODS, SCENARIO_MOOD_LABELS, ScenarioMoodPreview, useScenarioMood, type ScenarioMood } from '../store/scenarioMood'
+import { WorldAtlas } from './WorldAtlas'
 import { withBase } from '../utils/assets'
 import styles from './ScenarioAtlasPage.module.css'
 
@@ -29,12 +30,25 @@ export function ScenarioAtlasPage() {
     return createMatch(deck, STARTER_DECKS.find((candidate) => candidate.id !== deck.id) ?? deck, 903)
   }, [selected])
 
+  const selectScene = (id: SceneId) => {
+    setSelected(id)
+    setMessage('')
+  }
+
   return <main className={styles.page}>
     <header className={styles.header}>
       <div><span className={styles.eyebrow}>Los mundos de Crónicas del Nexo</span><h1>Atlas de escenarios</h1><p>Diecinueve territorios, cada uno con su suelo, su luz y su historia.</p></div>
       <Link to="/play" className={styles.back}>Volver a jugar</Link>
     </header>
-    <section className={styles.detail} aria-labelledby="atlas-scene-title" style={{ '--scene-accent': scene.accent } as CSSProperties}>
+    <section className={styles.worldMap} aria-label="Mapa ilustrado del Nexo">
+      <WorldAtlas label="Territorios del atlas" markers={SCENARIO_ATLAS.map(({ id }) => ({ id }))}
+        selected={selected} onSelect={selectScene} />
+      <div className={styles.mapCaption}>
+        <p aria-live="polite"><small>Territorio seleccionado</small><strong>{scene.name}</strong></p>
+        <a href="#ficha-del-escenario" className={styles.back}>Ver ficha del escenario <span aria-hidden="true">↓</span></a>
+      </div>
+    </section>
+    <section id="ficha-del-escenario" className={styles.detail} aria-labelledby="atlas-scene-title" style={{ '--scene-accent': scene.accent } as CSSProperties}>
       <div className={styles.preview}>
         {exploring ? <ScenarioMoodPreview mood={mood}>
           <Suspense fallback={<p className={styles.loading}>Abriendo el territorio…</p>}>
@@ -58,8 +72,5 @@ export function ScenarioAtlasPage() {
         <p role="status" className={styles.status}>{message}</p>
       </div>
     </section>
-    <nav className={styles.regions} aria-label="Territorios del atlas">{SCENARIO_ATLAS.map((entry) => <button type="button" key={entry.id} aria-pressed={entry.id === selected} onClick={() => { setSelected(entry.id); setMessage('') }} style={{ '--scene-accent': entry.accent } as CSSProperties}>
-      <img src={withBase(entry.panorama)} alt="" loading="lazy" /><span><small>{FACTION_LABELS[entry.faction]}</small><strong>{entry.name}</strong></span>
-    </button>)}</nav>
   </main>
 }

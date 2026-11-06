@@ -1,10 +1,12 @@
 import { useEffect, type CSSProperties } from 'react'
 import { Card, FactionSigil, RARITY_LABELS } from '../../components'
-import { KeywordGlyph, keywordIdentity, keywordStyle } from '../../components/keywordIdentity'
+import { BattlePlate } from './BattlePlate'
 import { CARD_BY_ID, COMMANDER_BY_ID, FACTION_BY_ID, type FactionId, type PlayerId } from '../../game'
 import { inspectionStatuses } from '../../battle/inspectionStatuses'
 import { combatTraits, type CombatExchange, type CombatSide } from '../../battle/presentation'
 import { withBase } from '../../utils/assets'
+import { attackKindFor } from '../../battle/attackStyle'
+import { FactionBattleArt, factionBattleSignature } from './FactionBattleArt'
 import { NexusReliquary } from './NexusReliquary'
 import styles from './CombatDuel.module.css'
 
@@ -18,6 +20,7 @@ interface CombatDuelProps {
   readonly nexusMaxHealth?: Readonly<Record<PlayerId, number>>
   /** El golpe aún no ha caído: se puede adelantar con un clic. */
   readonly holding: boolean
+  readonly reducedMotion: boolean
   readonly onSkip: () => void
   /** Ataques seguidos del mismo bando en este turno, desde el segundo. */
   readonly combo?: number
@@ -54,14 +57,6 @@ const SHARDS = [
 /** Chispas del impacto, repartidas en círculo. Más cuanto más rara es quien golpea. */
 const SPARK_COUNT: Readonly<Record<string, number>> = { common: 8, uncommon: 11, rare: 15, mythic: 22 }
 
-/** Rótulo del golpe según cómo de fuerte ha sido. */
-const hitWord = (side: CombatSide): string | undefined => {
-  if (side.destroyed && !side.nexus) return '¡Letal!'
-  if (side.damage >= 5) return '¡Brutal!'
-  if (side.damage >= 3) return '¡Golpe!'
-  return undefined
-}
-
 /** Fragmentos que orbitan el cristal: fijos para que no tiemblen entre renders. */
 const ORBIT = Array.from({ length: 7 }, (_, index) => ({ angle: index * (360 / 7), radius: 46 + (index % 3) * 6, speed: 7 + (index % 4) * 2 }))
 
@@ -96,6 +91,7 @@ function NexusMonolith({ artUrl, faction, name, health, maxHealth, damage }: {
       <div className={styles.crystal}>
         <NexusReliquary className={styles.facets} integrity={ratio} />
         <span className={styles.core} />
+        {faction && <span className={styles.relicSeal}><FactionBattleArt faction={faction} kind="seal" /></span>}
         <div className={styles.portrait}>
           <svg className={styles.runes} viewBox="0 0 100 100" aria-hidden="true">
             <circle cx="50" cy="50" r="47" />
@@ -125,7 +121,7 @@ function NexusMonolith({ artUrl, faction, name, health, maxHealth, damage }: {
   )
 }
 
-function Fighter({ side, role, me, commanderIds, nexusHealth, nexusMaxHealth, phase, holding, foeRarity }: {
+function Fighter({ side, role, me, commanderIds, nexusHealth, nexusMaxHealth, phase, holding, foeFaction, foeRarity, reducedMotion }: {
   side: CombatSide
   role: 'attacker' | 'defender'
   me: PlayerId
@@ -136,17 +132,21 @@ function Fighter({ side, role, me, commanderIds, nexusHealth, nexusMaxHealth, ph
   holding: boolean
   /** Rareza de quien le golpea: decide el color del tajo y las chispas. */
   foeRarity: string
+  foeFaction?: FactionId
+  reducedMotion: boolean
 }) {
   const card = side.cardId ? CARD_BY_ID[side.cardId] : undefined
   const owner = side.owner === me ? 'own' : 'rival'
   const commander = COMMANDER_BY_ID[commanderIds[side.owner]]
-  const accent = card ? FACTION_BY_ID[card.faction].accentColor : commander ? FACTION_BY_ID[commander.faction].accentColor : '#d8b46a'
+  const faction = card?.faction ?? commander?.faction
+  const accent = faction ? FACTION_BY_ID[faction].accentColor : '#d8b46a'
   const traits = combatTraits(side, role)
   const rarity = card?.rarity ?? 'mythic'
   const hit = side.damage > 0
-  const word = hit ? hitWord(side) : undefined
   const sparks = SPARK_COUNT[foeRarity] ?? 8
-  const shatter = side.destroyed && !side.nexus && card
+  const shatter = side.destroyed && !side.nexus && card && !reducedMotion && side.renacer === undefined
+  const life = side.health?.after
+  const stats = card && life !== undefined ? card.type === 'structure' ? { resistance: life } : { health: life } : undefined
   return (
     <div
       className={styles.fighter}
@@ -157,11 +157,13 @@ function Fighter({ side, role, me, commanderIds, nexusHealth, nexusMaxHealth, ph
       data-destroyed={side.destroyed || undefined}
       data-hit={hit || undefined}
       data-heavy={side.damage >= 3 || side.destroyed || undefined}
-      style={{ '--accent': accent, '--foe': `var(--rarity-${foeRarity})` } as CSSProperties}
+      style={{ '--accent': accent, '--foe': foeFaction ? factionBattleSignature(foeFaction).light : `var(--rarity-${foeRarity})` } as CSSProperties}
     >
       <div className={styles.tag}>
+        {faction && <span className={styles.tagSeal}><FactionBattleArt faction={faction} kind="seal" reducedMotion={reducedMotion} /></span>}
         <span className={styles.role}>{role === 'attacker' ? <><span className={styles.swords}>⚔</span> Ataca</> : 'Defiende'}</span>
         <span className={styles.owner}>{owner === 'own' ? 'Tu bando' : 'Rival'}</span>
+        {card && rarity !== 'common' && <span className={styles.tagRarity}>{RARITY_LABELS[rarity]}</span>}
       </div>
       <div className={styles.cardWrap}>
         <span className={styles.glow} />
@@ -172,23 +174,22 @@ function Fighter({ side, role, me, commanderIds, nexusHealth, nexusMaxHealth, ph
           </span>
         )}
         {card
-          ? <Card card={card} size="hand" reducedMotion statusEffects={inspectionStatuses(side.piece)} />
+          ? <Card card={card} size="hand" reducedMotion combatStats={stats} statusEffects={inspectionStatuses(side.piece)} />
           : (
             <NexusMonolith
               artUrl={commander ? withBase(commander.art.webp) : undefined}
               faction={commander?.faction}
               name={commander?.name}
-              health={nexusHealth[side.owner]}
+              health={phase === 'intro' ? side.health?.before ?? nexusHealth[side.owner] : nexusHealth[side.owner]}
               maxHealth={nexusMaxHealth?.[side.owner] ?? commander?.nexusHealth}
               damage={side.damage}
             />
           )}
-        {hit && (
+        {hit && !reducedMotion && (
           <>
-            <svg key={`slash${side.damage}`} className={styles.slash} viewBox="0 0 100 140" aria-hidden="true">
-              <path d="M8 118 L92 18" />
-              {side.damage >= 3 && <path d="M18 132 L88 46" data-second />}
-            </svg>
+            {foeFaction && <span key={`impact${side.damage}`} className={styles.contactSeal} aria-hidden="true">
+              <FactionBattleArt faction={foeFaction} kind="seal" />
+            </span>}
             <span key={`sparks${side.damage}`} className={styles.sparks} aria-hidden="true">
               {Array.from({ length: sparks }, (_, index) => (
                 <i key={index} style={{ '--a': `${(index / sparks) * 360 + 11}deg`, '--l': `${60 + (index % 3) * 26}px` } as CSSProperties} />
@@ -217,28 +218,27 @@ function Fighter({ side, role, me, commanderIds, nexusHealth, nexusMaxHealth, ph
             ))}
           </span>
         )}
-        {hit && <span key={side.damage} className={styles.damage}>−{side.damage}</span>}
-        {word && <span key={`w${side.damage}`} className={styles.hitWord}>{word}</span>}
-        {role === 'attacker' && hit && <span key={`c${side.damage}`} className={styles.counterTag}>¡Contraataque!</span>}
-        {side.absorbed > 0 && <span key={`a${side.absorbed}`} className={styles.absorbed}>⬡ {side.absorbed}</span>}
-        {side.destroyed && <span className={styles.stamp}>{side.nexus ? 'Herido' : 'Destruida'}</span>}
       </div>
-      {card && rarity !== 'common' && <span className={styles.rarityTag}>{RARITY_LABELS[rarity]}</span>}
+      <div className={styles.outcome} aria-label={`Resultado de ${side.name}`}>
+        {hit && <BattlePlate key={side.damage} label={side.health
+          ? `${card?.type === 'structure' ? 'Resistencia' : 'Vida'} ${side.health.before} → ${side.nexus ? nexusHealth[side.owner] : side.health.after}`
+          : 'Daño recibido'} metric={`−${side.damage}`} keyword={side.health ? 'vida-combate' : 'impacto'} faction={faction} active compact />}
+        {side.absorbed > 0 && <BattlePlate label={`${side.absorbed} absorbidos`} keyword="escudo" faction={faction} active compact />}
+        {role === 'attacker' && side.countered && <BattlePlate label="¡Contraataque!" keyword="contraataque" faction={foeFaction} active compact />}
+        {side.excess !== undefined && <BattlePlate label={`Perforar · ${side.excess} al Nexo`} keyword="perforar" faction={faction} active compact />}
+        {side.destroyed && <span data-renacer={side.renacer !== undefined || undefined}>
+          <BattlePlate label={side.renacer !== undefined ? `Renacer · a la mano +${side.renacer}/+${side.renacer}` : side.nexus ? 'Nexo derribado' : 'Destruida'}
+            keyword={side.renacer !== undefined ? 'renacer' : 'baja'} faction={faction} active compact />
+        </span>}
+      </div>
       {traits.length > 0 && (
         <ul className={styles.traits}>
-          {traits.map((trait) => {
-            const glossaryId = TRAIT_GLOSSARY[trait.id]
-            const identity = glossaryId ? keywordIdentity(glossaryId) : undefined
-            return (
-              <li key={trait.id} data-active={trait.active || undefined} style={glossaryId ? keywordStyle(glossaryId) : undefined}>
-                {identity && <span className={styles.traitGlyph}><KeywordGlyph glyph={identity.glyph} /></span>}
-                <span className={styles.traitText}>
-                  <strong>{trait.label}</strong>
-                  <small>{trait.active ? `¡Actúa! ${trait.detail}` : trait.detail}</small>
-                </span>
-              </li>
-            )
-          })}
+          {traits.map((trait) => (
+            <li key={trait.id}>
+              <BattlePlate label={trait.label} detail={trait.detail} keyword={TRAIT_GLOSSARY[trait.id]}
+                faction={faction} active={trait.active} compact />
+            </li>
+          ))}
         </ul>
       )}
       {role === 'attacker' && holding && <span className={styles.skip}>Clic para golpear ya</span>}
@@ -259,7 +259,7 @@ function Fighter({ side, role, me, commanderIds, nexusHealth, nexusMaxHealth, ph
  * golpeada se agrieta y, si cae, estalla en fragmentos. La rareza de quien
  * golpea cambia el color del tajo y la cantidad de chispas.
  */
-export function CombatDuel({ exchange, me, commanderIds, nexusHealth, nexusMaxHealth, holding, onSkip, combo }: CombatDuelProps) {
+export function CombatDuel({ exchange, me, commanderIds, nexusHealth, nexusMaxHealth, holding, onSkip, combo, reducedMotion }: CombatDuelProps) {
   const { attacker, defender } = exchange
 
   useEffect(() => {
@@ -275,6 +275,8 @@ export function CombatDuel({ exchange, me, commanderIds, nexusHealth, nexusMaxHe
   }, [holding, onSkip])
 
   const rarityOf = (side: CombatSide) => (side.cardId ? CARD_BY_ID[side.cardId]?.rarity : undefined) ?? 'common'
+  const attackCard = attacker.cardId ? CARD_BY_ID[attacker.cardId] : undefined
+  const defendCard = defender.cardId ? CARD_BY_ID[defender.cardId] : undefined
   const totalDamage = attacker.damage + defender.damage
   const summary = `${attacker.name} ataca a ${defender.name}${defender.damage ? `, ${defender.damage} de daño` : ''}${defender.destroyed ? ', cae' : ''}${attacker.damage ? `; recibe ${attacker.damage}` : ''}${attacker.destroyed ? ' y cae' : ''}.`
   return (
@@ -285,9 +287,11 @@ export function CombatDuel({ exchange, me, commanderIds, nexusHealth, nexusMaxHe
       data-holding={holding || undefined}
       data-struck={totalDamage > 0 || undefined}
       data-attacker-rarity={rarityOf(attacker)}
+      data-attack-gesture={attackKindFor(attackCard, (attackCard?.range ?? 1) <= 1)}
+      data-static={reducedMotion || undefined}
       data-finisher={exchange.finisher || undefined}
-      data-counter={(attacker.damage > 0 && !defender.nexus) || undefined}
-      style={{ '--shake': `${Math.min(18, 3 + totalDamage * 2 + (combo ?? 0) * 1.5)}px`, '--combo': combo ?? 0 } as CSSProperties}
+      data-counter={attacker.countered || undefined}
+      style={{ '--shake': `${Math.min(18, 3 + totalDamage * 2 + (combo ?? 0) * 1.5)}px` } as CSSProperties}
       onClick={holding ? onSkip : undefined}
       data-testid="combat-duel"
     >
@@ -295,17 +299,28 @@ export function CombatDuel({ exchange, me, commanderIds, nexusHealth, nexusMaxHe
       {/* Sin emblema central: arriba en el centro está el Nexo rival, que es
           justo lo que hay que ver cuando es el objetivo. El destello del
           choque cruza la pantalla sin quedarse. */}
-      {exchange.phase === 'clash' && <span key={`flash${totalDamage}`} className={styles.clashFlash} aria-hidden="true" />}
-      {/* Golpe decisivo: franjas de cine y viñeta; el CSS ralentiza el choque. */}
-      {exchange.finisher && <><span className={styles.cineTop} aria-hidden="true" /><span className={styles.cineBottom} aria-hidden="true" /><span className={styles.finisherVignette} aria-hidden="true" /></>}
-      {exchange.finisher && exchange.phase === 'clash' && <span className={styles.finisherTitle} aria-hidden="true">{defender.nexus ? '¡Golpe al corazón!' : '¡Golpe final!'}</span>}
+      {exchange.phase === 'clash' && attackCard && (
+        <div className={styles.crossing}>
+          <FactionBattleArt faction={attackCard.faction} kind="strike" attack={attackKindFor(attackCard, (attackCard.range ?? 1) <= 1)} reducedMotion={reducedMotion} />
+          {attacker.countered && defendCard && <span className={styles.returnStrike}>
+            <FactionBattleArt faction={defendCard.faction} kind="strike" attack={attackKindFor(defendCard, (defendCard.range ?? 1) <= 1)} reverse reducedMotion={reducedMotion} />
+          </span>}
+        </div>
+      )}
+      {/* Golpe decisivo: la viñeta enmarca el tablero; el CSS ralentiza el choque. */}
+      {exchange.finisher && <span className={styles.finisherVignette} aria-hidden="true" />}
+      {exchange.finisher && exchange.phase === 'clash' && totalDamage === 0 && <span className={styles.finisherTitle} aria-hidden="true">{defender.nexus ? '¡Golpe al corazón!' : '¡Golpe final!'}</span>}
+      {exchange.attackAbility === 'desafio' && <span className={styles.duelAbility}>Desafío · condición cumplida</span>}
       {combo && combo >= 2 && (
-        <span key={`combo${combo}`} className={styles.combo} data-level={Math.min(combo, 5)} aria-hidden="true">
-          Combo <strong>×{combo}</strong>
+        <span key={`combo${combo}`} className={styles.combo} data-level={Math.min(combo, 5)} role="status" aria-label={`Combo por ${combo}`}>
+          <span className={styles.comboMedal} aria-hidden="true">
+            {attackCard && <FactionBattleArt faction={attackCard.faction} kind="seal" reducedMotion={reducedMotion} />}
+          </span>
+          <span className={styles.comboLabel}>Combo</span><strong>×{combo}</strong>
         </span>
       )}
-        <Fighter side={attacker} role="attacker" me={me} commanderIds={commanderIds} nexusHealth={nexusHealth} nexusMaxHealth={nexusMaxHealth} phase={exchange.phase} holding={holding} foeRarity={rarityOf(defender)} />
-        <Fighter side={defender} role="defender" me={me} commanderIds={commanderIds} nexusHealth={nexusHealth} nexusMaxHealth={nexusMaxHealth} phase={exchange.phase} holding={holding} foeRarity={rarityOf(attacker)} />
+        <Fighter side={attacker} role="attacker" me={me} commanderIds={commanderIds} nexusHealth={nexusHealth} nexusMaxHealth={nexusMaxHealth} phase={exchange.phase} holding={holding} foeFaction={defendCard?.faction} foeRarity={rarityOf(defender)} reducedMotion={reducedMotion} />
+        <Fighter side={defender} role="defender" me={me} commanderIds={commanderIds} nexusHealth={nexusHealth} nexusMaxHealth={nexusMaxHealth} phase={exchange.phase} holding={holding} foeFaction={attackCard?.faction} foeRarity={rarityOf(attacker)} reducedMotion={reducedMotion} />
     </div>
   )
 }

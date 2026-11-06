@@ -4,11 +4,13 @@ import { STARTER_DECKS } from '../game/decks'
 import { deriveSeed } from '../game/random'
 import type { FactionId, MatchState, PlayerId } from '../game/types'
 import {
+  ATLAS_ROUTE,
   bossById,
   campaignChapters,
   createAdventureMatch,
   resolveBossAction,
   type AdventureKind,
+  type AtlasRouteNode,
   type BossId,
 } from '../game/adventure'
 
@@ -28,6 +30,7 @@ export interface AdventureRun {
   readonly bossId?: BossId
   readonly bossPhase: 1 | 2
   readonly battleSeed?: number
+  readonly routeNode?: AtlasRouteNode
 }
 interface AdventureState {
   run?: AdventureRun
@@ -36,6 +39,8 @@ interface AdventureState {
   startCampaign: (deckId: string, chapter?: number, seed?: number) => void
   startBoss: (deckId: string, bossId: BossId, seed?: number) => void
   startSeries: (deckId: string, opponentDeckId: string, seed?: number) => void
+  startRoute: (deckId: string, seed?: number) => void
+  chooseRoute: (node: Exclude<AtlasRouteNode, 'fimbul'>) => void
   prepareBattle: () => MatchState | undefined
   resolveAction: (before: MatchState, after: MatchState) => MatchState
   reportResult: (seed: number, winner: PlayerId) => void
@@ -103,6 +108,20 @@ export const useAdventure = create<AdventureState>()(
         const id = get().sessionCounter + 1
         set({ sessionCounter: id, run: createRun(id, 'series', deckId, opponentDeckId, seed) })
       },
+      startRoute: (deckId, seed = Date.now()) => {
+        const previous = get().run
+        if (!validDeck(deckId) || previous && previous.status !== 'complete') return
+        const opponent = STARTER_DECKS.find((deck) => deck.faction === ATLAS_ROUTE.fimbul.faction)!
+        const id = get().sessionCounter + 1
+        set({ sessionCounter: id, run: { ...createRun(id, 'route', deckId, opponent.id, seed), routeNode: 'fimbul' } })
+      },
+      chooseRoute: (node) => {
+        const run = get().run
+        if (run?.kind !== 'route' || run.routeNode !== 'fimbul' || run.status !== 'won') return
+        const opponent = STARTER_DECKS.find((deck) => deck.faction === ATLAS_ROUTE[node].faction)!
+        set({ run: { ...run, routeNode: node, opponentDeckId: opponent.id, chapter: 1,
+          status: 'ready', battleSeed: undefined, attempt: 0 } })
+      },
       prepareBattle: () => {
         const run = get().run
         if (!run || (run.status !== 'ready' && run.status !== 'fighting')) return undefined
@@ -115,6 +134,7 @@ export const useAdventure = create<AdventureState>()(
           opponentDeckId: run.opponentDeckId,
           seed,
           bossId: run.bossId,
+          routeNode: run.routeNode,
         })
         set({ run: { ...run, status: 'fighting', battleSeed: match.seed, bossPhase: 1 } })
         return match
@@ -162,7 +182,7 @@ export const useAdventure = create<AdventureState>()(
           campaignProgress,
           run: {
             ...run,
-            status: won ? (run.kind === 'boss' || run.chapter >= 2 ? 'complete' : 'won') : 'lost',
+            status: won ? (run.kind === 'boss' || run.chapter >= 2 || (run.kind === 'route' && run.routeNode !== 'fimbul') ? 'complete' : 'won') : 'lost',
             wins: run.wins + Number(won),
             losses: run.losses + Number(!won),
           },

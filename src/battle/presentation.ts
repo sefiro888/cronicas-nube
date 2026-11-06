@@ -1,3 +1,4 @@
+import { protectionEffect } from './resolvedEffects'
 import type { CastImpact } from './castImpact'
 import { CARD_BY_ID, COMMANDER_BY_ID, FACTION_BY_ID, type AnimationEvent, type BoardPiece, type CardDefinition, type Keyword, type MatchState, type PlayerId } from '../game'
 
@@ -74,6 +75,9 @@ export interface Spotlight {
   readonly durationMs: number
   /** A quién afectó la jugada (ver castImpact.ts). Falta en partidas en red. */
   readonly impact?: CastImpact
+  readonly payment?: AnimationEvent['spellPayment']
+  readonly sparkFace?: AnimationEvent['sparkFace']
+  readonly tide?: AnimationEvent['spellTide']
 }
 
 /**
@@ -153,7 +157,10 @@ export const spotlightFor = (
   }
   const card = CARD_BY_ID[event.cast.sourceId]
   if (!card) return undefined
-  return { eventId: event.id, kind: event.cast.kind, caster, card, target: targetFor(event, caster, me), durationMs, impact: options.impact }
+  return {
+    eventId: event.id, kind: event.cast.kind, caster, card, target: targetFor(event, caster, me),
+    durationMs, impact: options.impact, payment: event.spellPayment, sparkFace: event.sparkFace, tide: event.spellTide,
+  }
 }
 
 /** Título del rótulo: deja claro de un vistazo QUIÉN hace QUÉ. */
@@ -199,6 +206,10 @@ export interface CombatSide {
   readonly piece?: BoardPiece
   /** Daño que absorbió un escudo o una reducción en este golpe. */
   readonly absorbed: number
+  readonly health?: AnimationEvent['pieceHealth']
+  readonly renacer?: number
+  readonly excess?: number
+  readonly countered?: boolean
   /** Habilidades que ya han actuado: se iluminan con más fuerza. */
   readonly triggered: readonly string[]
 }
@@ -216,6 +227,7 @@ export interface CombatExchange {
    * motor ya ha resuelto la jugada y sus consecuencias esperan en la cola.
    */
   readonly finisher?: boolean
+  readonly attackAbility?: AnimationEvent['attackAbility']
 }
 
 /** Fracción de Vida del Nexo por debajo de la cual un golpe se trata como decisivo. */
@@ -261,13 +273,16 @@ export const openExchange = (
   return {
     key: event.id,
     phase: 'intro',
+    attackAbility: event.attackAbility,
     attacker: {
       id: event.actorId, cardId: event.cardId, name: attackerName ?? 'Atacante', owner: attackerOwner,
       damage: 0, destroyed: false, piece: pieceOf(event.actorId), absorbed: 0, triggered: [],
+      health: event.openingHealth && { before: event.openingHealth.attacker, after: event.openingHealth.attacker },
     },
     defender: {
       id: event.targetId, cardId: nexus ? undefined : event.targetCardId, name: defenderName ?? 'Objetivo',
       owner: defenderOwner, damage: 0, destroyed: false, nexus, piece: pieceOf(event.targetId), absorbed: 0, triggered: [],
+      health: event.openingHealth && { before: event.openingHealth.defender, after: event.openingHealth.defender },
     },
   }
 }
@@ -285,30 +300,34 @@ export const foldExchange = (exchange: CombatExchange, event: AnimationEvent): C
   if (event.type === 'damage' || event.type === 'nexus-damage') {
     // Perforar: el sobrante cae sobre el Nexo y lo firma el atacante.
     if (event.type === 'nexus-damage' && event.actorId === exchange.attacker.id && !exchange.defender.nexus && event.amount) {
-      return { ...exchange, attacker: { ...exchange.attacker, triggered: withTrigger(exchange.attacker, 'pierce') } }
+      return { ...exchange, attacker: { ...exchange.attacker, excess: (exchange.attacker.excess ?? 0) + event.amount, triggered: withTrigger(exchange.attacker, 'pierce') } }
     }
     const which = side(event.targetId)
     if (!which || !event.amount) return exchange
-    const hit = { ...exchange[which], damage: exchange[which].damage + event.amount }
-    // Vínculo vital y Aturdir no dejan evento propio: actúan cuando el golpe
-    // del atacante entra, así que se encienden con ese daño.
-    if (which === 'defender') {
-      const fired = (['lifelink', 'stun'] as const).filter((keyword) => attackerHas(exchange.attacker, keyword))
-      const triggered = fired.reduce<readonly string[]>((list, keyword) => (list.includes(keyword) ? list : [...list, keyword]), exchange.attacker.triggered)
-      return { ...exchange, defender: hit, attacker: { ...exchange.attacker, triggered } }
+    const current = exchange[which]
+    const hit = {
+      ...current, damage: current.damage + event.amount, countered: current.countered || event.retaliation,
+      health: event.pieceHealth ? { before: current.health?.before ?? event.pieceHealth.before, after: event.pieceHealth.after } : current.health,
     }
     return { ...exchange, [which]: hit }
   }
-  if (event.type === 'shield') {
+  if (event.effectId === 'vinculo-vital' && event.cardId === exchange.attacker.cardId
+    && event.actorId === exchange.attacker.owner) {
+    return { ...exchange, attacker: { ...exchange.attacker, triggered: withTrigger(exchange.attacker, 'lifelink') } }
+  }
+  if (event.effectId === 'stun-daze' && event.targetId === exchange.defender.id && attackerHas(exchange.attacker, 'stun')) {
+    return { ...exchange, attacker: { ...exchange.attacker, triggered: withTrigger(exchange.attacker, 'stun') } }
+  }
+  if (event.type === 'shield' && protectionEffect(event) === 'absorb') {
     const which = side(event.targetId)
     if (!which) return exchange
     const current = exchange[which]
-    return { ...exchange, [which]: { ...current, absorbed: current.absorbed + (event.amount ?? 0), triggered: withTrigger(current, 'shield') } }
+    return { ...exchange, [which]: { ...current, absorbed: current.absorbed + (event.amount ?? 0), countered: current.countered || event.retaliation, triggered: withTrigger(current, 'shield') } }
   }
   if (event.type === 'destroy') {
     const which = side(event.targetId)
     if (!which) return exchange
-    return { ...exchange, [which]: { ...exchange[which], destroyed: true } }
+    return { ...exchange, [which]: { ...exchange[which], destroyed: true, renacer: event.renacerBonus } }
   }
   return exchange
 }
