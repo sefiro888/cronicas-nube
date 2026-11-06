@@ -7,6 +7,7 @@ import { combatTraits, type CombatExchange, type CombatSide } from '../../battle
 import { withBase } from '../../utils/assets'
 import { attackKindFor } from '../../battle/attackStyle'
 import { FactionBattleArt, factionBattleSignature } from './FactionBattleArt'
+import { NEXUS_FORMS, nexusWear } from '../../battle/nexusForms'
 import { NexusReliquary } from './NexusReliquary'
 import styles from './CombatDuel.module.css'
 
@@ -79,9 +80,10 @@ function NexusMonolith({ artUrl, faction, name, health, maxHealth, damage }: {
   // La Torre puede dar más Vida que la del comandante: el máximo nunca baja de la actual.
   const max = Math.max(1, maxHealth ?? health, health + damage)
   const ratio = Math.max(0, Math.min(1, health / max))
-  const wear = ratio > 0.75 ? 0 : ratio > 0.5 ? 1 : ratio > 0.25 ? 2 : 3
+  const wear = nexusWear(ratio)
+  const form = faction ? NEXUS_FORMS[faction] : undefined
   return (
-    <div className={styles.monolith} data-testid="duel-nexus" data-wear={wear} data-critical={ratio <= 0.25 || undefined} data-hit={damage > 0 || undefined}>
+    <div className={styles.monolith} data-testid="duel-nexus" data-nexus-form={faction} style={form ? { '--accent': form.tint } as CSSProperties : undefined} data-wear={wear} data-critical={ratio <= 0.25 || undefined} data-hit={damage > 0 || undefined}>
       <span className={styles.monolithAura} />
       <span className={styles.orbit} aria-hidden="true">
         {ORBIT.map((shard, index) => (
@@ -89,7 +91,7 @@ function NexusMonolith({ artUrl, faction, name, health, maxHealth, damage }: {
         ))}
       </span>
       <div className={styles.crystal}>
-        <NexusReliquary className={styles.facets} integrity={ratio} />
+        <NexusReliquary className={styles.facets} integrity={ratio} form={form} />
         <span className={styles.core} />
         {faction && <span className={styles.relicSeal}><FactionBattleArt faction={faction} kind="seal" /></span>}
         <div className={styles.portrait}>

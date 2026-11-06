@@ -3,6 +3,8 @@ import { useMemo, useRef } from 'react'
 import { AdditiveBlending, Color, DoubleSide, Vector2, type ShaderMaterial } from 'three'
 import type { AnimationEvent, FactionId } from '../game'
 import type { CastImpact } from './castImpact'
+import { EmblematicSpell } from './EmblematicSpell'
+import { emblematicSpell } from './emblematicSpells'
 import { spellKindFor } from './spellStyle'
 import { SPELL_INSCRIPTIONS, spellChoreography } from './spellScene'
 
@@ -198,7 +200,8 @@ export function SpellChoreography({ event, impact, faction, reducedMotion }: {
   const [ink, gold, spokes, materialKind, house] = SPELL_INSCRIPTIONS[faction]
   const palette = useMemo(() => ({ ink: { value: new Color(ink) }, gold: { value: new Color(gold) } }), [ink, gold])
   const fireworks = event.cast?.sourceId === 'fuegos-de-artificio' && !reducedMotion
-  const area = Boolean(event.cast && spellKindFor(event.cast.sourceId, event.cast.kind) === 'storm')
+  const emblematic = emblematicSpell(event.cast?.sourceId)
+  const area = Boolean(!emblematic && event.cast && spellKindFor(event.cast.sourceId, event.cast.kind) === 'storm')
   const sites = useMemo(() => scene ? [
     { at: scene.origin, tone: 'neutral', nexus: true },
     ...scene.sites.filter(({ at }) => at.join(',') !== scene.origin.join(',')),
@@ -269,6 +272,7 @@ export function SpellChoreography({ event, impact, faction, reducedMotion }: {
           </mesh>}
         </group>
       ))}
+      {emblematic && !reducedMotion && <EmblematicSpell event={event} scene={scene} faction={faction} />}
       {fireworks && fireUniforms && <points frustumCulled={false} raycast={() => null}>
         <bufferGeometry>
           <bufferAttribute attach="attributes-position" args={[sparkData, 3]} />

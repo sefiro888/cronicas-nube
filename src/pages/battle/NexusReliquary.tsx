@@ -1,8 +1,9 @@
 import { useId } from 'react'
+import type { NexusForm } from '../../battle/nexusForms'
 
 /** Relieve frontal del relicario. La base permanece quieta mientras el núcleo
  * y la corona reaccionan al golpe, de modo que el Nexo pesa en el encuadre. */
-export function NexusReliquary({ className, integrity = 1 }: { className?: string; integrity?: number }) {
+export function NexusReliquary({ className, integrity = 1, form }: { className?: string; integrity?: number; form?: NexusForm }) {
   const id = useId()
   const paint = (name: string) => `url(#${id}-${name})`
   return <svg className={className} viewBox="0 0 240 302" aria-hidden="true">
@@ -29,11 +30,18 @@ export function NexusReliquary({ className, integrity = 1 }: { className?: strin
     <path d="M42 231 29 204 45 169 51 110 72 72 89 67 63 113 62 174 72 208Z" fill={paint('stone')} stroke={paint('metal')} strokeWidth="2.5" />
     <path d="M198 231 211 204 195 169 189 110 168 72 151 67 177 113 178 174 168 208Z" fill={paint('stone')} stroke={paint('metal')} strokeWidth="2.5" />
     <path d="M49 220 41 203 54 172 57 113 77 78M191 220 199 203 186 172 183 113 163 78" fill="none" stroke="var(--accent)" strokeWidth="2" opacity=".85" />
+    {form ? <g transform="translate(120 116) scale(65 -87)">
+      <polygon points={form.outline} fill={form.metal} stroke={paint('metal')} strokeWidth=".05" />
+      <polygon points={form.outline} transform="scale(.83)" fill={paint('glass')} stroke={form.tint} strokeWidth=".026" />
+      <polygon points={form.outline} transform="scale(.66)" fill="none" stroke="#fff3da" strokeWidth=".014" opacity={.45} />
+      {form.hole && <circle r={form.hole} fill="#11131e" stroke={form.tint} strokeWidth=".045" />}
+    </g> : <>
     <path d="M120 13 174 82 168 159 147 203 120 220 93 203 72 159 66 82Z" fill={paint('glass')} stroke={paint('metal')} strokeWidth="2.5" />
     <path d="M120 13 96 81 88 154 120 220 66 82Z" fill="#f2e7fe" opacity=".13" />
     <path d="M120 13 144 81 152 154 120 220 174 82Z" fill="#0a0920" opacity=".38" />
     <path d="M120 19 96 81 88 154 120 215 152 154 144 81Z" fill="none" stroke="#fff6e5" strokeWidth="1.3" opacity=".48" />
     <path d="M66 82 96 81 120 59 144 81 174 82M72 159 88 154 120 168 152 154 168 159" fill="none" stroke="#fff3dd" opacity=".65" />
+    </>}
     {[42, 198].map((x) => <g key={x}>
       <path d={`M${x} 137l11 21-11 20-11-20Z`} fill={paint('glass')} stroke={paint('metal')} />
       <path d={`M${x} 141v31`} stroke="#fff3de" opacity=".65" />

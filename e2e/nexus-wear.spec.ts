@@ -32,7 +32,8 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
       }, version: 2 }))
     }, match)
     await page.goto('/battle')
-    await expect(page.locator('[data-integrity="critical"]')).toHaveCount(1, { timeout: 25_000 })
+    await expect(page.locator('[data-nexus-form="fury"][data-wear="3"]')).toHaveCount(1, { timeout: 25_000 })
+    await expect(page.locator('[data-integrity="critical"]')).toHaveCount(1)
     await expect(page.locator('[data-integrity="wounded"]')).toHaveCount(1)
     await page.getByRole('button', { name: /Saltar guía/i }).click({ timeout: 2000 }).catch(() => {})
     if (process.env.RUN_SHOTS) {
@@ -41,6 +42,8 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
     }
     await page.getByRole('button', { name: /Bendición de la Luna/ }).first().click()
     await page.getByRole('button', { name: 'Resolver carta' }).click()
+    await expect(page.getByText('TU NEXO · 16', { exact: true })).toBeVisible({ timeout: 15_000 })
+    await expect(page.locator('[data-nexus-form="fury"]')).toHaveAttribute('data-wear', '2')
     await expect(page.locator('[data-integrity="critical"]')).toHaveCount(0)
     await expect(page.locator('[data-integrity="wounded"]')).toHaveCount(2)
     if (process.env.RUN_SHOTS) {

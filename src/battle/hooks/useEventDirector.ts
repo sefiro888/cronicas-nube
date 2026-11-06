@@ -36,7 +36,7 @@ const cueForEvent = (event: AnimationEvent, me: PlayerId): SoundCue | undefined 
       const kind = attackKindFor(card, (card?.range ?? 1) <= 1)
       return kind === 'orb' ? 'attack' : kind === 'barbs' ? 'attack-claw' : `attack-${kind}`
     }
-    case 'damage': return 'impact'
+    case 'damage': return event.effectId === 'olympus-thunderbolt' ? 'thunder' : 'impact'
     case 'nexus-damage': return 'impact'
     case 'shield': return 'shield'
     case 'destroy': return 'destroy'

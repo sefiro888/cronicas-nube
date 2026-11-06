@@ -189,9 +189,9 @@ test('el duelo contra el Nexo conserva su Vida de apertura y muestra su pérdida
   const result = await send(page, module, { type: 'attack-nexus', playerId: 'player', attackerId: 'atacante' })
   expect(result.ok, result.message).toBe(true)
   const nexus = page.getByTestId('duel-nexus')
+  await expect(nexus).toHaveAttribute('data-nexus-form', 'duna', { timeout: 15000 })
   await expect(nexus.getByLabel(/Vida del Nexo: 22 de /)).toBeVisible({ timeout: 15000 })
   await expect(nexus.getByLabel(/Vida del Nexo: 18 de /)).toBeVisible({ timeout: 15000 })
-  await expect(nexus.locator('[data-faction-art="duna"]')).toBeVisible()
   await page.screenshot({ path: 'tools/captures/duelos-y-poderes/duelo-nexo-1366.png' })
 })
 
@@ -199,6 +199,9 @@ const spellCases = [
   { card: 'fuegos-de-artificio', faction: 'jade', source: 'fuente-jade', width: 1920, height: 1080, targets: 1, routes: 0, fireworks: true },
   { card: 'resaca-subita', faction: 'marea', source: 'fuente-marea', width: 1366, height: 768, targets: 1, routes: 1, fireworks: false },
   { card: 'invierno-de-fimbul', faction: 'fimbul', source: 'fuente-fimbul', width: 1366, height: 768, targets: 2, routes: 0, fireworks: false },
+  { card: 'tormenta-de-arena', faction: 'duna', source: 'fuente-duna', width: 1920, height: 1080, targets: 2, routes: 0, fireworks: false, design: 'Vendaval de la necrópolis' },
+  { card: 'rayo-del-olimpo', faction: 'olimpo', source: 'fuente-olimpo', width: 1366, height: 768, targets: 1, routes: 0, fireworks: false, design: 'Ramas del trueno' },
+  { card: 'chispazo', faction: 'goblins', source: 'fuente-goblin', width: 1366, height: 768, targets: 1, routes: 0, fireworks: false, design: 'Mecha de Bromuro' },
 ] as const
 
 for (const sample of spellCases) {
@@ -219,7 +222,7 @@ for (const sample of spellCases) {
       },
       board: [
         piece('objetivo', 'devoradora-del-inframundo', 'ai', 4),
-        { ...piece('otro', 'golem-azur', 'ai', 3), position: { x: 1, y: 3 } },
+        { ...piece('otro', sample.faction === 'goblins' ? 'rodelero' : 'golem-azur', 'ai', 3), position: { x: 1, y: 3 } },
         { ...piece('aliado', 'sabueso-brasa', 'player', 5), position: { x: 5, y: 5 } },
       ],
     }, sample.faction, 'tercios')
@@ -229,9 +232,17 @@ for (const sample of spellCases) {
     page.on('console', (message) => {
       if (message.type() === 'error' && message.text().includes('Shader Error')) shaderErrors.push(message.text())
     })
+    const target = { kind: 'piece', pieceId: 'objetivo' } as const
     const result = await send(page, module, { type: 'play-card', playerId: 'player', cardInstanceId: 'hechizo',
-      target: sample.faction === 'fimbul' ? { kind: 'none' } : { kind: 'piece', pieceId: 'objetivo' } })
+      target: sample.faction === 'fimbul' || sample.faction === 'duna' || sample.faction === 'goblins' ? { kind: 'none' } : target })
     expect(result.ok, result.message).toBe(true)
+    let face: 'cara' | 'cruz' | undefined
+    if (sample.faction === 'goblins') {
+      face = await page.evaluate(() => (JSON.parse(localStorage.getItem('cronicas-nexo-match')!).state.match as MatchState).pendingSpark!.faces[0])
+      expect(face).toBeDefined()
+      const chosen = await send(page, module, { type: 'choose-spark', playerId: 'player', face: face!, target: face === 'cara' ? target : undefined })
+      expect(chosen.ok, chosen.message).toBe(true)
+    }
     const capture = await page.evaluate(async (url) => {
       const { _roots } = await import(/* @vite-ignore */ url) as {
         _roots: ReadonlyMap<HTMLCanvasElement, { store: { getState: () => RootState } }>
@@ -239,25 +250,27 @@ for (const sample of spellCases) {
       const canvas = document.querySelector<HTMLCanvasElement>('[data-testid="battle-board"] canvas')!
       const state = _roots.get(canvas)?.store.getState()
       if (!state) throw new Error('Falta el tablero de la batalla')
-      return new Promise<{ data: Record<string, unknown>; screenshot: string }>((resolve, reject) => {
-        const expires = performance.now() + 8000
+      return new Promise<{ data: Record<string, unknown>; emblem?: Record<string, unknown>; screenshot: string }>((resolve, reject) => {
+        const expires = performance.now() + 15000
         const frame = () => {
           const spell = state.scene.getObjectByName('coreografia-hechizo')
           if (spell) {
             // Se congela solo la muestra de la prueba, para capturar el mismo instante con cualquier GPU.
             spell.traverse((object) => {
               const material = (object as Mesh).material as ShaderMaterial | undefined
+              if (material?.uniforms?.time) material.uniforms.time.value = .46
               if (material?.uniforms?.progress) material.uniforms.progress.value = spell.userData.fireworks ? .75 : .66
             })
             state.gl.render(state.scene, state.camera)
-            resolve({ data: spell.userData, screenshot: canvas.toDataURL('image/png').split(',')[1]! })
+            resolve({ data: spell.userData, emblem: spell.getObjectByName('conjuro-emblematico')?.userData, screenshot: canvas.toDataURL('image/png').split(',')[1]! })
           } else if (performance.now() < expires) requestAnimationFrame(frame)
           else reject(new Error('El hechizo no llegó al tablero'))
         }
         requestAnimationFrame(frame)
       })
     }, url)
-    expect(capture.data).toMatchObject({ faction: sample.faction, targets: sample.targets, routes: sample.routes, fireworks: sample.fireworks })
+    expect(capture.data).toMatchObject({ faction: sample.faction, targets: face === 'cruz' ? 2 : sample.targets, routes: sample.routes, fireworks: sample.fireworks })
+    if ('design' in sample) expect(capture.emblem).toMatchObject({ name: sample.design, faction: sample.faction, ...(face ? { face } : {}) })
     expect(shaderErrors).toEqual([])
     const folder = 'tools/captures/coreografia-hechizos'
     await mkdir(folder, { recursive: true })

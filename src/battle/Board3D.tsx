@@ -50,6 +50,7 @@ import { TerrainMarks } from './terrain/TerrainMarks'
 import { CardFrameTrim, CardPlinth, CardSurfaceWear, CardWard } from './CardFinish'
 import { RitualSeal } from './RitualSeal'
 import { NexusFractures } from './NexusFractures'
+import { NEXUS_FORMS, nexusWear } from './nexusForms'
 import { NexusCrown } from './NexusCrown'
 import { BattleSkies } from './BattleSkies'
 import type { PreviewVerdict } from './ui/battleHints'
@@ -106,6 +107,7 @@ const BestiaryRavine = lazy(() =>
 )
 
 interface Board3DProps {
+  displayedNexusHealth?: Readonly<Record<PlayerId, number>>
   nexusMaxHealth?: Readonly<Record<PlayerId, number>>
   state: MatchState
   /** Bando de la partida que controla este navegador: decide qué Nexo queda cerca de la cámara. */
@@ -1262,6 +1264,7 @@ function Nexus({
   onHover,
   previewLines,
   commanderArt,
+  faction,
   activeEvent,
   terrainStyle,
   reducedMotion,
@@ -1277,6 +1280,7 @@ function Nexus({
   onHover?: (playerId?: PlayerId) => void
   previewLines?: readonly PreviewVerdict[]
   commanderArt: string
+  faction?: FactionId
   activeEvent?: AnimationEvent
   /** Piedra del sitio: el pedestal se talla en el material de la escena. */
   terrainStyle: BoardTileStyle
@@ -1346,6 +1350,7 @@ function Nexus({
   const ringEmissive = mine ? '#9a7326' : '#3f7fb0'
   const integrity = MathUtils.clamp(health / Math.max(1, maxHealth), 0, 1)
   const damage = 1 - integrity
+  const form = faction ? NEXUS_FORMS[faction] : undefined
   useFrame(({ camera }) => {
     const since = performance.now() - hitAt.current
     // Html reinicia su estilo al conectar el portal y solo recalcula escala
@@ -1423,7 +1428,7 @@ function Nexus({
       })}
       </group>
       </group>
-      {decorReady && !collapse?.settled && <NexusCrown color={color} damage={damage} hitAt={hitAt} collapsing={Boolean(collapse)} reducedMotion={reducedMotion} />}
+      {decorReady && !collapse?.settled && <NexusCrown color={form?.tint ?? color} form={form} damage={damage} hitAt={hitAt} collapsing={Boolean(collapse)} reducedMotion={reducedMotion} />}
       {collapse && <NexusRupture key={collapse.id} durationMs={collapse.durationMs} tone={color}
         stoneColors={[stone.base, stone.shaft, stone.crown]} reducedMotion={reducedMotion || Boolean(collapse.settled)} />}
       {/* Volumen invisible: conserva el clic/hover en 3D sin gastar una textura. */}
@@ -1437,7 +1442,7 @@ function Nexus({
         <boxGeometry args={[0.9, 0.5, 1.1]} />
       </mesh>
       <Html ref={portraitLabel} center position={[0, 0.66, 0]} distanceFactor={6.5} zIndexRange={[14, 0]} className={styles.nexusCard}>
-        <div data-targetable={targetable || undefined} data-hit={justHit || undefined} data-integrity={damage > 0.65 ? 'critical' : damage > 0.2 ? 'wounded' : undefined}
+        <div data-nexus-form={faction} data-wear={nexusWear(integrity)} data-targetable={targetable || undefined} data-hit={justHit || undefined} data-integrity={damage > 0.65 ? 'critical' : damage > 0.2 ? 'wounded' : undefined}
           data-collapsed={collapse ? true : undefined} data-reduced-motion={reducedMotion || collapse?.settled || undefined}
           style={collapse ? { '--rupture-duration': `${collapse.durationMs}ms` } as CSSProperties : undefined}>
           <img src={withBase(commanderArt)} alt="" />
@@ -2016,12 +2021,13 @@ function Scene(props: Board3DProps) {
         key={`nexus-player-${props.state.seed}`}
         playerId="player"
         mine={props.localPlayerId === 'player'}
-        health={props.state.players.player.nexusHealth}
+        health={props.displayedNexusHealth?.player ?? props.state.players.player.nexusHealth}
         maxHealth={props.nexusMaxHealth?.player ?? COMMANDER_BY_ID[props.state.players.player.commanderId]?.nexusHealth ?? 35}
         targetable={props.validTargets.includes('player-nexus')}
         onClick={() => props.onNexus('player')}
         onHover={props.onHoverNexus}
         previewLines={props.attackPreview?.targetId === 'player-nexus' ? props.attackPreview.target : undefined}
+        faction={COMMANDER_BY_ID[props.state.players.player.commanderId]?.faction}
         commanderArt={COMMANDER_BY_ID[props.state.players.player.commanderId]?.art.webp ?? '/assets/cards/art/fuente-furia.webp'}
         activeEvent={props.activeEvent}
         terrainStyle={terrainStyle}
@@ -2032,12 +2038,13 @@ function Scene(props: Board3DProps) {
         key={`nexus-ai-${props.state.seed}`}
         playerId="ai"
         mine={props.localPlayerId === 'ai'}
-        health={props.state.players.ai.nexusHealth}
+        health={props.displayedNexusHealth?.ai ?? props.state.players.ai.nexusHealth}
         maxHealth={props.nexusMaxHealth?.ai ?? COMMANDER_BY_ID[props.state.players.ai.commanderId]?.nexusHealth ?? 35}
         targetable={props.validTargets.includes('ai-nexus')}
         onClick={() => props.onNexus('ai')}
         onHover={props.onHoverNexus}
         previewLines={props.attackPreview?.targetId === 'ai-nexus' ? props.attackPreview.target : undefined}
+        faction={COMMANDER_BY_ID[props.state.players.ai.commanderId]?.faction}
         commanderArt={COMMANDER_BY_ID[props.state.players.ai.commanderId]?.art.webp ?? '/assets/cards/art/fuente-arcana.webp'}
         activeEvent={props.activeEvent}
         terrainStyle={terrainStyle}

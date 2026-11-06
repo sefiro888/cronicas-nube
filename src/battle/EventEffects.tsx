@@ -20,6 +20,7 @@ import { RarityArrival } from './RarityArrival'
 import { Blessing, DrawCards, Fireball, FrostWave, HealingLight, PushWave, SkyJudgement } from './SpellStyles'
 import { spellKindFor } from './spellStyle'
 import { FactionSignature } from './FactionSignature'
+import { emblematicSpell } from './emblematicSpells'
 import { SpellChoreography } from './SpellChoreography'
 import { spellChoreography } from './spellScene'
 import type { CastImpact } from './castImpact'
@@ -465,7 +466,7 @@ function EventBody({ event, reducedMotion, impact }: EventEffectsProps) {
         const aimed = scene?.sites.map(({ at }) => at) ?? []
         const castMs = event.durationMs
         const kind = spellKindFor(event.cast.sourceId, event.cast.kind)
-        if (event.cast.sourceId === 'fuegos-de-artificio' || scene?.routes.length && kind === 'push') return null
+        if (emblematicSpell(event.cast.sourceId) || event.cast.sourceId === 'fuegos-de-artificio' || scene?.routes.length && kind === 'push') return null
         const props = { from, targets: aimed, tone, durationMs: castMs }
         switch (kind) {
           case 'fireball': return <Fireball {...props} />

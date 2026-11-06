@@ -1221,6 +1221,7 @@ export function BattlePage() {
         >
           <Board3D
             state={match}
+            displayedNexusHealth={displayedNexusHealth}
             nexusMaxHealth={nexusMaxHealth}
             localPlayerId={ME}
             selectedPieceId={duelOnBoard?.attacker ?? store.selectedPieceId}

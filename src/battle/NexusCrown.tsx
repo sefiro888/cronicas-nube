@@ -1,7 +1,8 @@
 import { useFrame } from '@react-three/fiber'
 import { useMemo, useRef } from 'react'
-import { AdditiveBlending, Color, DoubleSide } from 'three'
+import { AdditiveBlending, Color, DoubleSide, Path, Shape } from 'three'
 import type { Group, Mesh, MeshBasicMaterial, MeshStandardMaterial, PointLight, Sprite } from 'three'
+import { type NexusForm } from './nexusForms'
 import { glowTexture } from './textures'
 
 /**
@@ -20,6 +21,7 @@ import { glowTexture } from './textures'
  */
 interface NexusCrownProps {
   readonly color: string
+  readonly form?: NexusForm
   /** 0 = intacto, 1 = sin Vida. */
   readonly damage: number
   /** Momento del último golpe (performance.now), para iluminar la cúpula. */
@@ -34,7 +36,7 @@ export const NEXUS_DANGER_RATIO = 0.25
 const DANGER = new Color('#ff2a1a')
 const SATELLITES = 4
 
-export function NexusCrown({ color, damage, hitAt, collapsing, reducedMotion }: NexusCrownProps) {
+export function NexusCrown({ color, form, damage, hitAt, collapsing, reducedMotion }: NexusCrownProps) {
   const crystal = useRef<Mesh>(null)
   const satellites = useRef<Group>(null)
   const dome = useRef<Mesh>(null)
@@ -44,7 +46,24 @@ export function NexusCrown({ color, damage, hitAt, collapsing, reducedMotion }: 
   const falling = useRef<Group>(null)
   const collapseAt = useRef<number | null>(null)
   const base = useMemo(() => new Color(color), [color])
+  const casing = useMemo(() => new Color(form?.metal ?? color), [form, color])
   const tint = useMemo(() => new Color(), [])
+  const shape = useMemo(() => {
+    if (!form) return undefined
+    const outline = new Shape()
+    form.outline.split(' ').forEach((point, index) => {
+      const [x, y] = point.split(',').map(Number) as [number, number]
+      if (index === 0) outline.moveTo(x, y)
+      else outline.lineTo(x, y)
+    })
+    outline.closePath()
+    if (form.hole) {
+      const hole = new Path()
+      hole.absarc(0, 0, form.hole, 0, Math.PI * 2, true)
+      outline.holes.push(hole)
+    }
+    return outline
+  }, [form])
   const danger = damage >= 1 - NEXUS_DANGER_RATIO
   // Satélites que quedan: uno menos por cada cuarto de Vida perdido.
   const alive = Math.max(0, SATELLITES - Math.floor(damage * SATELLITES))
@@ -65,15 +84,15 @@ export function NexusCrown({ color, damage, hitAt, collapsing, reducedMotion }: 
 
     if (crystal.current) {
       const material = crystal.current.material as MeshStandardMaterial
-      material.color.copy(tint)
+      material.color.copy(casing).lerp(tint, .35 + (1 - damage) * .4)
       material.emissive.copy(tint)
       material.emissiveIntensity = (0.5 + (1 - damage) * 0.9 + hit * 2.5) * (danger ? .76 + pulse * .24 : 1)
       const bob = reducedMotion ? 0 : Math.sin(t * 1.3) * 0.06
       // Implosión: se hincha un instante y desaparece hacia dentro.
       const swell = fall < 0.25 ? 1 + fall * 1.6 : Math.max(0, 1.4 * (1 - (fall - 0.25) / 0.35))
-      crystal.current.scale.set(0.3 * swell, 0.62 * swell, 0.3 * swell)
+      crystal.current.scale.set((form ? .56 : .3) * swell, (form ? .43 : .62) * swell, .3 * swell)
       crystal.current.position.y = 1.42 + bob - damage * 0.12
-      crystal.current.rotation.y = reducedMotion ? 0.4 : t * 0.45
+      crystal.current.rotation.y = form ? (reducedMotion ? .12 : Math.sin(t * 1.1) * .32) : reducedMotion ? .4 : t * .45
       crystal.current.rotation.z = damage * 0.22 + (hit ? Math.sin(sinceHit * 0.08) * 0.08 * hit : 0)
       crystal.current.visible = swell > 0.001
     }
@@ -123,9 +142,10 @@ export function NexusCrown({ color, damage, hitAt, collapsing, reducedMotion }: 
 
   return (
     <group>
-      <mesh ref={crystal} position={[0, 1.42, 0]} castShadow>
-        <octahedronGeometry args={[1, 0]} />
-        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={1.2} roughness={0.12} metalness={0.1} transparent opacity={0.92} />
+      <mesh ref={crystal} position={[0, 1.42, 0]} castShadow name="corona-del-nexo" userData={{ form: form?.name }}>
+        {shape ? <extrudeGeometry args={[shape, { depth: .43, bevelThickness: .08, bevelSize: .075, bevelSegments: 1, steps: 1, curveSegments: 18 }]} />
+          : <octahedronGeometry args={[1, 0]} />}
+        <meshStandardMaterial color={color} emissive={color} emissiveIntensity={1.2} roughness={form ? .27 : .12} metalness={form ? .37 : .1} transparent opacity={0.92} />
       </mesh>
       <group ref={satellites}>
         {Array.from({ length: SATELLITES }, (_, i) => (

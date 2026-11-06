@@ -9,6 +9,7 @@ export type SoundCue =
   | 'move'
   | 'attack'
   | 'impact'
+  | 'thunder'
   | 'destroy'
   | 'freeze'
   | 'shield'
@@ -100,6 +101,12 @@ export const voicesForCue = (cue: SoundCue): readonly Voice[] => {
         attack: 0.01,
       }))
     }
+    case 'thunder':
+      return [
+        { wave: 'noise', freq: 3600, toFreq: 850, at: 0, duration: 0.12, gain: 0.38, q: 1.1 },
+        { wave: 'noise', freq: 430, toFreq: 98, at: 0.04, duration: 0.57, gain: 0.62, q: 0.65 },
+        { wave: 'sine', freq: 92, toFreq: 36, at: 0.02, duration: 0.42, gain: 0.55 },
+      ]
     case 'move':
       return [
         { wave: 'noise', freq: 1100, toFreq: 420, at: 0, duration: 0.16, gain: 0.34, q: 0.7 },
