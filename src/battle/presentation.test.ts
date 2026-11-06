@@ -102,18 +102,19 @@ describe('el motor marca las jugadas que merecen presentarse', () => {
 
 describe('presentación de la carta lanzada', () => {
   const match = freshMatch()
-  const spell = CARDS.find((card) => card.type === 'instant')!
+  const spell = CARDS.find((card) => card.type === 'instant' && card.rarity !== 'mythic' && card.rules.length < 130)!
   const castEvent: AnimationEvent = {
     id: 'event-1', type: 'spell', actorId: 'ai', targetId: 'player-nexus', cardId: spell.id,
     cast: { kind: 'spell', sourceId: spell.id }, durationMs: 420,
   }
 
-  it('en cinemático cada carta, propia o rival, se queda cinco segundos', () => {
+  it('en cinemático una carta breve dura 3,2 s y una Chispa conserva 5 s', () => {
     const rival = spotlightFor(castEvent, match, 'player', { pace: 'cinematic' })!
     const own = spotlightFor({ ...castEvent, actorId: 'player' }, match, 'player', { pace: 'cinematic' })!
     expect(rival.card.id).toBe(spell.id)
-    expect(rival.durationMs).toBe(5000)
-    expect(own.durationMs).toBe(5000)
+    expect(rival.durationMs).toBe(3200)
+    expect(own.durationMs).toBe(3200)
+    expect(spotlightFor({ ...castEvent, sparkFace: 'cruz' }, match, 'player', { pace: 'cinematic' })?.durationMs).toBe(5000)
     expect(rival.target?.label).toBe('tu Nexo')
   })
 
