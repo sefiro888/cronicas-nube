@@ -4,7 +4,7 @@ import { createMatch } from './engine'
 import { FACTION_BY_ID } from './factions'
 import type { AnimationEvent, FactionId, MatchState } from './types'
 
-export type AdventureKind = 'campaign' | 'boss' | 'series'
+export type AdventureKind = 'campaign' | 'boss' | 'series' | 'route'
 export type BossId = 'corazon-caldera' | 'centinela-alba' | 'hambre-vacio'
 export interface BossDefinition {
   readonly id: BossId
@@ -197,11 +197,25 @@ export const campaignChapters = (faction: FactionId): readonly CampaignChapter[]
   ]
 }
 
+export const ATLAS_ROUTE = {
+  fimbul: { faction: 'fimbul', title: 'La señal bajo el hielo', health: 28, rivalMandate: false,
+    story: 'Un sello partido ha aparecido junto al drakkar encallado. Los vigías del fiordo guardan las pistas que indican por dónde cruzar.',
+    reward: 'Sello del Fiordo y acceso a los dos caminos.' },
+  'baluarte-tercios': { faction: 'tercios', title: 'El paso de los estandartes', health: 38, rivalMandate: false,
+    story: 'El camino terrestre cruza un baluarte fortificado. La guarnición guarda la mitad occidental del sello.',
+    reward: 'Sello del Baluarte y desenlace de la ruta terrestre.' },
+  'jade-court': { faction: 'jade', title: 'El sello del Río Amarillo', health: 30, rivalMandate: true,
+    story: 'La ruta del río lleva a la Corte de Jade, donde el Mandato protege la mitad oriental del sello.',
+    reward: 'Sello de Jade y desenlace de la ruta fluvial.' },
+} as const
+export type AtlasRouteNode = keyof typeof ATLAS_ROUTE
+
 export interface AdventureBattleSpec {
   readonly playerDeckId: string
   readonly opponentDeckId: string
   readonly seed: number
   readonly bossId?: BossId
+  readonly routeNode?: AtlasRouteNode
 }
 
 export const createAdventureMatch = (spec: AdventureBattleSpec): MatchState => {
@@ -209,7 +223,10 @@ export const createAdventureMatch = (spec: AdventureBattleSpec): MatchState => {
   const opponent = STARTER_DECKS.find((deck) => deck.id === spec.opponentDeckId)
   if (!player || !opponent) throw new Error('Falta un mazo válido para esta aventura.')
   const boss = bossById(spec.bossId)
-  return createMatch(player, opponent, spec.seed, boss ? { aiNexusHealth: boss.health } : {})
+  const route = spec.routeNode && ATLAS_ROUTE[spec.routeNode]
+  const health = route?.health ?? boss?.health
+  const match = createMatch(player, opponent, spec.seed, health === undefined ? {} : { aiNexusHealth: health })
+  return route?.rivalMandate ? { ...match, mandate: 'ai' } : match
 }
 
 export interface BossResolution {

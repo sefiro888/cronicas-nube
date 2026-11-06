@@ -274,8 +274,10 @@ export function BattlePage() {
   // Escenario efectivo: con «Según tu facción» lo decide el mazo con el que
   // juegas, y si no, manda la elección manual. Se lee del propio MatchState y
   // no del jugador, que se deriva más abajo.
+  const routeRun = useAdventure((state) => state.run)
+  const routeScenario = isAdventureMatch && routeRun?.kind === 'route' && routeRun.battleSeed === match?.seed ? routeRun.routeNode : undefined
   const scenario = resolveScenario(
-    preferences.scenario,
+    routeScenario ?? preferences.scenario,
     match ? COMMANDER_BY_ID[match.players[ME].commanderId]?.faction : undefined,
   )
   // Capa ambiental generativa del escenario activo (se apaga sola al salir).

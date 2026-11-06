@@ -6,36 +6,13 @@ import { SCENARIO_ATLAS, SCENARIO_ENVIRONMENTS, type SceneId } from '../battle/s
 import { resolveScenario } from '../battle/scenarioForFaction'
 import { usePreferences } from '../store/preferences'
 import { SCENARIO_MOODS, SCENARIO_MOOD_LABELS, ScenarioMoodPreview, useScenarioMood, type ScenarioMood } from '../store/scenarioMood'
+import { WorldAtlas } from './WorldAtlas'
 import { withBase } from '../utils/assets'
 import styles from './ScenarioAtlasPage.module.css'
 
 const Board3D = lazy(() => import('../battle/Board3D').then((module) => ({ default: module.Board3D })))
 const EMPTY = new Set<string>()
 const nothing = () => undefined
-
-// Coordenadas porcentuales de los hitos en la ilustración, con el Nexo libre
-// en el centro. Se indexan por escenario para que el catálogo siga dando los nombres.
-const ATLAS_MARKERS: Readonly<Record<SceneId, readonly [number, number]>> = {
-  fimbul: [17, 14],
-  'lago-kalevala': [48, 10],
-  'aether-citadel': [70, 11],
-  'acropolis-olimpo': [91, 11],
-  grove: [8, 32],
-  'bastion-alba': [20, 30],
-  foundry: [33, 30],
-  'jade-court': [80, 27],
-  'wheel-ghat': [92, 38],
-  'baluarte-tercios': [25, 47],
-  'desguace-goblin': [63, 39],
-  'umbral-vacio': [79, 49],
-  'bestiary-ravine': [12, 63],
-  sanctuary: [50, 59],
-  'cripta-plaga': [74, 64],
-  'solar-court': [91, 64],
-  shore: [14, 82],
-  duna: [42, 79],
-  caldera: [65, 81],
-}
 
 export function ScenarioAtlasPage() {
   const preferences = usePreferences()
@@ -64,19 +41,8 @@ export function ScenarioAtlasPage() {
       <Link to="/play" className={styles.back}>Volver a jugar</Link>
     </header>
     <section className={styles.worldMap} aria-label="Mapa ilustrado del Nexo">
-      <nav className={styles.map} aria-label="Territorios del atlas">
-        <img className={styles.mapArt} src={withBase('/assets/scenarios/atlas-del-nexo.webp')} width={1881} height={836} alt="" />
-        {SCENARIO_ATLAS.map((entry) => {
-          const [x, y] = ATLAS_MARKERS[entry.id]
-          return <button type="button" key={entry.id} className={styles.marker}
-            aria-label={`${FACTION_LABELS[entry.faction]} ${entry.name}`} aria-pressed={entry.id === selected}
-            onClick={() => selectScene(entry.id)}
-            style={{ '--map-x': `${x}%`, '--map-y': `${y}%`, '--scene-accent': entry.accent } as CSSProperties}>
-            <span className={styles.medallion}><FactionSigil faction={entry.faction} decorative /></span>
-            <span className={styles.markerName}>{entry.name}</span>
-          </button>
-        })}
-      </nav>
+      <WorldAtlas label="Territorios del atlas" markers={SCENARIO_ATLAS.map(({ id }) => ({ id }))}
+        selected={selected} onSelect={selectScene} />
       <div className={styles.mapCaption}>
         <p aria-live="polite"><small>Territorio seleccionado</small><strong>{scene.name}</strong></p>
         <a href="#ficha-del-escenario" className={styles.back}>Ver ficha del escenario <span aria-hidden="true">↓</span></a>
