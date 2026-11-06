@@ -1,13 +1,22 @@
 # Crónicas del Nexo
 
-**[▶ Jugar en el navegador](https://sefiro888.github.io/magicfable/)**
+**[▶ Jugar en el navegador](https://sefiro888.github.io/cronicas-nube/)**
+
+**Estado al 6 de noviembre de 2026.** `main` de `sefiro888/cronicas-nube`
+incluye Supabase independiente, obstáculos destructibles, hechizos emblemáticos,
+formas del Nexo por facción y ajustes del ritmo Cinemático. La versión de juego
+publicada y verificada es `ef3f235`.
+
+Para continuar, lee [AGENTS.md](AGENTS.md) y el
+[traspaso vigente](docs/ESTADO-Y-SIGUIENTE.md#traspaso-vigente--6-de-noviembre-de-2026).
+Las notas fechadas de entregas anteriores son históricas.
 
 Juego táctico de cartas de fantasía para PC, en español: duelos 1v1 sobre un
 **tablero 8 × 8 en 3D**, contra la IA o en salas multijugador en línea.
 Las unidades y estructuras conservan su forma de carta sobre el tablero.
 También se puede instalar como PWA.
 
-**Estado revisado el 1 de noviembre de 2026.** Este README es el punto de entrada
+**Contexto del 1 de noviembre de 2026.** Este README es el punto de entrada
 para entender el juego y continuar su desarrollo. Distingue contenido integrado,
 trabajo local y diseños pendientes: tener un dosier no significa ser jugable.
 
@@ -48,7 +57,7 @@ comprobó que [su flujo de compilación y despliegue terminó correctamente](htt
 El resultado de las siguientes publicaciones se consulta en
 [GitHub Actions](https://github.com/sefiro888/magicfable/actions).
 
-**El desarrollo de juego quedó en pausa por petición del propietario.** Esta
+**Nota histórica del 30 de octubre.** El desarrollo de juego quedó en pausa por petición del propietario. Esta
 actualización documental no reanuda las mejoras visuales ni integra prototipos.
 Para continuar trabajo de juego hay que partir de una nueva petición y revisar
 el estado de Git, conservando los cambios existentes.
@@ -353,12 +362,10 @@ el porqué de la solución.
 
 ## Publicación y documentación de referencia
 
-Cada push a `main` activa [el flujo de Pages](.github/workflows/deploy.yml):
-instala dependencias, ejecuta pruebas unitarias, comprueba TypeScript, compila
-con base `/magicfable/`, prepara `404.html` y despliega. **El flujo no ejecuta
-lint ni Playwright**: hay que completarlos según el cambio. Los originales,
-capturas y prototipos ignorados no llegan a la web por hacer push.
-Una compilación correcta y un despliegue correcto son estados distintos.
+Cada push a `main` activa [las comprobaciones](.github/workflows/comprobar.yml)
+(pruebas unitarias, compilación y lint) y [la publicación](.github/workflows/vista-previa.yml)
+con base `/cronicas-nube/`. GitHub Pages sirve la web compilada desde `gh-pages`.
+Para cambios de navegación o batalla, ejecuta también Playwright según AGENTS.md.
 
 Los dosieres `docs/FACCION_*.md` detallan identidad, cartas y arte; el catálogo
 y sus pruebas indican qué está implementado. Documentos de raíz como

@@ -1,6 +1,6 @@
 # Guía de trabajo del repositorio
 
-**Si eres un agente y acabas de llegar: lee también `docs/ESTADO-Y-SIGUIENTE.md`.**
+**Si acabas de llegar, empieza por «Traspaso vigente» en `docs/ESTADO-Y-SIGUIENTE.md`.**
 Ahí está el estado real del proyecto, las trampas que ya han costado tiempo y
 una lista de ideas de mejora de la que puedes tirar. Este archivo son las
 reglas; aquel es el mapa.

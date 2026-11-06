@@ -1,5 +1,27 @@
 # Estado del proyecto y por dónde seguir
 
+## Traspaso vigente — 6 de noviembre de 2026
+
+- **Base de trabajo.** `main` en `sefiro888/cronicas-nube`. Parte de `main`
+  para cambios nuevos y consolida cada entrega aprobada. `gh-pages` sirve la
+  web compilada. Limita los cambios a este repositorio. `magicfable` es aparte.
+- **Publicado en `ef3f235`.** Supabase independiente, obstáculos destructibles,
+  hechizos emblemáticos, formas del Nexo por facción y ajustes del ritmo
+  Cinemático. La revisión de batalla quedó fusionada en el PR #6.
+- **Verificado.** 809 pruebas unitarias, compilación, lint y comprobaciones de
+  GitHub. La web publicada usa el nuevo Supabase. Dos clientes crearon y se
+  unieron a una sala y cargaron la misma batalla.
+- **Pendiente de probar.** Un duelo online completo desde dos dispositivos,
+  incluida la revancha y una reconexión durante una jugada. También quedan
+  pendientes las pruebas humanas de equilibrio.
+- **Pendiente de implementar.** MVP por contribución acumulada y mazo visible
+  con animación de robo (ideas 101 y 102). La IA todavía puede priorizar el
+  poder de comandante sin comparar alternativas. Consulta la auditoría de
+  equilibrio antes de ajustar cartas o mazos.
+
+Los apartados siguientes conservan el historial. Sus estados y cifras
+corresponden a la fecha de cada entrega.
+
 ## Revisión conjunta de batalla
 
 Rama de revisión: `codex/revision-conjunta-batalla`, creada desde `main`.
@@ -128,7 +150,7 @@ Cinco pruebas específicas de navegador correctas: 1920 × 1080, 1366 × 768,
 adicional de la compilación con base `/cronicas-nube/`: apertura normal y
 recursos sin errores. Capturas en `tools/captures/album/`.
 
-## TRASPASO A CODEX — 4 de noviembre de 2026 (léelo primero)
+## Traspaso histórico a Codex — 4 de noviembre de 2026
 
 El propietario pasa el proyecto a Codex (también para generar imágenes).
 Resumen de dónde está todo; el detalle de cada bloque va en las notas de
