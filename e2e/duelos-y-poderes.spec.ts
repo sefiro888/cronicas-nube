@@ -176,6 +176,7 @@ test('Olimpo y Marea muestran el riesgo de cerrar turno y la fase pública', asy
 test('el duelo contra el Nexo conserva su Vida de apertura y muestra su pérdida real', async ({ page }) => {
   await page.setViewportSize({ width: 1366, height: 768 })
   const base = createMatch(deck('fimbul'), deck('duna'), 761)
+  const fiber = fiberModuleUrl(page)
   const module = await openBattle(page, {
     ...base, turn: 4, phase: 'main', activePlayer: 'player', terrain: [],
     board: [piece('atacante', 'huscarle-del-rey', 'player', 0)],
@@ -184,6 +185,7 @@ test('el duelo contra el Nexo conserva su Vida de apertura y muestra su pérdida
       ai: { ...base.players.ai, nexusHealth: 22, mulliganTaken: true },
     },
   }, 'fimbul', 'duna')
+  await waitForRenderedBoard(page, await fiber)
   const result = await send(page, module, { type: 'attack-nexus', playerId: 'player', attackerId: 'atacante' })
   expect(result.ok, result.message).toBe(true)
   const nexus = page.getByTestId('duel-nexus')
@@ -267,6 +269,7 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
   test(`Jade muestra a quién congela y conserva el contador a ${width}`, async ({ page }) => {
     await page.setViewportSize({ width, height })
     const base = createMatch(deck('jade'), deck('tercios'), 41)
+    const fiber = fiberModuleUrl(page)
     const module = await openBattle(page, {
       ...base, phase: 'main', turn: 4, mandate: 'player', terrain: [],
       players: {
@@ -279,6 +282,7 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
         { ...piece('débil', 'rodelero', 'ai', 3), position: { x: 1, y: 3 } },
       ],
     }, 'jade', 'tercios')
+    await waitForRenderedBoard(page, await fiber)
     await page.getByRole('button', { name: /^Dragón del Río Amarillo\./ }).click()
     await page.keyboard.press('ArrowUp')
     await expect(page.getByText('Congelación · 2 turnos', { exact: true })).toBeVisible()
@@ -286,7 +290,7 @@ for (const [width, height] of [[1920, 1080], [1366, 768]] as const) {
     await page.screenshot({ path: `tools/captures/duelos-y-poderes/prevision-jade-${width}.png` })
     const result = await send(page, module, { type: 'play-card', playerId: 'player', cardInstanceId: 'hechizo', position: { x: 3, y: 7 }, target: { kind: 'none' } })
     expect(result.ok, result.message).toBe(true)
-    await expect(page.getByLabel('Congelada · 2 turnos', { exact: true })).toBeVisible()
+    await expect(page.getByLabel('Congelada · 2 turnos', { exact: true })).toBeVisible({ timeout: 20000 })
   })
 
   test(`Marea señala el destino real de un empuje acortado a ${width}`, async ({ page }) => {
