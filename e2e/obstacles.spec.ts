@@ -14,7 +14,7 @@ for (const [width, height, scenario] of [[1920, 1080, 'caldera'], [1366, 768, 'a
     const base = createMatch(STARTER_DECKS[0]!, STARTER_DECKS[1]!, 712)
     const state: MatchState = {
       ...base, turn: 4, activePlayer: 'player', phase: 'main', animations: [],
-      terrain: [{ kind: 'rubble', position: { x: 4, y: 4 } }, { kind: 'cover', position: { x: 2, y: 4 } }],
+      terrain: [{ kind: 'rubble', position: { x: 5, y: 5 } }, { kind: 'cover', position: { x: 2, y: 4 } }],
       players: { ...base.players, player: { ...base.players.player, mulliganTaken: true } },
       board: [{ instanceId: 'lobo', cardId: 'lobo-salvaje', owner: 'player', position: { x: 4, y: 5 }, currentHealth: 2,
         attackModifier: 0, movedThisTurn: false, attackedThisTurn: false, enteredOnTurn: 1, statuses: [] }],
@@ -39,14 +39,14 @@ for (const [width, height, scenario] of [[1920, 1080, 'caldera'], [1366, 768, 'a
     const model = () => page.evaluate(async (url) => {
       const { useMatchStore } = await import(url) as { useMatchStore: typeof MatchStore }
       const match = useMatchStore.getState().match!
-      return { tile: match.terrain.find((tile) => tile.position.x === 4 && tile.position.y === 4),
+      return { tile: match.terrain.find((tile) => tile.position.x === 5 && tile.position.y === 5),
         piece: match.board.find((piece) => piece.instanceId === 'lobo'), selected: useMatchStore.getState().selectedPieceId,
         playing: Boolean(useMatchStore.getState().currentEvent || useMatchStore.getState().pendingAnimations.length) }
     }, module)
     await page.keyboard.press('ArrowUp')
     await page.keyboard.press('Enter')
     await expect.poll(async () => (await model()).selected).toBe('lobo')
-    await page.keyboard.press('ArrowUp')
+    await page.keyboard.press('ArrowRight')
     await expect(page.getByText('Romper obstáculo', { exact: true })).toBeVisible()
     await page.screenshot({ path: `tools/captures/obstaculos/objetivo-${width}.png` })
     await page.evaluate(async ({ world, module }) => {
@@ -82,11 +82,11 @@ for (const [width, height, scenario] of [[1920, 1080, 'caldera'], [1366, 768, 'a
     await writeFile(`${folder}/derrumbe-${width}.png`, Buffer.from((await impact()).shot, 'base64'))
     await expect.poll(async () => (await model()).playing).toBe(false)
     expect(await model()).toMatchObject({ tile: undefined, piece: { attackedThisTurn: true } })
-    await page.keyboard.press('ArrowDown')
+    await page.keyboard.press('ArrowLeft')
     await page.keyboard.press('Enter')
-    await page.keyboard.press('ArrowUp')
+    await page.keyboard.press('ArrowRight')
     await page.keyboard.press('Enter')
-    await expect.poll(async () => (await model()).piece?.position).toEqual({ x: 4, y: 4 })
+    await expect.poll(async () => (await model()).piece?.position).toEqual({ x: 5, y: 5 })
     expect(errors).toEqual([])
   })
 }

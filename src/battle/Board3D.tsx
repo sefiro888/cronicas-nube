@@ -575,10 +575,16 @@ const BoardCell = memo(function BoardCell({ position, valid, hazard, occupied, s
         <meshBasicMaterial color={validColor} transparent opacity={0.32} depthWrite={false} toneMapped={false} />
       </mesh>}
       {hazard && <MovementHazardMarker hazard={hazard} surfaceY={height / 2 + .016} />}
-      {breach && <mesh position={[0, .108, 0]} rotation={[-Math.PI / 2, 0, Math.PI / 4]} raycast={() => null}>
-        <ringGeometry args={[TILE_SIZE * .61, TILE_SIZE * .72, 4]} />
-        <meshBasicMaterial color={hovered ? '#fff3c3' : '#ffae43'} toneMapped={false} />
-      </mesh>}
+      {breach && <>
+        <mesh position={[0, .108, 0]} rotation={[-Math.PI / 2, 0, Math.PI / 4]} raycast={() => null}>
+          <ringGeometry args={[TILE_SIZE * .61, TILE_SIZE * .72, 4]} />
+          <meshBasicMaterial color={hovered ? '#fff3c3' : '#ffae43'} toneMapped={false} />
+        </mesh>
+        <mesh position={[0, .87, 0]} raycast={() => null}>
+          <octahedronGeometry args={[hovered ? .082 : .062]} />
+          <meshBasicMaterial color={hovered ? '#fff3c3' : '#ffae43'} toneMapped={false} />
+        </mesh>
+      </>}
       <TerrainMarks accent={ruinAccent} rubble={rubble} cover={cover} position={position} terrainStyle={terrainStyle} />
       {scorched && <ScorchMarks position={position} reducedMotion={reducedMotion} />}
     </mesh>

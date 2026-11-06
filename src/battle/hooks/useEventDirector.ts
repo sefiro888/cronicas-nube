@@ -7,7 +7,7 @@ import { playSynthCue, type SoundCue } from '../../services/audio'
 import { useMatchStore } from '../../store/match'
 import type { PreferencesState } from '../../store/preferences'
 import { ARRIVAL_LANDING } from '../arrivalMotion'
-import { eventDuration } from '../eventTiming'
+import { eventDuration, OBSTACLE_CONTACT } from '../eventTiming'
 import { protectionEffect } from '../resolvedEffects'
 import { clashExchange, duelIntroDuration, endsExchange, foldExchange, isFinisher, openExchange, pushRecentPlay, recentPlayFor, spotlightFor, type CombatExchange, type RecentPlay, type Spotlight } from '../presentation'
 
@@ -39,7 +39,6 @@ const cueForEvent = (event: AnimationEvent, me: PlayerId): SoundCue | undefined 
     case 'damage': return event.effectId === 'olympus-thunderbolt' ? 'thunder' : 'impact'
     case 'nexus-damage': return 'impact'
     case 'shield': return 'shield'
-    case 'obstacle-break':
     case 'destroy': return 'destroy'
     case 'freeze': return 'freeze'
     case 'reveal': return 'reveal'
@@ -350,8 +349,15 @@ export const useEventDirector = (me: PlayerId, preferences: PreferencesState): E
         if (!preferences.muted) playSynthCue('land')
       }, duration * ARRIVAL_LANDING)
       : undefined
+    const breach = currentEvent.type === 'obstacle-break'
+      ? window.setTimeout(() => {
+        if (!preferences.reducedMotion) setImpact({ key: currentEvent.id, strength: 'heavy' })
+        if (!preferences.muted) playSynthCue('destroy', currentEvent.faction)
+      }, duration * OBSTACLE_CONTACT)
+      : undefined
     const timer = window.setTimeout(() => useMatchStore.getState().finishEvent(), duration)
     return () => {
+      if (breach !== undefined) window.clearTimeout(breach)
       window.clearTimeout(sideChannel)
       window.clearTimeout(timer)
       window.clearTimeout(landing)

@@ -7,6 +7,7 @@ import { paceScale, type PresentationPace } from './presentation'
  * efectos usan el mismo factor (ver EventEffects) para no desincronizarse.
  */
 export const SPELL_CAST_STRETCH = 1.8
+export const OBSTACLE_CONTACT = .43
 
 /** La contabilidad pasa rápido; golpes e invocaciones conservan su recorrido. */
 const EVENT_PACE: Readonly<Partial<Record<AnimationEvent['type'], number>>> = {

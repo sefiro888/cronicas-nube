@@ -2,6 +2,7 @@ import { useFrame } from '@react-three/fiber'
 import { useRef } from 'react'
 import { Mesh, type Euler, type Group, type MeshBasicMaterial, type PointLight, type Sprite, type Vector3 } from 'three'
 import type { AnimationEvent, Position } from '../../game'
+import { OBSTACLE_CONTACT } from '../eventTiming'
 import { gridToWorldX, gridToWorldZ } from '../grid/gridCoordinates'
 import { glowTexture, type BoardTileStyle } from '../textures'
 import { TERRAIN_LOOK, TerrainMarks } from './TerrainMarks'
@@ -27,6 +28,7 @@ export function ObstacleRupture({ event, position, terrainStyle, reducedMotion, 
   const dust = useRef<Group>(null)
   const ring = useRef<Mesh>(null)
   const light = useRef<PointLight>(null)
+  const flare = useRef<Sprite>(null)
   const started = useRef<number | undefined>(undefined)
   const fragments = useRef<Fragment[]>([])
   const color = accent ?? accents[terrainStyle]
@@ -34,7 +36,7 @@ export function ObstacleRupture({ event, position, terrainStyle, reducedMotion, 
   const z = position.y - (event.from?.y ?? position.y)
   useFrame(({ clock }) => {
     started.current ??= clock.elapsedTime
-    const contact = .43
+    const contact = OBSTACLE_CONTACT
     const t = reducedMotion ? .54 : Math.min(1, (clock.elapsedTime - started.current) * 1000 / event.durationMs)
     const burst = Math.max(0, (t - contact) / (1 - contact))
     if (root.current) root.current.userData.ruptureProgress = t
@@ -62,6 +64,10 @@ export function ObstacleRupture({ event, position, terrainStyle, reducedMotion, 
       ring.current.scale.setScalar(.35 + burst * 1.35)
       ;(ring.current.material as MeshBasicMaterial).opacity = t < contact ? 0 : (1 - burst) ** 2 * .9
     }
+    if (flare.current) {
+      flare.current.scale.set(.38 + burst * 1.8, .85 + burst * .55, 1)
+      flare.current.material.opacity = t < contact ? 0 : (1 - burst) ** 3 * .65
+    }
     if (light.current) light.current.intensity = t < contact ? 0 : (1 - burst) ** 5 * 9
     dust.current?.children.forEach((object, index) => {
       const cloud = object as Sprite
@@ -75,9 +81,10 @@ export function ObstacleRupture({ event, position, terrainStyle, reducedMotion, 
       const angle = index * 2.39996
       const radius = burst * (.55 + (index % 7) * .13)
       child.visible = !reducedMotion && t >= contact && burst < .96
-      child.position.set((Math.cos(angle) + x * .55) * radius, .1 + Math.sin(burst * Math.PI) * (.22 + (index % 5) * .21), (Math.sin(angle) + z * .55) * radius)
+      child.position.set((Math.cos(angle) + x * .55) * radius, .36 + Math.sin(burst * Math.PI) * (.30 + (index % 5) * .32), (Math.sin(angle) + z * .55) * radius)
       child.rotation.set(angle + burst * 5, burst * 3, angle)
-      child.scale.setScalar(Math.min(1, (1 - burst) * 2.5))
+      const fade = Math.min(1, (1 - burst) * 2.5)
+      child.scale.set(fade, index < 9 ? fade : fade * 3.3, fade)
     })
   })
   return <group ref={root} name="derrumbe-obstaculo" position={[gridToWorldX(position.x), 0, gridToWorldZ(position.y)]}>
@@ -104,6 +111,9 @@ export function ObstacleRupture({ event, position, terrainStyle, reducedMotion, 
       <ringGeometry args={[.43, .48, 8]} />
       <meshBasicMaterial color={color} opacity={0} transparent depthWrite={false} toneMapped={false} />
     </mesh>
+    {!reducedMotion && <sprite ref={flare} position={[0, .61, 0]} raycast={() => null}>
+      <spriteMaterial map={glowTexture('arcane')} color={color} transparent opacity={0} depthWrite={false} toneMapped={false} />
+    </sprite>}
     {!reducedMotion && <pointLight ref={light} color={color} position={[0, .43, 0]} intensity={0} distance={2.3} />}
   </group>
 }
