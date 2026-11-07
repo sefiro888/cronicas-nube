@@ -2,6 +2,20 @@
 
 ## Multijugador completo en revisión local — 7 de noviembre de 2026
 
+Validación adicional de partida completa del 7 de noviembre. La prueba
+`e2e/multiplayer-match-live.spec.ts`, con `RUN_LIVE_PVP=1`, juega Furia contra
+Goblins por la sala real con dos clientes automatizados. Compara el estado
+de ambos tras cada acción. Terminó en el turno 33 con victoria de Furia,
+tras más de 175 acciones, reconexión del invitado en el turno 10 y revancha
+bilateral aceptada. Pantallas finales revisadas en 1920 × 1080 y 1366 × 768.
+Capturas en `tools/captures/pvp-partida-completa/`.
+
+Esta prueba larga usa calidad baja, movimiento reducido y omite las colas
+intermedias para acelerar la comprobación de sincronización. Las escenas
+visuales se verificaron por separado en `multiplayer-live.spec.ts`. Son
+pruebas automatizadas, con posiciones dirigidas y una partida completa,
+pendientes de la valoración visual y de experiencia del propietario.
+
 Rama local `codex/multijugador-completo-local`, desde `main` en `cf2bc80`.
 El propietario pide probar aquí antes de integrar o publicar.
 
