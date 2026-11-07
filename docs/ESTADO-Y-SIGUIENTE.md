@@ -1,6 +1,6 @@
 # Estado del proyecto y por dónde seguir
 
-## Multijugador completo en revisión local — 7 de noviembre de 2026
+## Multijugador integrado en main — 7 de noviembre de 2026
 
 Validación adicional de partida completa del 7 de noviembre. La prueba
 `e2e/multiplayer-match-live.spec.ts`, con `RUN_LIVE_PVP=1`, juega Furia contra
@@ -16,8 +16,9 @@ visuales se verificaron por separado en `multiplayer-live.spec.ts`. Son
 pruebas automatizadas, con posiciones dirigidas y una partida completa,
 pendientes de la valoración visual y de experiencia del propietario.
 
-Rama local `codex/multijugador-completo-local`, desde `main` en `cf2bc80`.
-El propietario pide probar aquí antes de integrar o publicar.
+Trabajo realizado en `codex/multijugador-completo-local`, desde `cf2bc80`.
+El 7 de noviembre el propietario autoriza integrarlo en `main` y publicarlo
+para jugar online con un amigo. Esta entrega incorpora `3e3983d` y `2cf9ca2`.
 
 El anfitrión drenaba los eventos del motor antes de enviar el estado al
 invitado. Ahora envía los eventos nuevos junto al estado, con deduplicación
