@@ -6,6 +6,7 @@
     // (page.evaluate, addInitScript), así que necesitan los tipos del DOM
     // aunque el propio runner sea Node.
     "lib": ["ES2023", "DOM"],
+    "types": ["node", "vite/client"],
     "module": "ESNext",
     "skipLibCheck": true,
     "moduleResolution": "Bundler",
