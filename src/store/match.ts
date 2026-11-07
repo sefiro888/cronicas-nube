@@ -444,6 +444,7 @@ export const useMatchStore = create<MatchStore>()(
       // pasan por `dispatch`, así que se registran aparte como entradas 'info'.
       matchLog: message ? [...current.matchLog, { turn: cleaned.turn, type: 'info' as const, ok: true, note: message }] : current.matchLog,
       pendingAnimations: [...current.pendingAnimations, ...events],
+      lastPlay: replayable(events) ?? current.lastPlay,
       elapsedSeconds: cleaned.winner ? Math.max(1, Math.round((Date.now() - current.startedAtMs) / 1000)) : current.elapsedSeconds,
     }))
   },

@@ -1,5 +1,45 @@
 # Estado del proyecto y por dónde seguir
 
+## Multijugador completo en revisión local — 7 de noviembre de 2026
+
+Rama local `codex/multijugador-completo-local`, desde `main` en `cf2bc80`.
+El propietario pide probar aquí antes de integrar o publicar.
+
+El anfitrión drenaba los eventos del motor antes de enviar el estado al
+invitado. Ahora envía los eventos nuevos junto al estado, con deduplicación
+por identificador y reinicio del registro al cambiar de partida. El invitado
+conserva la última jugada, los resultados visuales de hechizos, el registro
+y la mejor jugada. La resincronización recupera esa presentación sin volver
+a ejecutar las animaciones. `replaceMatch` también guarda la repetición.
+
+La preparación muestra retratos, emblemas y descripciones de las facciones,
+pasiva y poder de comandante. El anfitrión escoge entre los 19 panoramas.
+El invitado recibe la elección en la sala y en el estado de batalla, también
+al recargar. Los mazos se fijan al entrar en la sala.
+
+Verificación local
+
+- 812 pruebas unitarias correctas y 7 omitidas. Compilación y lint correctos.
+- Suite general de navegador con 161 correctas y 144 omitidas. Una prueba
+  del historial agotó su espera de cinco segundos para el mulligan. Pasó al
+  repetirla aislada, sin modificar su código.
+- Dos pruebas adicionales con Supabase real a 1920 × 1080 y 1366 × 768.
+  Crean y unen sala, comprueban escenario, ataque y muerte en la cola del
+  invitado, repetición, recarga y lanzamiento de hechizo y poder del invitado.
+  Casos dirigidos con posiciones preparadas, pendientes de revisión humana
+  en una partida completa. Capturas en `tools/captures/pvp-verified/`.
+- Tres regresiones unitarias cubren transporte de eventos drenados,
+  duplicados y recuperación del registro y repetición tras reconectar.
+
+Para repetir las pruebas online, usar `RUN_LIVE_PVP=1` y ejecutar
+`npm run test:e2e -- e2e/multiplayer-live.spec.ts`. Requieren Internet y el
+Supabase de este repositorio. La preparación de sus posiciones espera
+que los dos tableros estén montados antes de actuar.
+
+Vista local de revisión en `http://127.0.0.1:4200/multiplayer` mientras esté
+activo Vite. Para dos jugadores en este equipo, usar dos perfiles o ventanas
+con almacenamiento independiente.
+
 ## Traspaso vigente — 6 de noviembre de 2026
 
 - **Base de trabajo.** `main` en `sefiro888/cronicas-nube`. Parte de `main`

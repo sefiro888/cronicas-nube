@@ -1,11 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { COMMANDERS, STARTER_DECKS, commanderForDeck } from '../game'
+import { COMMANDERS, FACTION_BY_ID, STARTER_DECKS, commanderForDeck } from '../game'
 import { createRoom, joinRoom, type Room, type RoomStatus } from '../multiplayer/room'
 import { saveTicket } from '../multiplayer/ticket'
 import { useMatchStore } from '../store/match'
 import { useNetworkStore } from '../store/network'
 import { usePreferences } from '../store/preferences'
+import { SCENARIO_ATLAS } from '../battle/scenarioEnvironments'
+import { resolveScenario } from '../battle/scenarioForFaction'
+import { withBase } from '../utils/assets'
+import { FactionSigil } from '../components/FactionSigil'
 import styles from './MultiplayerPage.module.css'
 
 type Mode = 'idle' | 'hosting' | 'joining'
@@ -13,6 +17,8 @@ type Mode = 'idle' | 'hosting' | 'joining'
 export function MultiplayerPage() {
   const navigate = useNavigate()
   const preferences = usePreferences()
+  const scenario = resolveScenario(preferences.scenario, STARTER_DECKS.find((deck) => deck.id === preferences.selectedDeckId)?.faction)
+  const sharedScenario = useNetworkStore((state) => state.scenario)
   const [mode, setMode] = useState<Mode>('idle')
   const [room, setRoom] = useState<Room>()
   const [status, setStatus] = useState<RoomStatus>('waiting')
@@ -31,8 +37,30 @@ export function MultiplayerPage() {
     next.onStatusChange(setStatus)
   }, [])
 
+  useEffect(() => {
+    if (!room) return
+    const announce = () => room.send('arena', { scenario })
+    const offArena = room.onMessage('arena', (payload) => {
+      if (room.role !== 'guest') return
+      const value = (payload as { scenario?: string })?.scenario
+      const scene = SCENARIO_ATLAS.find((entry) => entry.id === value)
+      if (scene) useNetworkStore.getState().setScenario(scene.id)
+    })
+    const offReady = room.onMessage('arena-ready', () => { if (room.role === 'host') announce() })
+    const offStatus = room.onStatusChange((status) => {
+      if (status === 'connected') {
+        if (room.role === 'host') announce()
+        else room.send('arena-ready', {})
+      }
+    })
+    if (room.role === 'host') announce()
+    else room.send('arena-ready', {})
+    return () => { offArena(); offReady(); offStatus() }
+  }, [room, scenario])
+
   const handleCreate = () => {
     setError(undefined)
+    useNetworkStore.getState().setScenario(scenario)
     setMode('hosting')
     attach(createRoom())
   }
@@ -66,6 +94,7 @@ export function MultiplayerPage() {
     // Billete de vuelta: si la pestaña se recarga en mitad de la batalla,
     // BattlePage sabrá a qué sala y con qué papel tiene que reengancharse.
     saveTicket({ code: room.code, role: room.role })
+    if (room.role === 'host') useNetworkStore.getState().setScenario(scenario)
     useNetworkStore.getState().setRoom(room, room.role)
     // La sala ya no es responsabilidad de esta pantalla: BattlePage se encarga
     // de salir de ella cuando la partida termine o se abandone.
@@ -103,13 +132,17 @@ export function MultiplayerPage() {
             return (
               <button
                 key={deck.id}
-                className={`${styles.deckOption} ${styles[deck.faction]}`}
+                className={`${styles.deckOption} ${styles.factionCard} ${styles[deck.faction]}`}
                 data-selected={selected}
                 aria-pressed={selected}
                 onClick={() => preferences.setSelectedDeck(deck.id)}
                 title={deck.name}
+                disabled={mode !== 'idle'}
               >
-                {commander?.name ?? deck.name}
+                {commander && <img src={withBase(commander.art.webp ?? commander.art.fallback)} alt="" loading="lazy" />}
+                <span className={styles.factionTitle}><FactionSigil faction={deck.faction} size="small" decorative />{FACTION_BY_ID[deck.faction].name}</span>
+                <strong>{commander?.name ?? deck.name}</strong>
+                <span className={styles.factionDescription}>{FACTION_BY_ID[deck.faction].description}</span>
               </button>
             )
           })}
@@ -123,7 +156,6 @@ export function MultiplayerPage() {
         if (!deck) return null
         const leaders = COMMANDERS.filter((option) => option.faction === deck.faction)
         const chosen = commanderForDeck(deck, preferences.commanderByDeck[deck.id])
-        if (leaders.length < 2) return null
         return (
           <section className={styles.leaderPicker} aria-label={`Comandante de ${deck.name}`}>
             <span className={styles.deckPickerLabel}>Al mando</span>
@@ -143,9 +175,20 @@ export function MultiplayerPage() {
               ))}
             </div>
             <small className={styles.leaderRules}>{chosen.rules}</small>
+            <p className={styles.leaderRules}><strong>{chosen.power.name}</strong> · {chosen.power.description}</p>
           </section>
         )
       })()}
+
+      {mode !== 'joining' && <section className={styles.arenaPicker} aria-label="Escenario de la sala">
+        <h2>Elige el campo de batalla</h2>
+        <p>El anfitrión elige el escenario compartido por los dos jugadores.</p>
+        <div className={styles.arenaGrid}>{SCENARIO_ATLAS.map((scene) => <button type="button" key={scene.id} aria-pressed={scenario === scene.id}
+          onClick={() => { preferences.setScenario(scene.id); useNetworkStore.getState().setScenario(scene.id) }}>
+          <img src={withBase(scene.panorama)} alt="" loading="lazy" /><strong>{scene.name}</strong><span>{scene.setting}</span>
+        </button>)}</div>
+      </section>}
+      {mode === 'joining' && <p className={styles.note}>Campo elegido por el anfitrión · {SCENARIO_ATLAS.find((scene) => scene.id === sharedScenario)?.name ?? 'Esperando selección…'}</p>}
 
       {mode === 'idle' && (
         <div className={styles.choices}>
@@ -207,7 +250,7 @@ export function MultiplayerPage() {
           )}
           {status === 'connected' && (
             <>
-              <p className={styles.note}>Jugarás con el mazo elegido arriba. Confirma con tu rival que no hayáis elegido la misma facción.</p>
+              <p className={styles.note}>Jugarás con el mazo elegido arriba. Los dos bandos compartirán el escenario elegido por el anfitrión.</p>
               <button className={styles.joinButton} onClick={enterBattle}>Entrar a la batalla</button>
             </>
           )}

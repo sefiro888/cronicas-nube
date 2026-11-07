@@ -111,6 +111,7 @@ export function BattlePage() {
   const store = useMatchStore()
   const profile = useProfile()
   const room = useNetworkStore((state) => state.room)
+  const sharedScenario = useNetworkStore((state) => state.scenario)
   const role = useNetworkStore((state) => state.role)
   // En solitario y para el anfitrión, «yo» soy el bando 'player' del motor;
   // el invitado ocupa siempre el bando 'ai' (así el motor no cambia nada).
@@ -278,7 +279,7 @@ export function BattlePage() {
   const routeRun = useAdventure((state) => state.run)
   const routeScenario = isAdventureMatch && routeRun?.kind === 'route' && routeRun.battleSeed === match?.seed ? routeRun.routeNode : undefined
   const scenario = resolveScenario(
-    routeScenario ?? preferences.scenario,
+    (room ? sharedScenario : undefined) ?? routeScenario ?? preferences.scenario,
     match ? COMMANDER_BY_ID[match.players[ME].commanderId]?.faction : undefined,
   )
   // Capa ambiental generativa del escenario activo (se apaga sola al salir).

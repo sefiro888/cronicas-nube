@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { createMatch, mulliganOpeningHand, reorderTopCards, STARTER_DECKS, type GameAction, type MatchState } from '../game'
 import { useMatchStore } from '../store/match'
+import { useNetworkStore } from '../store/network'
+import { usePreferences, type ScenarioId } from '../store/preferences'
+import { SCENARIO_OPTIONS } from '../battle/scenarioCatalog'
 import type { Room, RoomRole } from './room'
 
 type NetworkIntent =
@@ -11,6 +14,8 @@ type NetworkIntent =
 interface StatePayload {
   match: MatchState
   message?: string
+  scenario?: ScenarioId
+  presentation?: Pick<ReturnType<typeof useMatchStore.getState>, 'lastPlay' | 'castImpacts' | 'bestPlay' | 'matchLog' | 'history'>
 }
 
 /**
@@ -52,6 +57,14 @@ const readPeerDeck = (payload: unknown): PeerDeck | undefined => {
   }
   return undefined
 }
+
+const presentationFor = (state: ReturnType<typeof useMatchStore.getState>) => ({
+  lastPlay: state.lastPlay,
+  castImpacts: state.castImpacts,
+  bestPlay: state.bestPlay,
+  matchLog: state.matchLog,
+  history: state.history,
+})
 
 export const useNetworkSync = (
   room: Room | undefined,
@@ -154,12 +167,22 @@ export const useNetworkSync = (
 
     const offReady = room.onMessage('ready', () => room.send('deck', presentacion))
 
+    const receivedEvents = new Set<string>()
+    let receivedSeed = useMatchStore.getState().match?.seed
     const offState = room.onMessage('state', (payload) => {
       if (role !== 'guest') return
-      const { match, message } = payload as StatePayload
+      const { match, message, scenario, presentation } = payload as StatePayload
+      if (SCENARIO_OPTIONS.some((option) => option.value === scenario)) useNetworkStore.getState().setScenario(scenario!)
       const store = useMatchStore.getState()
-      if (!store.match) store.startFromMatch(match)
-      else store.replaceMatch(match, message)
+      if (receivedSeed !== match.seed) {
+        receivedEvents.clear()
+        receivedSeed = match.seed
+      }
+      const events = match.animations.filter((event) => !receivedEvents.has(event.id))
+      events.forEach((event) => receivedEvents.add(event.id))
+      if (!store.match || store.match.seed !== match.seed) store.startFromMatch(match)
+      else store.replaceMatch({ ...match, animations: events }, message)
+      if (presentation) useMatchStore.setState(presentation)
     })
 
     const offRematch = room.onMessage('rematch', () => setRematchPeer(true))
@@ -172,7 +195,7 @@ export const useNetworkSync = (
       if (role !== 'host') return
       const store = useMatchStore.getState()
       room.send('deck', presentacion)
-      if (store.match) room.send('state', { match: store.match })
+      if (store.match) room.send('state', { match: store.match, presentation: presentationFor(store), scenario: useNetworkStore.getState().scenario ?? usePreferences.getState().scenario })
     })
 
     // Si el anfitrión rechaza la jugada del invitado (turno equivocado, ya
@@ -224,7 +247,11 @@ export const useNetworkSync = (
     const offBroadcast = role === 'host'
       ? useMatchStore.subscribe((state, previous) => {
           if (state.match && state.match !== previous.match) {
-            room.send('state', { match: state.match, message: state.history[state.history.length - 1] })
+            const previousIds = new Set(previous.pendingAnimations.map((event) => event.id))
+            // dispatch ya extrajo los eventos del motor para la presentación local.
+            // Transportamos únicamente los nuevos para que el invitado los presente también.
+            const events = state.pendingAnimations.filter((event) => !previousIds.has(event.id))
+            room.send('state', { match: { ...state.match, animations: events }, presentation: presentationFor(state), message: state.history[state.history.length - 1], scenario: useNetworkStore.getState().scenario ?? usePreferences.getState().scenario })
           }
         })
       : undefined
