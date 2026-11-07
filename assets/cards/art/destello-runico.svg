@@ -1,0 +1,12 @@
+<svg viewBox="0 0 400 500" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="grad-rune">
+      <stop offset="0%" style="stop-color:#64b5f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1a237e;stop-opacity:1" />
+    </radialGradient>
+  </defs>
+  <rect width="400" height="500" fill="url(#grad-rune)"/>
+  <circle cx="200" cy="200" r="50" fill="none" stroke="#2196f3" stroke-width="6"/>
+  <polygon points="200,120 240,200 200,280 160,200" fill="#2196f3" opacity="0.6"/>
+  <text x="200" y="450" font-size="24" font-weight="bold" text-anchor="middle" fill="white">Destello Rúnico</text>
+</svg>

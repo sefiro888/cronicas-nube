@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 560" role="img" aria-labelledby="title desc">
+  <title id="title">Sabueso de Brasa</title>
+  <desc id="desc">Arte piloto final: sabueso volcanico de carbon vivo corriendo sobre basalto agrietado.</desc>
+  <defs>
+    <clipPath id="safeCrop">
+      <rect width="800" height="560" rx="0" />
+    </clipPath>
+    <radialGradient id="focus" cx="68%" cy="42%" r="58%">
+      <stop offset="0" stop-color="#fff0b8" stop-opacity=".16" />
+      <stop offset=".42" stop-color="#ff6a1f" stop-opacity=".08" />
+      <stop offset="1" stop-color="#050303" stop-opacity=".34" />
+    </radialGradient>
+    <linearGradient id="grade" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#050303" stop-opacity=".16" />
+      <stop offset=".52" stop-color="#000000" stop-opacity="0" />
+      <stop offset="1" stop-color="#160604" stop-opacity=".2" />
+    </linearGradient>
+  </defs>
+  <g clip-path="url(#safeCrop)">
+    <image href="sabueso-brasa-pilot.png" x="0" y="0" width="800" height="560" preserveAspectRatio="xMidYMid slice" />
+    <rect width="800" height="560" fill="url(#focus)" />
+    <rect width="800" height="560" fill="url(#grade)" />
+  </g>
+</svg>

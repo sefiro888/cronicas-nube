@@ -1,0 +1,1 @@
+import{a as e,n as t}from"./jsx-runtime-n5LQ9ujS.js";var n=e(t(),1),r=()=>{let e=(0,n.useRef)(!0);return(0,n.useEffect)(()=>{let t=()=>{e.current=!document.hidden};return document.addEventListener(`visibilitychange`,t),()=>document.removeEventListener(`visibilitychange`,t)},[]),e};export{r as t};

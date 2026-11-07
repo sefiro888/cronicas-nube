@@ -1,0 +1,1 @@
+import{t as e}from"./scenarioPresentation-HzIjUOL3.js";var t=[{value:`auto`,label:`Según tu facción`,hint:`El escenario acompaña a la facción de tu mazo.`},...Object.entries(e).map(([e,t])=>({value:e,label:t.name,hint:t.setting}))];export{t};

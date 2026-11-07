@@ -1,0 +1,13 @@
+<svg viewBox="0 0 400 500" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad-frost-dragon" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00bcd4;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#003d5c;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="500" fill="url(#grad-frost-dragon)"/>
+  <ellipse cx="200" cy="200" rx="70" ry="80" fill="#0097a7"/>
+  <polygon points="270,200 320,170 310,230" fill="#4dd0e1"/>
+  <circle cx="200" cy="170" r="20" fill="#b3e5fc"/>
+  <text x="200" y="450" font-size="24" font-weight="bold" text-anchor="middle" fill="white">Dragón de Escarcha</text>
+</svg>

@@ -1,0 +1,14 @@
+<svg viewBox="0 0 400 500" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad-ice-golem" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#80deea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#004d73;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="500" fill="url(#grad-ice-golem)"/>
+  <rect x="140" y="120" width="120" height="140" fill="#0288d1"/>
+  <rect x="160" y="260" width="80" height="100" fill="#01579b"/>
+  <circle cx="170" cy="160" r="12" fill="#b3e5fc"/>
+  <circle cx="230" cy="160" r="12" fill="#b3e5fc"/>
+  <text x="200" y="450" font-size="24" font-weight="bold" text-anchor="middle" fill="white">Guardián Escarchado</text>
+</svg>

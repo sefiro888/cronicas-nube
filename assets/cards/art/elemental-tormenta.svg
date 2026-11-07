@@ -1,0 +1,13 @@
+<svg viewBox="0 0 400 500" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="grad-storm">
+      <stop offset="0%" style="stop-color:#ffff00;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#663300;stop-opacity:1" />
+    </radialGradient>
+  </defs>
+  <rect width="400" height="500" fill="url(#grad-storm)"/>
+  <circle cx="200" cy="180" r="70" fill="#ff9800"/>
+  <polygon points="200,100 240,180 200,260 160,180" fill="#ffc107"/>
+  <path d="M 200 80 L 210 120 M 200 80 L 190 120" stroke="#ffeb3b" stroke-width="3" fill="none"/>
+  <text x="200" y="450" font-size="24" font-weight="bold" text-anchor="middle" fill="white">Elemental de Tormenta</text>
+</svg>

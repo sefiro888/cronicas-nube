@@ -1,0 +1,14 @@
+<svg viewBox="0 0 400 500" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="grad-celestial">
+      <stop offset="0%" style="stop-color:#ffeb3b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1a237e;stop-opacity:1" />
+    </radialGradient>
+  </defs>
+  <rect width="400" height="500" fill="url(#grad-celestial)"/>
+  <circle cx="200" cy="180" r="50" fill="#fdd835"/>
+  <rect x="180" y="230" width="40" height="100" fill="#4a3f35"/>
+  <circle cx="150" cy="140" r="15" fill="#fff9c4" opacity="0.7"/>
+  <circle cx="250" cy="140" r="15" fill="#fff9c4" opacity="0.7"/>
+  <text x="200" y="450" font-size="24" font-weight="bold" text-anchor="middle" fill="white">Mago Celestial</text>
+</svg>

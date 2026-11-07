@@ -1,0 +1,1 @@
+var e=e=>e.startsWith(`/`)?`/cronicas-nube/`+e.slice(1):e;export{e as t};
